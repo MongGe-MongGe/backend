@@ -1,0 +1,26 @@
+# 기본 텍스트 파일은 Git이 줄바꿈을 자동 관리
+* text=auto
+
+# Maven Wrapper
+/mvnw text eol=lf
+*.cmd text eol=crlf
+
+# Source / config files
+*.java text
+*.xml text
+*.properties text
+*.yml text
+*.yaml text
+*.md text
+*.gitignore text
+*.gitattributes text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.war binary
+*.zip binary

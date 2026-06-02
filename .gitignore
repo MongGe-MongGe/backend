@@ -1,0 +1,168 @@
+# =========================================================
+# Project help
+# =========================================================
+HELP.md
+
+
+# =========================================================
+# Maven / Build output
+# =========================================================
+target/
+*.class
+
+# src 안에 있는 target 폴더는 예외 처리
+# Spring Initializr 기본 설정 유지용
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+
+# =========================================================
+# Maven Wrapper
+# =========================================================
+# Maven Wrapper는 팀원들이 Maven 설치 여부와 상관없이 같은 방식으로 빌드할 수 있게 해준다.
+# 보통 mvnw, mvnw.cmd, .mvn/wrapper/maven-wrapper.properties는 Git에 올린다.
+# jar 파일은 기본 템플릿에서 제외되어 있으므로 그대로 제외.
+.mvn/wrapper/maven-wrapper.jar
+
+
+# =========================================================
+# Spring Boot local config
+# =========================================================
+# 개인 로컬 설정 파일
+# DB 계정, 비밀번호, API Key 등이 들어가므로 Git에 올리지 않는다.
+src/main/resources/application-local.properties
+src/main/resources/application-local.yml
+
+# 비밀 설정 파일을 따로 만들 경우
+src/main/resources/application-secret.properties
+src/main/resources/application-secret.yml
+
+# 환경별 개인 설정 파일
+src/main/resources/application-dev-local.properties
+src/main/resources/application-prod-local.properties
+
+
+# =========================================================
+# Logs
+# =========================================================
+*.log
+logs/
+
+
+# =========================================================
+# Uploaded files / Local storage
+# =========================================================
+# 파일 업로드 기능에서 로컬에 저장되는 파일들
+uploads/
+files/
+storage/
+
+
+# =========================================================
+# STS / Eclipse
+# =========================================================
+.apt_generated/
+.apt_generated_tests/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+.metadata/
+.recommenders/
+
+
+# =========================================================
+# IntelliJ IDEA
+# =========================================================
+.idea/
+*.iws
+*.iml
+*.ipr
+
+
+# =========================================================
+# NetBeans
+# =========================================================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# src 안에 있는 build 폴더는 예외 처리
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+
+# =========================================================
+# VS Code
+# =========================================================
+.vscode/
+
+
+# =========================================================
+# macOS
+# =========================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# macOS resource fork files
+._*
+
+# Finder folder view settings
+.Spotlight-V100
+.Trashes
+
+
+# =========================================================
+# Windows
+# =========================================================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+
+# =========================================================
+# Temporary files
+# =========================================================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+
+# =========================================================
+# Environment files
+# =========================================================
+.env
+.env.*
+!.env.example
+
+
+# =========================================================
+# Test reports / Coverage
+# =========================================================
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+coverage/
+
+
+# =========================================================
+# Packaged files
+# =========================================================
+*.jar
+*.war
+*.ear
+
+# Maven Wrapper jar는 위에서 이미 제외됨.
+# 나중에 jar 파일을 직접 Git에 올려야 하는 특별한 상황이면 예외 규칙을 따로 추가하면 된다.

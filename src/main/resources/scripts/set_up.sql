@@ -25,8 +25,7 @@ CREATE TABLE users (
 -- Places
 -- ============================================================
 CREATE TABLE places (
-    id                  CHAR(36)      NOT NULL DEFAULT (UUID()),
-    kakao_place_id      VARCHAR(50)   NOT NULL UNIQUE,        -- 카카오 장소 ID (중복 방지용)
+    id                  VARCHAR(50)   NOT NULL,               -- 카카오 장소 ID
     name                VARCHAR(255)  NOT NULL,
     category_name       VARCHAR(10)   NOT NULL,               -- FD6 | CE7
     road_address_name   VARCHAR(500)  NOT NULL,
@@ -47,7 +46,7 @@ CREATE TABLE reviews (
     images        JSON,                                       -- ["url1", "url2", ...]
     rating_score  TINYINT UNSIGNED,                          -- 1~5, NULL 허용
     visited_at    DATE,                                      -- 방문일, NULL 허용
-    place_id      CHAR(36)      NOT NULL,
+    place_id      VARCHAR(50)   NOT NULL,
     user_id       CHAR(36)      NOT NULL,
     created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -109,7 +108,7 @@ CREATE TABLE good_places (
     id          CHAR(36)  NOT NULL DEFAULT (UUID()),
     user_id     CHAR(36)  NOT NULL,
     group_id    CHAR(36)  NOT NULL,
-    place_id    CHAR(36)  NOT NULL,
+    place_id    VARCHAR(50) NOT NULL,
     created_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
@@ -174,5 +173,3 @@ CREATE INDEX idx_good_places_group_id ON good_places (group_id);
 -- 댓글 조회
 CREATE INDEX idx_comments_review_id ON comments (review_id);
 
--- 카카오 장소 중복 체크
-CREATE INDEX idx_places_kakao_place_id ON places (kakao_place_id);

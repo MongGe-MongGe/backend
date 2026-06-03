@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.PlaceMapper">
+
+	<resultMap id="placeResultMap" type="com.ssafy.gourming.model.dto.PlaceDto">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="categoryName" column="category_name" />
+		<result property="roadAddressName" column="road_address_name" />
+		<result property="x" column="x" />
+		<result property="y" column="y" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<select id="selectPlaceById" resultMap="placeResultMap">
+		SELECT
+			id,
+			name,
+			category_name,
+			road_address_name,
+			x,
+			y,
+			created_at,
+			updated_at
+		FROM places
+		WHERE id = #{id}
+	</select>
+
+	<insert id="insertPlace" parameterType="com.ssafy.gourming.model.dto.PlaceDto">
+		INSERT INTO places (
+			id,
+			name,
+			category_name,
+			road_address_name,
+			x,
+			y
+		)
+		VALUES (
+			#{id},
+			#{name},
+			#{categoryName},
+			#{roadAddressName},
+			#{x},
+			#{y}
+		)
+	</insert>
+
+	<delete id="deletePlaceById">
+		DELETE FROM places
+		WHERE id = #{id}
+	</delete>
+
+</mapper>

@@ -14,10 +14,11 @@ CREATE TABLE users (
     password      VARCHAR(255)  NOT NULL,                     -- bcrypt hashed
     handle        VARCHAR(50)   NOT NULL UNIQUE,              -- @... 형식
     nickname      VARCHAR(100)  NOT NULL,
+    phone         VARCHAR(20),                                -- 전화번호 추가
     bio           TEXT,
     profile_image VARCHAR(500),
     created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    
     PRIMARY KEY (id)
 );
 

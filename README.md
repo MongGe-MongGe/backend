@@ -6,17 +6,17 @@ Spring Boot 기반 REST API 서버로, 사용자 인증/인가, 장소 검색, �
 
 ## 기술 스택
 
-| 구분 | 기술 |
-| --- | --- |
-| Language | Java 21 |
-| Framework | Spring Boot 3.5.14 |
-| Build Tool | Maven |
-| Database | MySQL |
-| Persistence | MyBatis |
-| Security | Spring Security |
-| API Docs | Springdoc OpenAPI / Swagger UI |
-| Test | JUnit 5, Spring Boot Test, MyBatis Test, Spring Security Test |
-| Utility | Lombok, Validation |
+| 구분        | 기술                                                          |
+| ----------- | ------------------------------------------------------------- |
+| Language    | Java 21                                                       |
+| Framework   | Spring Boot 3.5.14                                            |
+| Build Tool  | Maven                                                         |
+| Database    | MySQL                                                         |
+| Persistence | MyBatis                                                       |
+| Security    | Spring Security                                               |
+| API Docs    | Springdoc OpenAPI / Swagger UI                                |
+| Test        | JUnit 5, Spring Boot Test, MyBatis Test, Spring Security Test |
+| Utility     | Lombok, Validation                                            |
 
 ## 프로젝트 구조
 
@@ -69,17 +69,17 @@ backend
 
 ## 주요 도메인
 
-| 도메인 | 설명 |
-| --- | --- |
-| `Users` | 회원 계정, 프로필, 핸들, 자기소개 정보 |
-| `Places` | 카카오 장소 기반 식당/카페 정보 |
-| `Reviews` | 장소에 대한 방문 리뷰, 이미지, 평점 정보 |
-| `Comments` | 리뷰에 작성되는 댓글 |
-| `Likes` | 리뷰 좋아요 정보 |
-| `Follows` | 유저 팔로우/팔로잉 관계 |
-| `Groups` | 유저가 맛집을 분류하는 그룹 |
-| `GoodPlaces` | 유저가 저장한 맛집과 그룹 연결 정보 |
-| `Posts` | 공지사항 및 이벤트 게시글 |
+| 도메인       | 설명                                     |
+| ------------ | ---------------------------------------- |
+| `Users`      | 회원 계정, 프로필, 핸들, 자기소개 정보   |
+| `Places`     | 카카오 장소 기반 식당/카페 정보          |
+| `Reviews`    | 장소에 대한 방문 리뷰, 이미지, 평점 정보 |
+| `Comments`   | 리뷰에 작성되는 댓글                     |
+| `Likes`      | 리뷰 좋아요 정보                         |
+| `Follows`    | 유저 팔로우/팔로잉 관계                  |
+| `Groups`     | 유저가 맛집을 분류하는 그룹              |
+| `GoodPlaces` | 유저가 저장한 맛집과 그룹 연결 정보      |
+| `Posts`      | 공지사항 및 이벤트 게시글                |
 
 ## 실행 환경
 
@@ -97,6 +97,9 @@ backend
 spring.datasource.url=jdbc:mysql://localhost:3306/gourming?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
 spring.datasource.username=DB_USERNAME
 spring.datasource.password=DB_PASSWORD
+
+jwt.secret=gourming-secret-key-minimum-32-characters-long!!
+jwt.expiration-ms=3600000
 ```
 
 `application.properties`에서 아래 설정으로 로컬 설정 파일을 선택적으로 불러옵니다.
@@ -177,11 +180,11 @@ http://localhost:8080/v3/api-docs
 
 현재 multipart 업로드 설정이 포함되어 있습니다.
 
-| 설정 | 값 |
-| --- | --- |
-| 임시 저장 위치 | `${user.home}/uploads` |
-| 파일 1개 최대 크기 | `10MB` |
-| 요청 1회 최대 크기 | `50MB` |
+| 설정               | 값                     |
+| ------------------ | ---------------------- |
+| 임시 저장 위치     | `${user.home}/uploads` |
+| 파일 1개 최대 크기 | `10MB`                 |
+| 요청 1회 최대 크기 | `50MB`                 |
 
 ### MyBatis
 
@@ -201,13 +204,13 @@ mybatis.type-aliases-package=com.ssafy.gourming.domain.*.dto,com.ssafy.gourming.
 
 프로젝트 루트의 `명세` 디렉터리에 있는 Markdown/CSV 명세서를 기준으로 백엔드 기능을 구현합니다.
 
-| 문서 | 설명 |
-| --- | --- |
-| `명세/요구사항 명세서` | 전체 기능 요구사항 |
-| `명세/API 명세서` | API 분류, 메서드, 경로 |
-| `명세/데이터 구조 명세서` | 데이터 모델 및 주요 필드 |
-| `명세/용어 사전` | 프로젝트 용어와 네이밍 기준 |
-| `명세/페이지별 기능 논리 흐름도` | 화면별 기능 흐름 |
+| 문서                             | 설명                        |
+| -------------------------------- | --------------------------- |
+| `명세/요구사항 명세서`           | 전체 기능 요구사항          |
+| `명세/API 명세서`                | API 분류, 메서드, 경로      |
+| `명세/데이터 구조 명세서`        | 데이터 모델 및 주요 필드    |
+| `명세/용어 사전`                 | 프로젝트 용어와 네이밍 기준 |
+| `명세/페이지별 기능 논리 흐름도` | 화면별 기능 흐름            |
 
 ## 협업 규칙
 

@@ -47,6 +47,7 @@ public class UserDto {
 		private String handle;
 		private String phone;
 		private String profileImage;
+		private String bio;       // 자기소개 (프로필 조회에서 사용)
 	}
 	
 	@Getter

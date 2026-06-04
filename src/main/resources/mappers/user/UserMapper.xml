@@ -3,7 +3,11 @@
 
 <mapper namespace="com.ssafy.gourming.model.dao.UserMapper">
 
-    <insert id="insertUser" parameterType="UserDto$SignupRequest">
+    <!-- type-aliases-package는 최상위 클래스만 스캔하므로,
+         내부 정적 클래스(UserDto$SignupRequest 등)는 FQCN(전체 경로)으로 명시해야 합니다. -->
+
+    <insert id="insertUser"
+            parameterType="com.ssafy.gourming.model.dto.UserDto$SignupRequest">
         INSERT INTO users (email, password, handle, nickname, phone)
         VALUES (
             #{email},
@@ -14,13 +18,17 @@
         )
     </insert>
 
-    <select id="findByEmail" parameterType="String" resultType="UserDto$UserEntity">
+    <select id="findByEmail"
+            parameterType="String"
+            resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
         SELECT id, email, password, nickname, handle, profile_image, phone
         FROM users
         WHERE email = #{email}
     </select>
 
-    <select id="findByHandle" parameterType="String" resultType="UserDto$UserEntity">
+    <select id="findByHandle"
+            parameterType="String"
+            resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
         SELECT id, nickname, handle, profile_image, bio
         FROM users
         WHERE handle = #{handle}

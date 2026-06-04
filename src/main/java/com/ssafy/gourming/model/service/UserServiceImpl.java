@@ -28,10 +28,10 @@ public class UserServiceImpl implements UserService{
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
 	
-	@Value("${jwt.secret")
+	@Value("${jwt.secret}")
 	private String jwtSecret;
 	
-	@Value("${jwt.expiration-ms)")
+	@Value("${jwt.expiration-ms}")
 	private long jwtExpirationMs;
 	
 	@Override
@@ -83,15 +83,15 @@ public class UserServiceImpl implements UserService{
 
 	@Override
 	public UserProfileResponse getUserProfile(String handle) {
-		// 1. handle로 사용자 조회
-		UserDto.UserProfileResponse user = userMapper.findByHanlde(handle);
+		// 1. handle로 사용자 조회 (내부 전용 UserEntity로 받음)
+		UserDto.UserEntity user = userMapper.findByHandle(handle);
 		
 		// 2. 존재하지 않는 handle이면 예외처리
 		if(user == null) {
 			throw new NoSuchElementException("User not found: " + handle);
 		}
 		
-		// 3. 안전 필드만 추려서 UserProfileResponse로 변환 후 반환
+		// 3. 민감 필드(password, phone, email)를 제외하고 안전 필드만 UserProfileResponse로 변환
 		return new UserDto.UserProfileResponse(
 				user.getId(), 
 				user.getNickname(), 

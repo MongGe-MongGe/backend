@@ -15,5 +15,5 @@ public interface UserMapper {
 	UserDto.UserEntity findByEmail(String email);	
 	
 	// 핸들로 사용자 조회
-	UserDto.UserProfileResponse findByHanlde(String handle);
+	UserDto.UserEntity findByHandle(String handle);
 }

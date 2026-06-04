@@ -21,8 +21,8 @@ public class SecurityConfig {
 			.sessionManagement(session -> 
 				session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 서버에 JWT 세션 생성 금지
 			.authorizeHttpRequests(auth -> auth
-					.requestMatchers("/api/user/signup", "/api/user/login").permitAll()
-					.requestMatchers(HttpMethod.GET, "/api/user/**").permitAll()
+					.requestMatchers("/api/auth/**").permitAll()              // 회원가입, 로그인 공개
+					.requestMatchers(HttpMethod.GET, "/api/users/**").permitAll() // 프로필 조회 공개
 					.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 					.anyRequest().authenticated()
 			);

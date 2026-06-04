@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.dao.UserMapper">
+
+    <insert id="insertUser" parameterType="UserDto$SignupRequest">
+        INSERT INTO users (email, password, handle, nickname, phone)
+        VALUES (
+            #{email},
+            #{password},
+            #{handle},
+            #{nickname},
+            #{phone}
+        )
+    </insert>
+
+    <select id="findByEmail" parameterType="String" resultType="UserDto$UserEntity">
+        SELECT id, email, password, nickname, handle, profile_image, phone
+        FROM users
+        WHERE email = #{email}
+    </select>
+
+    <select id="findByHandle" parameterType="String" resultType="UserDto$UserEntity">
+        SELECT id, nickname, handle, profile_image, bio
+        FROM users
+        WHERE handle = #{handle}
+    </select>
+
+</mapper>

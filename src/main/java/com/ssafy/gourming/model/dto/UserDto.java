@@ -48,4 +48,14 @@ public class UserDto {
 		private String phone;
 		private String profileImage;
 	}
+	
+	@Getter
+	@AllArgsConstructor
+	public static class UserProfileResponse {
+		private String id;
+		private String nickname;
+		private String handle;
+		private String profileImage;
+		private String bio;
+	}
 }

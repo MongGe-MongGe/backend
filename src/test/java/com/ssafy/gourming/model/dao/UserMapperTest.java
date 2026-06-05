@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.mapper.UserMapper;
 
 import lombok.extern.slf4j.Slf4j;
 

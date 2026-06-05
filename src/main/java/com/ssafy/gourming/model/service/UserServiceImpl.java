@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ssafy.gourming.model.dao.UserMapper;
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.mapper.UserMapper;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

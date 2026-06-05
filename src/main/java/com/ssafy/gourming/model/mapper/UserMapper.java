@@ -1,4 +1,4 @@
-package com.ssafy.gourming.model.dao;
+package com.ssafy.gourming.model.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 

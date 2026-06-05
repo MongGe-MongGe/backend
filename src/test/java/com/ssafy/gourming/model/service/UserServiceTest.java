@@ -13,8 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.ssafy.gourming.model.dao.UserMapper;
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.mapper.UserMapper;
 
 import lombok.extern.slf4j.Slf4j;
 

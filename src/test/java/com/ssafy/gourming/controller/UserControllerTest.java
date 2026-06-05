@@ -36,7 +36,7 @@ class UserControllerTest {
 
         // 사전 가입 (/api/auth/signup 사용)
         Map<String, String> signupBody = Map.of(
-            "email", email, "password", "pw", "nickname", "프로필유저", "handle", handle);
+            "email", email, "password", "password123!", "nickname", "프로필유저", "handle", handle);
         mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signupBody)))

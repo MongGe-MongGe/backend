@@ -51,7 +51,7 @@ class AuthControllerTest {
         String email  = "d_" + uid() + "@test.com";
         String handle = "@dup_" + uid();
         Map<String, String> body = Map.of(
-            "email", email, "password", "pw", "nickname", "유저", "handle", handle);
+            "email", email, "password", "password123!", "nickname", "유저", "handle", handle);
 
         mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -72,13 +72,13 @@ class AuthControllerTest {
         String handle = "@login_" + uid();
 
         Map<String, String> signupBody = Map.of(
-            "email", email, "password", "pw123!", "nickname", "로그인유저", "handle", handle);
+            "email", email, "password", "password123!", "nickname", "로그인유저", "handle", handle);
         mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signupBody)))
             .andExpect(status().isCreated());
 
-        Map<String, String> loginBody = Map.of("email", email, "password", "pw123!");
+        Map<String, String> loginBody = Map.of("email", email, "password", "password123!");
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginBody)))
@@ -93,7 +93,7 @@ class AuthControllerTest {
     @DisplayName("[Auth] 잘못된 비밀번호 → 401 Unauthorized")
     void login_wrongPw_401() throws Exception {
         Map<String, String> body = Map.of(
-            "email", "nobody@test.com", "password", "wrongPw!");
+            "email", "nobody@test.com", "password", "wrongPassword!");
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))

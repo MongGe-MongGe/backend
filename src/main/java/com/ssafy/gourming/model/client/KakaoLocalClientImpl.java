@@ -26,6 +26,7 @@ public class KakaoLocalClientImpl implements KakaoLocalClient {
 	@Override
 	public List<KakaoPlaceDto> searchPlaceByKeyword(String name, String x, String y) {
 		
+		// 전달받은 좌표 반경 100m 내 장소를 거리순으로 최대 15개 조회한다.
 		KakaoPlaceDto.KeywordSearchResponse response = restClient.get()
 				.uri(uriBuilder->uriBuilder
 						.path("/v2/local/search/keyword.json")
@@ -40,6 +41,7 @@ public class KakaoLocalClientImpl implements KakaoLocalClient {
 				.retrieve()
 				.body(KakaoPlaceDto.KeywordSearchResponse.class);
 		
+		// 응답 본문이나 검색 결과가 없으면 빈 목록을 반환한다.
 		if (response == null || response.getDocuments() == null) {
 		    return List.of();
 		}

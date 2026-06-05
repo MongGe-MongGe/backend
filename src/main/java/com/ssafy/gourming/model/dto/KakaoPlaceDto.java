@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// 카카오 Local API 장소 검색 결과
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,6 +37,7 @@ public class KakaoPlaceDto {
 	@NoArgsConstructor
 	public static class KeywordSearchResponse {
 
+		// 카카오 API가 검색된 장소 목록을 documents 필드로 반환한다.
 		private List<KakaoPlaceDto> documents;
 	}
 }

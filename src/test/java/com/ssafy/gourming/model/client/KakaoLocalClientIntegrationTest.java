@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.core.io.ClassPathResource;
@@ -20,10 +21,12 @@ import com.ssafy.gourming.model.dto.KakaoPlaceDto;
     matches = "true",
     disabledReason = "Kakao 실제 API 통합 테스트는 -Drun.kakao.integration=true 옵션이 있을 때만 실행됩니다."
 )
-class KakaoLocalClientImplIntegrationTest {
+@DisplayName("카카오 로컬 클라이언트 통합 테스트")
+class KakaoLocalClientIntegrationTest {
 
     @Test
-    void searchPlaceByKeywordCallsRealKakaoLocalApi() throws IOException {
+    @DisplayName("실제 카카오 Local API를 호출해 장소 목록을 조회한다")
+    void searchPlaceByKeywordCallsKakaoLocalApi() throws IOException {
         Properties properties = PropertiesLoaderUtils.loadProperties(
             new ClassPathResource("application-local.properties")
         );

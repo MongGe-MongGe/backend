@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,7 +23,8 @@ import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 
 @ExtendWith(MockitoExtension.class)
-class PlaceServiceImplTest {
+@DisplayName("장소 서비스 Mock 단위 테스트")
+class PlaceServiceMockTest {
 
 	@Mock
 	private PlaceMapper placeMapper;
@@ -34,7 +36,7 @@ class PlaceServiceImplTest {
 	private PlaceServiceImpl placeService;
 
 	@Test
-	//DB에 장소가 이미 있으면 카카오 API를 호출하지 않고 기존 장소 반환
+	@DisplayName("DB에 장소가 있으면 카카오 API를 호출하지 않고 기존 장소를 반환한다")
 	void findOrCreatePlaceReturnsExistingPlaceWithoutCallingKakaoApi() {
 		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		PlaceEntity existingPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 연무장길 12");
@@ -49,7 +51,7 @@ class PlaceServiceImplTest {
 	}
 
 	@Test
-	//DB에 없으면 카카오 결과 중 id가 일치하는 장소를 저장하고 저장된 장소 반환
+	@DisplayName("DB에 장소가 없으면 카카오 결과 중 ID가 일치하는 장소를 저장하고 반환한다")
 	void findOrCreatePlaceSavesMatchingKakaoPlaceWhenPlaceDoesNotExist() {
 		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		KakaoPlaceDto otherKakaoPlace = createKakaoPlace("kakao-place-999", "다른 식당", "FD6", "서울 성동구 다른길 1", null);
@@ -82,7 +84,7 @@ class PlaceServiceImplTest {
 	}
 
 	@Test
-	//roadAddressName이 비어 있으면 addressName을 대체 주소로 사용
+	@DisplayName("도로명 주소가 없으면 지번 주소를 저장한다")
 	void findOrCreatePlaceUsesAddressNameWhenRoadAddressNameIsBlank() {
 		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		KakaoPlaceDto matchingKakaoPlace = createKakaoPlace(
@@ -108,7 +110,7 @@ class PlaceServiceImplTest {
 	}
 
 	@Test
-	//카카오 결과에 일치하는 장소가 없으면 insert하지 않고 null 반환
+	@DisplayName("카카오 결과에 ID가 일치하는 장소가 없으면 저장하지 않고 null을 반환한다")
 	void findOrCreatePlaceReturnsNullWhenKakaoResultDoesNotContainMatchingPlace() {
 		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		KakaoPlaceDto otherKakaoPlace = createKakaoPlace("kakao-place-999", "다른 식당", "FD6", "서울 성동구 다른길 1", null);

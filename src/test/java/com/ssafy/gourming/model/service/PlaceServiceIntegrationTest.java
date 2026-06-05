@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,8 @@ import com.ssafy.gourming.model.mapper.PlaceMapper;
 
 @SpringBootTest
 @EnabledIfSystemProperty(named = "run.place.integration", matches = "true")
-class PlaceServiceImplIntegrationTest {
+@DisplayName("장소 서비스 통합 테스트")
+class PlaceServiceIntegrationTest {
 
 	private static final String TEST_PLACE_ID = "35026031";
 
@@ -36,7 +38,8 @@ class PlaceServiceImplIntegrationTest {
 	}
 
 	@Test
-	void findOrCreatePlaceCallsRealKakaoApiAndSavesPlaceToRealDatabase() {
+	@DisplayName("카카오 API에서 검증한 장소를 실제 DB에 저장하고 반환한다")
+	void findOrCreatePlaceCallsKakaoApiAndSavesPlaceToDatabase() {
 		PlaceRequest request = new PlaceRequest();
 		request.setId(TEST_PLACE_ID);
 		request.setName("스타벅스 강남R점");

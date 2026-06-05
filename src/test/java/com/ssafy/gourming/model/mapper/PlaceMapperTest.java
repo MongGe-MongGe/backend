@@ -3,6 +3,7 @@ package com.ssafy.gourming.model.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
 @TestPropertySource(properties = {
 	"spring.config.import=optional:classpath:application-local.properties"
 })
+@DisplayName("장소 Mapper 테스트")
 class PlaceMapperTest {
 
 	private static final String TEST_PLACE_ID = "test-place-mapper-id";
@@ -29,6 +31,7 @@ class PlaceMapperTest {
 	}
 
 	@Test
+	@DisplayName("장소를 저장한 뒤 ID로 조회한다")
 	void insertPlaceAndSelectPlaceById() {
 		placeMapper.deletePlaceById(TEST_PLACE_ID);
 

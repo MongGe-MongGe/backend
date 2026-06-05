@@ -36,15 +36,20 @@ public class UserServiceImpl implements UserService{
 	
 	@Override
 	public void signup(SignupRequest request) {
-		// 1. 이메일 중복 체
+		// 1. 이메일 중복 체크
 		if (userMapper.findByEmail(request.getEmail()) != null) {
 			throw new IllegalArgumentException("Already Exists Email");
 		}
-		
-		// 2. 비밀번호 Bcrypt 암호화 후 request 내 password 교체
+
+		// 2. 핸들 중복 체크
+		if (userMapper.findByHandle(request.getHandle()) != null) {
+			throw new IllegalArgumentException("Already Exists Handle");
+		}
+
+		// 3. 비밀번호 Bcrypt 암호화 후 request 내 password 교체
 		request.setPassword(passwordEncoder.encode(request.getPassword()));
-		
-		// 3.DB INSERT
+
+		// 4. DB INSERT
 		userMapper.insertUser(request);
 	}
 

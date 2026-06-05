@@ -12,10 +12,6 @@ import org.springframework.stereotype.Service;
 
 import com.ssafy.gourming.model.dao.UserMapper;
 import com.ssafy.gourming.model.dto.UserDto;
-import com.ssafy.gourming.model.dto.UserDto.LoginRequest;
-import com.ssafy.gourming.model.dto.UserDto.LoginResponse;
-import com.ssafy.gourming.model.dto.UserDto.SignupRequest;
-import com.ssafy.gourming.model.dto.UserDto.UserProfileResponse;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -35,7 +31,7 @@ public class UserServiceImpl implements UserService{
 	private long jwtExpirationMs;
 	
 	@Override
-	public void signup(SignupRequest request) {
+	public void signup(UserDto.SignupRequest request) {
 		// 1. 이메일 중복 체크
 		if (userMapper.findByEmail(request.getEmail()) != null) {
 			throw new IllegalArgumentException("Already Exists Email");
@@ -54,7 +50,7 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public LoginResponse login(LoginRequest request) {
+	public UserDto.LoginResponse login(UserDto.LoginRequest request) {
 		// 1. 이메일로 사용자 조회
 		UserDto.UserEntity user = userMapper.findByEmail(request.getEmail());
 		
@@ -63,15 +59,15 @@ public class UserServiceImpl implements UserService{
 			throw new IllegalArgumentException("Invalid Email or Password");
 		}
 		
-		// 3. JWT 생성 후 응답 반환 (프로필 정보 전체를 Bpdy에 포함)
+		// 3. JWT 생성 후 응답 반환 (프로필 정보 전체를 Body에 포함)
 		String token = generateToken(user.getEmail());
 		return new UserDto.LoginResponse(
 				token, 
 				user.getId(), 
-				user.getNickname(), 
+				user.getNickname(),
+				user.getEmail(),
 				user.getHandle(), 
-				user.getProfileImage(), 
-				user.getEmail()
+				user.getProfileImage()
 			);
 	}
 	
@@ -87,7 +83,7 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public UserProfileResponse getUserProfile(String handle) {
+	public UserDto.UserProfileResponse getUserProfile(String handle) {
 		// 1. handle로 사용자 조회 (내부 전용 UserEntity로 받음)
 		UserDto.UserEntity user = userMapper.findByHandle(handle);
 		

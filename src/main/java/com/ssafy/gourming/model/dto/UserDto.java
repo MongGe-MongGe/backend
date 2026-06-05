@@ -1,0 +1,83 @@
+package com.ssafy.gourming.model.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+public class UserDto {
+	
+	@Getter
+	@NoArgsConstructor
+	public static class SignupRequest {
+		@NotBlank(message = "이메일은 필수 입력값입니다")
+		@Email(message = "올바른 이메일 형식이 아닙니다")
+		private String email;
+
+		@NotBlank(message = "닉네임은 필수 입력값입니다")
+		@Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다")
+		private String nickname;
+
+		@Setter
+		@NotBlank(message = "비밀번호는 필수 입력값입니다")
+		@Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다")
+		private String password; // 비밀번호 암호화를 위해 이 필드에만 setter 적용
+
+		private String phone;
+
+		@NotBlank(message = "핸들은 필수 입력값입니다")
+		@Pattern(regexp = "^@[a-zA-Z0-9_.]{8,32}$",
+		         message = "핸들은 @로 시작하고 영문, 숫자, _, .만 사용할 수 있습니다 (8~32자)")
+		private String handle;
+	}
+	
+	@Getter
+	@NoArgsConstructor
+	public static class LoginRequest {
+		@NotBlank(message = "이메일은 필수 입력값입니다")
+		@Email(message = "올바른 이메일 형식이 아닙니다")
+		private String email;
+
+		@NotBlank(message = "비밀번호는 필수 입력값입니다")
+		private String password;
+	}
+	
+	@Getter
+	@AllArgsConstructor
+	public static class LoginResponse {
+		private String Token;
+		private String id;
+		private String nickname;
+		private String email;
+		private String handle;
+		private String profileImage;
+	}
+	
+	@Getter
+	@NoArgsConstructor
+	public static class UserEntity {
+		private String id;
+		private String email;
+		private String password; // bcrypt hash
+		private String nickname;
+		private String handle;
+		private String phone;
+		private String profileImage;
+		private String bio;       // 자기소개 (프로필 조회에서 사용)
+	}
+	
+	@Getter
+	@AllArgsConstructor
+	public static class UserProfileResponse {
+		private String id;
+		private String nickname;
+		private String handle;
+		private String profileImage;
+		private String bio;
+	}
+}

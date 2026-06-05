@@ -1,11 +1,11 @@
 package com.ssafy.gourming.model.service;
 
-import com.ssafy.gourming.model.dto.PlaceDto;
-import com.ssafy.gourming.model.dto.PlaceRequestDto;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 
 public interface PlaceService {
 
-	PlaceDto findOrCreatePlace(PlaceRequestDto placeRequestDto);
+	PlaceEntity findOrCreatePlace(PlaceRequest placeRequestDto);
 
-	PlaceDto getPlace(String id);
+	PlaceEntity getPlace(String id);
 }

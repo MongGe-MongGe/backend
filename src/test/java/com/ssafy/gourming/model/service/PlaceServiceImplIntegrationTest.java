@@ -9,8 +9,8 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.ssafy.gourming.model.dto.PlaceDto;
-import com.ssafy.gourming.model.dto.PlaceRequestDto;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 
 @SpringBootTest
@@ -37,14 +37,14 @@ class PlaceServiceImplIntegrationTest {
 
 	@Test
 	void findOrCreatePlaceCallsRealKakaoApiAndSavesPlaceToRealDatabase() {
-		PlaceRequestDto request = new PlaceRequestDto();
+		PlaceRequest request = new PlaceRequest();
 		request.setId(TEST_PLACE_ID);
 		request.setName("스타벅스 강남R점");
 		request.setX("127.028443419181");
 		request.setY("37.4976744709989");
 
-		PlaceDto result = placeService.findOrCreatePlace(request);
-		PlaceDto selectedPlace = placeMapper.selectPlaceById(TEST_PLACE_ID);
+		PlaceEntity result = placeService.findOrCreatePlace(request);
+		PlaceEntity selectedPlace = placeMapper.selectPlaceById(TEST_PLACE_ID);
 		
 		assertThat(result).isNotNull();
 

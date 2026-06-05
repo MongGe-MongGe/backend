@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.test.context.TestPropertySource;
 
-import com.ssafy.gourming.model.dto.PlaceDto;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -32,7 +32,7 @@ class PlaceMapperTest {
 	void insertPlaceAndSelectPlaceById() {
 		placeMapper.deletePlaceById(TEST_PLACE_ID);
 
-		PlaceDto place = new PlaceDto();
+		PlaceEntity place = new PlaceEntity();
 		place.setId(TEST_PLACE_ID);
 		place.setName("테스트 식당");
 		place.setCategoryName("FD6");
@@ -41,7 +41,7 @@ class PlaceMapperTest {
 		place.setY("37.000000");
 
 		int insertedCount = placeMapper.insertPlace(place);
-		PlaceDto selectedPlace = placeMapper.selectPlaceById(TEST_PLACE_ID);
+		PlaceEntity selectedPlace = placeMapper.selectPlaceById(TEST_PLACE_ID);
 
 		assertThat(insertedCount).isEqualTo(1);
 		assertThat(selectedPlace).isNotNull();

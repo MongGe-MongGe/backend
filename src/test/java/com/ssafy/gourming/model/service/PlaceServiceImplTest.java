@@ -17,8 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ssafy.gourming.model.client.KakaoLocalClient;
 import com.ssafy.gourming.model.dto.KakaoPlaceDto;
-import com.ssafy.gourming.model.dto.PlaceDto;
-import com.ssafy.gourming.model.dto.PlaceRequestDto;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,12 +36,12 @@ class PlaceServiceImplTest {
 	@Test
 	//DB에 장소가 이미 있으면 카카오 API를 호출하지 않고 기존 장소 반환
 	void findOrCreatePlaceReturnsExistingPlaceWithoutCallingKakaoApi() {
-		PlaceRequestDto request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
-		PlaceDto existingPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 연무장길 12");
+		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
+		PlaceEntity existingPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 연무장길 12");
 
 		when(placeMapper.selectPlaceById("kakao-place-001")).thenReturn(existingPlace);
 
-		PlaceDto result = placeService.findOrCreatePlace(request);
+		PlaceEntity result = placeService.findOrCreatePlace(request);
 
 		assertThat(result).isSameAs(existingPlace);
 		verify(kakaoClient, never()).searchPlaceByKeyword(any(), any(), any());
@@ -51,7 +51,7 @@ class PlaceServiceImplTest {
 	@Test
 	//DB에 없으면 카카오 결과 중 id가 일치하는 장소를 저장하고 저장된 장소 반환
 	void findOrCreatePlaceSavesMatchingKakaoPlaceWhenPlaceDoesNotExist() {
-		PlaceRequestDto request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
+		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		KakaoPlaceDto otherKakaoPlace = createKakaoPlace("kakao-place-999", "다른 식당", "FD6", "서울 성동구 다른길 1", null);
 		KakaoPlaceDto matchingKakaoPlace = createKakaoPlace(
 			"kakao-place-001",
@@ -60,17 +60,17 @@ class PlaceServiceImplTest {
 			"서울 성동구 연무장길 12",
 			"서울 성동구 성수동"
 		);
-		PlaceDto savedPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 연무장길 12");
+		PlaceEntity savedPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 연무장길 12");
 
 		when(placeMapper.selectPlaceById("kakao-place-001")).thenReturn(null, savedPlace);
 		when(kakaoClient.searchPlaceByKeyword("성수 파스타하우스", "127.056123", "37.544321"))
 			.thenReturn(List.of(otherKakaoPlace, matchingKakaoPlace));
 
-		PlaceDto result = placeService.findOrCreatePlace(request);
+		PlaceEntity result = placeService.findOrCreatePlace(request);
 
-		ArgumentCaptor<PlaceDto> placeCaptor = ArgumentCaptor.forClass(PlaceDto.class);
+		ArgumentCaptor<PlaceEntity> placeCaptor = ArgumentCaptor.forClass(PlaceEntity.class);
 		verify(placeMapper).insertPlace(placeCaptor.capture());
-		PlaceDto insertedPlace = placeCaptor.getValue();
+		PlaceEntity insertedPlace = placeCaptor.getValue();
 
 		assertThat(insertedPlace.getId()).isEqualTo("kakao-place-001");
 		assertThat(insertedPlace.getName()).isEqualTo("성수 파스타하우스");
@@ -84,7 +84,7 @@ class PlaceServiceImplTest {
 	@Test
 	//roadAddressName이 비어 있으면 addressName을 대체 주소로 사용
 	void findOrCreatePlaceUsesAddressNameWhenRoadAddressNameIsBlank() {
-		PlaceRequestDto request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
+		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		KakaoPlaceDto matchingKakaoPlace = createKakaoPlace(
 			"kakao-place-001",
 			"성수 파스타하우스",
@@ -92,15 +92,15 @@ class PlaceServiceImplTest {
 			"",
 			"서울 성동구 성수동"
 		);
-		PlaceDto savedPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 성수동");
+		PlaceEntity savedPlace = createPlace("kakao-place-001", "성수 파스타하우스", "FD6", "서울 성동구 성수동");
 
 		when(placeMapper.selectPlaceById("kakao-place-001")).thenReturn(null, savedPlace);
 		when(kakaoClient.searchPlaceByKeyword("성수 파스타하우스", "127.056123", "37.544321"))
 			.thenReturn(List.of(matchingKakaoPlace));
 
-		PlaceDto result = placeService.findOrCreatePlace(request);
+		PlaceEntity result = placeService.findOrCreatePlace(request);
 
-		ArgumentCaptor<PlaceDto> placeCaptor = ArgumentCaptor.forClass(PlaceDto.class);
+		ArgumentCaptor<PlaceEntity> placeCaptor = ArgumentCaptor.forClass(PlaceEntity.class);
 		verify(placeMapper).insertPlace(placeCaptor.capture());
 
 		assertThat(placeCaptor.getValue().getRoadAddressName()).isEqualTo("서울 성동구 성수동");
@@ -110,21 +110,21 @@ class PlaceServiceImplTest {
 	@Test
 	//카카오 결과에 일치하는 장소가 없으면 insert하지 않고 null 반환
 	void findOrCreatePlaceReturnsNullWhenKakaoResultDoesNotContainMatchingPlace() {
-		PlaceRequestDto request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
+		PlaceRequest request = createPlaceRequest("kakao-place-001", "성수 파스타하우스");
 		KakaoPlaceDto otherKakaoPlace = createKakaoPlace("kakao-place-999", "다른 식당", "FD6", "서울 성동구 다른길 1", null);
 
 		when(placeMapper.selectPlaceById("kakao-place-001")).thenReturn(null);
 		when(kakaoClient.searchPlaceByKeyword("성수 파스타하우스", "127.056123", "37.544321"))
 			.thenReturn(List.of(otherKakaoPlace));
 
-		PlaceDto result = placeService.findOrCreatePlace(request);
+		PlaceEntity result = placeService.findOrCreatePlace(request);
 
 		assertThat(result).isNull();
 		verify(placeMapper, never()).insertPlace(any());
 	}
 
-	private PlaceRequestDto createPlaceRequest(String id, String name) {
-		PlaceRequestDto request = new PlaceRequestDto();
+	private PlaceRequest createPlaceRequest(String id, String name) {
+		PlaceRequest request = new PlaceRequest();
 		request.setId(id);
 		request.setName(name);
 		request.setX("127.056123");
@@ -132,8 +132,8 @@ class PlaceServiceImplTest {
 		return request;
 	}
 
-	private PlaceDto createPlace(String id, String name, String categoryName, String roadAddressName) {
-		PlaceDto place = new PlaceDto();
+	private PlaceEntity createPlace(String id, String name, String categoryName, String roadAddressName) {
+		PlaceEntity place = new PlaceEntity();
 		place.setId(id);
 		place.setName(name);
 		place.setCategoryName(categoryName);

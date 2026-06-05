@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 
 import com.ssafy.gourming.model.client.KakaoLocalClient;
 import com.ssafy.gourming.model.dto.KakaoPlaceDto;
-import com.ssafy.gourming.model.dto.PlaceDto;
-import com.ssafy.gourming.model.dto.PlaceRequestDto;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
+import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -18,8 +18,8 @@ public class PlaceServiceImpl implements PlaceService{
 	private final PlaceMapper placeMapper;
 	private final KakaoLocalClient kakaoClient;
 	
-	private PlaceDto toPlaceDto(KakaoPlaceDto kakaoPlace) {
-	    PlaceDto place = new PlaceDto();
+	private PlaceEntity toPlaceEntity(KakaoPlaceDto kakaoPlace) {
+	    PlaceEntity place = new PlaceEntity();
 	    place.setId(kakaoPlace.getId());
 	    place.setName(kakaoPlace.getName());
 	    place.setCategoryName(kakaoPlace.getCategoryName());
@@ -34,9 +34,9 @@ public class PlaceServiceImpl implements PlaceService{
 	}
 
 	@Override
-	public PlaceDto findOrCreatePlace(PlaceRequestDto placeRequestDto) {
+	public PlaceEntity findOrCreatePlace(PlaceRequest placeRequestDto) {
 		String id = placeRequestDto.getId();
-		PlaceDto place = placeMapper.selectPlaceById(id);
+		PlaceEntity place = placeMapper.selectPlaceById(id);
 		if(place != null) {
 			return place;
 		}
@@ -46,7 +46,7 @@ public class PlaceServiceImpl implements PlaceService{
 		
 		for(KakaoPlaceDto kakaoPlace:kakaoPlaces) {
 			if(id.equals(kakaoPlace.getId())) {
-				place = toPlaceDto(kakaoPlace);
+				place = toPlaceEntity(kakaoPlace);
 				placeMapper.insertPlace(place);
 				break;
 			}
@@ -56,7 +56,7 @@ public class PlaceServiceImpl implements PlaceService{
 	}
 
 	@Override
-	public PlaceDto getPlace(String id) {
+	public PlaceEntity getPlace(String id) {
 		return placeMapper.selectPlaceById(id);
 	}
 	

@@ -71,11 +71,13 @@ public class LoggingFilter extends OncePerRequestFilter {
             }
 
             if (!requestBody.isEmpty()) {
-                logMessage.append("\n  Request Body : ").append(requestBody);
+                String maskedRequestBody = maskSensitiveData(requestBody);
+                logMessage.append("\n  Request Body : ").append(maskedRequestBody);
             }
 
             if (!responseBody.isEmpty() && cachingResponse.getContentType() != null && cachingResponse.getContentType().contains("application/json")) {
-                logMessage.append("\n  Response Body: ").append(responseBody);
+                String maskedResponseBody = maskSensitiveData(responseBody);
+                logMessage.append("\n  Response Body: ").append(maskedResponseBody);
             }
             logMessage.append("\n===================================================================");
 
@@ -111,5 +113,14 @@ public class LoggingFilter extends OncePerRequestFilter {
             }
         }
         return "Anonymous";
+    }
+
+    private String maskSensitiveData(String body) {
+        if (body == null || body.isEmpty()) return body;
+        // JSON 형식 마스킹 (예: "password": "secret", "token": "eyJ...")
+        body = body.replaceAll("(?i)(\"(?:password|token|accessToken|refreshToken)\"\\s*:\\s*\")[^\"]+(\")", "$1***$2");
+        // x-www-form-urlencoded 형식 마스킹 (예: password=secret&...)
+        body = body.replaceAll("(?i)((?:password|token|accessToken|refreshToken)=)([^&]+)", "$1***");
+        return body;
     }
 }

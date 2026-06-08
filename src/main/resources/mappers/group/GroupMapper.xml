@@ -23,13 +23,11 @@
 
 	<insert id="insertGroup" parameterType="com.ssafy.gourming.model.dto.GroupDto$GroupEntity">
 		INSERT INTO `groups` (
-			id,
 			user_id,
 			name,
 			default_group
 		)
 		VALUES (
-			#{id},
 			#{userId},
 			#{name},
 			#{defaultGroup}

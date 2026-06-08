@@ -26,8 +26,6 @@ class GroupMapperTest {
 
 	private static final String TEST_USER_ID = "test-group-user-000000000000000001";
 	private static final String OTHER_USER_ID = "test-group-user-000000000000000002";
-	private static final String DEFAULT_GROUP_ID = "test-default-group-000000000000001";
-	private static final String NORMAL_GROUP_ID = "test-normal-group-0000000000000001";
 
 	@Autowired
 	private GroupMapper groupMapper;
@@ -45,14 +43,15 @@ class GroupMapperTest {
 	@Test
 	@DisplayName("그룹을 저장하고 ID로 조회한다")
 	void insertGroupAndSelectGroupById() {
-		GroupEntity group = createGroup(NORMAL_GROUP_ID, TEST_USER_ID, "친구 추천", false);
+		GroupEntity group = createGroup(TEST_USER_ID, "친구 추천", false);
 
 		int insertedCount = groupMapper.insertGroup(group);
-		GroupEntity selectedGroup = groupMapper.selectGroupById(NORMAL_GROUP_ID);
+		GroupEntity insertedGroup = groupMapper.selectGroupByUserIdAndName(TEST_USER_ID, "친구 추천");
+		GroupEntity selectedGroup = groupMapper.selectGroupById(insertedGroup.getId());
 
 		assertThat(insertedCount).isEqualTo(1);
 		assertThat(selectedGroup).isNotNull();
-		assertThat(selectedGroup.getId()).isEqualTo(NORMAL_GROUP_ID);
+		assertThat(selectedGroup.getId()).isNotBlank();
 		assertThat(selectedGroup.getUserId()).isEqualTo(TEST_USER_ID);
 		assertThat(selectedGroup.getName()).isEqualTo("친구 추천");
 		assertThat(selectedGroup.isDefaultGroup()).isFalse();
@@ -62,66 +61,66 @@ class GroupMapperTest {
 	@Test
 	@DisplayName("사용자의 기본 그룹을 조회한다")
 	void selectDefaultGroupByUserId() {
-		groupMapper.insertGroup(createGroup(DEFAULT_GROUP_ID, TEST_USER_ID, "전체 맛집", true));
-		groupMapper.insertGroup(createGroup(NORMAL_GROUP_ID, TEST_USER_ID, "친구 추천", false));
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "전체 맛집", true));
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "친구 추천", false));
 
 		GroupEntity defaultGroup = groupMapper.selectDefaultGroupByUserId(TEST_USER_ID);
 
 		assertThat(defaultGroup).isNotNull();
-		assertThat(defaultGroup.getId()).isEqualTo(DEFAULT_GROUP_ID);
+		assertThat(defaultGroup.getName()).isEqualTo("전체 맛집");
 		assertThat(defaultGroup.isDefaultGroup()).isTrue();
 	}
 
 	@Test
 	@DisplayName("그룹 목록에서 기본 그룹을 먼저 조회한다")
 	void selectGroupsByUserIdOrdersDefaultGroupFirst() {
-		groupMapper.insertGroup(createGroup(NORMAL_GROUP_ID, TEST_USER_ID, "친구 추천", false));
-		groupMapper.insertGroup(createGroup(DEFAULT_GROUP_ID, TEST_USER_ID, "전체 맛집", true));
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "친구 추천", false));
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "전체 맛집", true));
 
 		List<GroupResponse> groups = groupMapper.selectGroupsByUserId(TEST_USER_ID);
 
 		assertThat(groups).hasSize(2);
-		assertThat(groups.get(0).getId()).isEqualTo(DEFAULT_GROUP_ID);
+		assertThat(groups.get(0).getName()).isEqualTo("전체 맛집");
 		assertThat(groups.get(0).isDefaultGroup()).isTrue();
 		assertThat(groups.get(0).getGoodPlaceCount()).isZero();
-		assertThat(groups.get(1).getId()).isEqualTo(NORMAL_GROUP_ID);
+		assertThat(groups.get(1).getName()).isEqualTo("친구 추천");
 	}
 
 	@Test
 	@DisplayName("사용자와 이름으로 그룹을 조회한다")
 	void selectGroupByUserIdAndName() {
-		groupMapper.insertGroup(createGroup(NORMAL_GROUP_ID, TEST_USER_ID, "친구 추천", false));
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "친구 추천", false));
 
 		GroupEntity selectedGroup = groupMapper.selectGroupByUserIdAndName(TEST_USER_ID, "친구 추천");
 		GroupEntity otherUserGroup = groupMapper.selectGroupByUserIdAndName(OTHER_USER_ID, "친구 추천");
 
 		assertThat(selectedGroup).isNotNull();
-		assertThat(selectedGroup.getId()).isEqualTo(NORMAL_GROUP_ID);
+		assertThat(selectedGroup.getId()).isNotBlank();
 		assertThat(otherUserGroup).isNull();
 	}
 
 	@Test
 	@DisplayName("소유자만 그룹 이름을 수정하고 그룹을 삭제할 수 있다")
 	void updateAndDeleteGroupChecksOwner() {
-		groupMapper.insertGroup(createGroup(NORMAL_GROUP_ID, TEST_USER_ID, "수정 전", false));
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "수정 전", false));
+		String groupId = groupMapper.selectGroupByUserIdAndName(TEST_USER_ID, "수정 전").getId();
 
-		int otherUserUpdatedCount = groupMapper.updateGroupName(NORMAL_GROUP_ID, OTHER_USER_ID, "수정 실패");
-		int updatedCount = groupMapper.updateGroupName(NORMAL_GROUP_ID, TEST_USER_ID, "수정 후");
-		int otherUserDeletedCount = groupMapper.deleteGroup(NORMAL_GROUP_ID, OTHER_USER_ID);
-		GroupEntity updatedGroup = groupMapper.selectGroupById(NORMAL_GROUP_ID);
-		int deletedCount = groupMapper.deleteGroup(NORMAL_GROUP_ID, TEST_USER_ID);
+		int otherUserUpdatedCount = groupMapper.updateGroupName(groupId, OTHER_USER_ID, "수정 실패");
+		int updatedCount = groupMapper.updateGroupName(groupId, TEST_USER_ID, "수정 후");
+		int otherUserDeletedCount = groupMapper.deleteGroup(groupId, OTHER_USER_ID);
+		GroupEntity updatedGroup = groupMapper.selectGroupById(groupId);
+		int deletedCount = groupMapper.deleteGroup(groupId, TEST_USER_ID);
 
 		assertThat(otherUserUpdatedCount).isZero();
 		assertThat(updatedCount).isEqualTo(1);
 		assertThat(otherUserDeletedCount).isZero();
 		assertThat(updatedGroup.getName()).isEqualTo("수정 후");
 		assertThat(deletedCount).isEqualTo(1);
-		assertThat(groupMapper.selectGroupById(NORMAL_GROUP_ID)).isNull();
+		assertThat(groupMapper.selectGroupById(groupId)).isNull();
 	}
 
-	private GroupEntity createGroup(String id, String userId, String name, boolean defaultGroup) {
+	private GroupEntity createGroup(String userId, String name, boolean defaultGroup) {
 		GroupEntity group = new GroupEntity();
-		group.setId(id);
 		group.setUserId(userId);
 		group.setName(name);
 		group.setDefaultGroup(defaultGroup);

@@ -24,6 +24,7 @@ public class GroupServiceImpl implements GroupService{
 	@Override
 	@Transactional
 	public GroupEntity createDefaultGroup(String userId) {
+		// 회원가입 재시도에도 중복 생성되지 않도록 기존 그룹을 우선 반환한다.
 		GroupEntity existingGroup = groupMapper.selectDefaultGroupByUserId(userId);
 		if(existingGroup != null) {
 			return existingGroup;
@@ -61,6 +62,7 @@ public class GroupServiceImpl implements GroupService{
 	@Transactional
 	public GroupResponse createGroup(String userId, GroupCreateRequest request) {
 		String name = normalizeGroupName(request.getName());
+		// 같은 사용자는 동일한 이름의 그룹을 중복 생성할 수 없다.
 		GroupEntity existingGroup = groupMapper.selectGroupByUserIdAndName(userId, name);
 		if(existingGroup != null) {
 			throw new IllegalArgumentException("Already Exists Group");
@@ -98,6 +100,7 @@ public class GroupServiceImpl implements GroupService{
 		GroupEntity group = getGroup(groupId);
 		validateOwner(group, userId);
 
+		// 기본 그룹은 이름 변경이 금지된다.
 		if (group.isDefaultGroup()) {
 			throw new IllegalArgumentException("Default group cannot be updated");
 		}
@@ -122,6 +125,7 @@ public class GroupServiceImpl implements GroupService{
 		GroupEntity group = getGroup(groupId);
 		validateOwner(group, userId);
 
+		// 기본 그룹은 사용자에게 항상 존재해야 하므로 삭제할 수 없다.
 		if (group.isDefaultGroup()) {
 			throw new IllegalArgumentException("Default group cannot be deleted");
 		}
@@ -147,6 +151,7 @@ public class GroupServiceImpl implements GroupService{
 	}
 
 	private GroupResponse findGroupResponseById(String userId, String groupId) {
+		// 수정 후 맛집 수까지 포함된 응답을 반환하기 위해 목록 결과에서 찾는다.
 		List<GroupResponse> groups = groupMapper.selectGroupsByUserId(userId);
 		for (GroupResponse group : groups) {
 			if (group.getId().equals(groupId)) {
@@ -157,6 +162,7 @@ public class GroupServiceImpl implements GroupService{
 	}
 
 	private String normalizeGroupName(String name) {
+		// 내부 공백은 유지하고 앞뒤 공백만 제거한다.
 		if (name == null) {
 			throw new IllegalArgumentException("Group name cannot be blank");
 		}

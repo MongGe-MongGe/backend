@@ -30,6 +30,7 @@ public class GroupController {
 
 	private final GroupService groupService;
 
+	// LoginUser는 JWT 필터가 SecurityContext에 등록할 인증 사용자 정보다.
 	@GetMapping("/me/groups")
 	public ResponseEntity<List<GroupResponse>> getMyGroups(
 		@AuthenticationPrincipal LoginUser loginUser

@@ -152,6 +152,17 @@ CREATE TABLE comments (
 );
 
 -- ============================================================
+-- Images (이미지 업로드 및 생명주기 관리)
+-- ============================================================
+CREATE TABLE images (
+    id          BIGINT        AUTO_INCREMENT PRIMARY KEY,
+    filename    VARCHAR(255)  NOT NULL,
+    url         VARCHAR(255)  NOT NULL,
+    status      VARCHAR(50)   NOT NULL COMMENT 'PENDING 또는 CONFIRMED',
+    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
 -- Indexes (성능 최적화)
 -- ============================================================
 

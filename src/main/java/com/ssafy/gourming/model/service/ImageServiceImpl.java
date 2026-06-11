@@ -78,10 +78,10 @@ public class ImageServiceImpl implements ImageService {
 
         try {
             // 3. 업로드 디렉토리가 없으면 생성
-            Files.createDirectories(Paths.get(uploadDir));
+            Files.createDirectories(Paths.get(uploadDir).toAbsolutePath());
             
             // 4. 지정한 경로로 실제 파일 복사(저장)
-            file.transferTo(filePath.toFile());
+            file.transferTo(filePath.toAbsolutePath().toFile());
             
             // 5. 클라이언트가 접근할 수 있는 Web URL 경로 생성
             String finalUrl = "/images/" + uniqueFilename;

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ssafy.gourming.model.service.FileService;
+import com.ssafy.gourming.model.service.ImageService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,11 +16,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ImageController {
 	
-	private final FileService fileService;
+	private final ImageService imageService;
 	
 	@PostMapping
 	public ResponseEntity<String> uploadImage(@RequestParam MultipartFile file) {
-		String tempUrl = fileService.uploadImage(file);
+		String tempUrl = imageService.uploadImage(file);
 		return ResponseEntity.ok(tempUrl);
 	}
 }

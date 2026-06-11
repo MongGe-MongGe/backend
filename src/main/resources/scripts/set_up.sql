@@ -166,6 +166,9 @@ CREATE TABLE images (
 -- Indexes (성능 최적화)
 -- ============================================================
 
+-- 스케줄러 PENDING 이미지 조회 최적화용 복합 인덱스
+CREATE INDEX idx_images_status_created_at ON images (status, created_at);
+
 -- 리뷰 조회
 CREATE INDEX idx_reviews_place_id  ON reviews (place_id);
 CREATE INDEX idx_reviews_user_id   ON reviews (user_id);

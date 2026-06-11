@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class FileServiceImple implements FileService {
+public class ImageServiceImpl implements ImageService {
 
     // application.properties 에 설정된 파일 업로드 물리 경로
     @Value("${file.upload.dir}")
@@ -57,11 +57,16 @@ public class FileServiceImple implements FileService {
             throw new IllegalArgumentException("파일이 비어있습니다.");
         }
 
-        // 1. 파일 확장자 추출 (예: .png, .jpg)
+        // 1. 파일 확장자 추출 및 검증
         String extension = "";
         String originalFilename = file.getOriginalFilename();
         if (originalFilename != null && originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        
+        List<String> allowedExtensions = List.of(".jpg", ".jpeg", ".png", ".webp");
+        if (!allowedExtensions.contains(extension.toLowerCase())) {
+            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. (jpg, jpeg, png, webp만 가능)");
         }
 
         // 2. 파일명 충돌 방지를 위해 '현재시간_UUID.확장자' 형식으로 고유 파일명 생성

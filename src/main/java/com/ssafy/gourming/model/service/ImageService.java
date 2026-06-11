@@ -2,7 +2,7 @@ package com.ssafy.gourming.model.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
-public interface FileService {
+public interface ImageService {
     
     // 이미지 업로드 후 PENDING 상태로 DB 및 로컬 저장
     String uploadImage(MultipartFile file);

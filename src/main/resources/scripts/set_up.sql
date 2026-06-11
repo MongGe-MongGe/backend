@@ -152,8 +152,22 @@ CREATE TABLE comments (
 );
 
 -- ============================================================
+-- Images (이미지 업로드 및 생명주기 관리)
+-- ============================================================
+CREATE TABLE images (
+    id          BIGINT        AUTO_INCREMENT PRIMARY KEY,
+    filename    VARCHAR(255)  NOT NULL,
+    url         VARCHAR(255)  NOT NULL,
+    status      VARCHAR(50)   NOT NULL COMMENT 'PENDING 또는 CONFIRMED',
+    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
 -- Indexes (성능 최적화)
 -- ============================================================
+
+-- 스케줄러 PENDING 이미지 조회 최적화용 복합 인덱스
+CREATE INDEX idx_images_status_created_at ON images (status, created_at);
 
 -- 리뷰 조회
 CREATE INDEX idx_reviews_place_id  ON reviews (place_id);

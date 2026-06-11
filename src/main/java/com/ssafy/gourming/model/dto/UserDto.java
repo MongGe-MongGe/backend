@@ -71,12 +71,37 @@ public class UserDto {
 		private String bio;       // 자기소개 (프로필 조회에서 사용)
 	}
 	
+	/**
+	 * 프로필 조회 시 반환되는 DTO입니다.
+	 * 민감한 정보(비밀번호, 연락처, 이메일)를 제외하고 안전한 정보만 포함합니다.
+	 */
 	@Getter
 	@AllArgsConstructor
 	public static class UserProfileResponse {
 		private String id;
 		private String nickname;
 		private String handle;
+		private String profileImage;
+		private String bio;
+	}
+
+	/**
+	 * 프로필 수정 요청 시 클라이언트로부터 전달받는 데이터 DTO입니다.
+	 * 닉네임, 핸들, 프로필 이미지, 자기소개 필드의 유효성 검사 규칙을 포함합니다.
+	 */
+	@Getter
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class UpdateProfileRequest {
+		@NotBlank(message = "닉네임은 필수 입력값입니다")
+		@Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다")
+		private String nickname;
+
+		@NotBlank(message = "핸들은 필수 입력값입니다")
+		@Pattern(regexp = "^@[a-zA-Z0-9_.]{6,20}$",
+		         message = "핸들은 @로 시작하고 영문, 숫자, _, .만 사용할 수 있습니다 (6~20자)")
+		private String handle;
+
 		private String profileImage;
 		private String bio;
 	}

@@ -34,4 +34,13 @@
         WHERE handle = #{handle}
     </select>
 
+    <update id="updateProfile">
+        UPDATE users
+        SET nickname = #{request.nickname},
+            handle = #{request.handle},
+            profile_image = #{request.profileImage},
+            bio = #{request.bio}
+        WHERE id = #{id}
+    </update>
+
 </mapper>

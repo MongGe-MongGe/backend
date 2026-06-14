@@ -1,6 +1,7 @@
 package com.ssafy.gourming.model.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 
@@ -72,5 +73,19 @@ public class GoodPlaceDto {
 		private String groupId;
 		private PlaceSummary place;
 		private LocalDateTime createdAt;
+	}
+
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	public static class GoodPlacePageResponse {
+
+		private List<GoodPlaceDetailResponse> content;
+		private int page;
+		private int size;
+		private long totalElements;
+		private int totalPages;
+		private boolean first;
+		private boolean last;
 	}
 }

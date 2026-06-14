@@ -3,6 +3,8 @@ package com.ssafy.gourming.model.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,6 +25,7 @@ import org.springframework.dao.DuplicateKeyException;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceCreateRequest;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceDetailResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceEntity;
+import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlacePageResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupEntity;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
@@ -177,14 +180,23 @@ class GoodPlaceServiceMockTest {
 	void getOtherUsersGroupGoodPlaces() {
 		List<GoodPlaceDetailResponse> responses = List.of(new GoodPlaceDetailResponse());
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(createGroup(OTHER_USER_ID));
-		when(goodPlaceMapper.selectGoodPlacesByGroup(OTHER_USER_ID, GROUP_ID))
+		when(goodPlaceMapper.countGoodPlacesByGroup(OTHER_USER_ID, GROUP_ID))
+			.thenReturn(21L);
+		when(goodPlaceMapper.selectGoodPlacesByGroup(OTHER_USER_ID, GROUP_ID, 20, 10))
 			.thenReturn(responses);
 
-		List<GoodPlaceDetailResponse> result =
-			goodPlaceService.getGroupGoodPlaces(OTHER_USER_ID, GROUP_ID);
+		GoodPlacePageResponse result =
+			goodPlaceService.getGroupGoodPlaces(OTHER_USER_ID, GROUP_ID, 2, 10);
 
-		assertThat(result).isSameAs(responses);
-		verify(goodPlaceMapper).selectGoodPlacesByGroup(OTHER_USER_ID, GROUP_ID);
+		assertThat(result.getContent()).isSameAs(responses);
+		assertThat(result.getPage()).isEqualTo(2);
+		assertThat(result.getSize()).isEqualTo(10);
+		assertThat(result.getTotalElements()).isEqualTo(21);
+		assertThat(result.getTotalPages()).isEqualTo(3);
+		assertThat(result.isFirst()).isFalse();
+		assertThat(result.isLast()).isTrue();
+		verify(goodPlaceMapper)
+			.selectGoodPlacesByGroup(OTHER_USER_ID, GROUP_ID, 20, 10);
 	}
 
 	@Test
@@ -193,11 +205,34 @@ class GoodPlaceServiceMockTest {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(createGroup(OTHER_USER_ID));
 
 		assertThatThrownBy(() ->
-			goodPlaceService.getGroupGoodPlaces(USER_ID, GROUP_ID))
+			goodPlaceService.getGroupGoodPlaces(USER_ID, GROUP_ID, 0, 20))
 			.isInstanceOf(NoSuchElementException.class)
 			.hasMessage("Group not found: " + GROUP_ID);
 
-		verify(goodPlaceMapper, never()).selectGoodPlacesByGroup(any(), any());
+		verify(goodPlaceMapper, never())
+			.selectGoodPlacesByGroup(any(), any(), anyLong(), anyInt());
+	}
+
+	@Test
+	@DisplayName("페이지 번호는 0 이상이어야 한다")
+	void getGroupGoodPlacesWithNegativePageFails() {
+		assertThatThrownBy(() ->
+			goodPlaceService.getGroupGoodPlaces(USER_ID, GROUP_ID, -1, 20))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("Page must be zero or greater");
+
+		verify(groupMapper, never()).selectGroupById(any());
+	}
+
+	@Test
+	@DisplayName("페이지 크기는 1 이상 100 이하여야 한다")
+	void getGroupGoodPlacesWithInvalidSizeFails() {
+		assertThatThrownBy(() ->
+			goodPlaceService.getGroupGoodPlaces(USER_ID, GROUP_ID, 0, 101))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("Size must be between 1 and 100");
+
+		verify(groupMapper, never()).selectGroupById(any());
 	}
 
 	@Test

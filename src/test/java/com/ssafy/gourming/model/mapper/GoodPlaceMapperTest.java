@@ -107,9 +107,20 @@ class GoodPlaceMapperTest {
 		goodPlaceMapper.insertGoodPlace(createGoodPlace(TEST_USER_ID, groupId, OTHER_PLACE_ID));
 
 		List<GoodPlaceDetailResponse> goodPlaces =
-			goodPlaceMapper.selectGoodPlacesByGroup(TEST_USER_ID, groupId);
+			goodPlaceMapper.selectGoodPlacesByGroup(TEST_USER_ID, groupId, 0, 10);
+		List<GoodPlaceDetailResponse> firstPage =
+			goodPlaceMapper.selectGoodPlacesByGroup(TEST_USER_ID, groupId, 0, 1);
+		List<GoodPlaceDetailResponse> secondPage =
+			goodPlaceMapper.selectGoodPlacesByGroup(TEST_USER_ID, groupId, 1, 1);
+		long totalElements =
+			goodPlaceMapper.countGoodPlacesByGroup(TEST_USER_ID, groupId);
 
 		assertThat(goodPlaces).hasSize(2);
+		assertThat(firstPage).hasSize(1);
+		assertThat(secondPage).hasSize(1);
+		assertThat(firstPage.getFirst().getId())
+			.isNotEqualTo(secondPage.getFirst().getId());
+		assertThat(totalElements).isEqualTo(2);
 		assertThat(goodPlaces)
 			.extracting(goodPlace -> goodPlace.getPlace().getId())
 			.containsExactlyInAnyOrder(PLACE_ID, OTHER_PLACE_ID);

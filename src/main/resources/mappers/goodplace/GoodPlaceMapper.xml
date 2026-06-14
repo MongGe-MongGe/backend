@@ -72,7 +72,15 @@
 		JOIN places p ON p.id = gp.place_id
 		WHERE gp.user_id = #{userId}
 		  AND gp.group_id = #{groupId}
-		ORDER BY gp.created_at DESC
+		ORDER BY gp.created_at DESC, gp.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countGoodPlacesByGroup" resultType="long">
+		SELECT COUNT(*)
+		FROM good_places
+		WHERE user_id = #{userId}
+		  AND group_id = #{groupId}
 	</select>
 
 	<delete id="deleteGoodPlaceFromGroup">

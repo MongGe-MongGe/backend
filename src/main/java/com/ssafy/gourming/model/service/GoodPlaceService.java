@@ -1,9 +1,7 @@
 package com.ssafy.gourming.model.service;
 
-import java.util.List;
-
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceCreateRequest;
-import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceDetailResponse;
+import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlacePageResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceResponse;
 
 public interface GoodPlaceService {
@@ -16,9 +14,11 @@ public interface GoodPlaceService {
 	);
 
 	// 경로의 userId에 해당하는 사용자의 그룹 맛집 공개 조회
-	List<GoodPlaceDetailResponse> getGroupGoodPlaces(
+	GoodPlacePageResponse getGroupGoodPlaces(
 		String targetUserId,
-		String groupId
+		String groupId,
+		int page,
+		int size
 	);
 
 	// 로그인 사용자의 특정 그룹에서 맛집 삭제

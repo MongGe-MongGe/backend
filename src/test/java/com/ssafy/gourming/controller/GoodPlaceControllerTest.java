@@ -1,6 +1,7 @@
 package com.ssafy.gourming.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.SecurityConfig;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceCreateRequest;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceDetailResponse;
+import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlacePageResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.PlaceSummary;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
@@ -57,8 +59,8 @@ class GoodPlaceControllerTest {
 	@Test
 	@DisplayName("인증 없이 다른 사용자의 그룹 맛집을 조회한다")
 	void getGroupGoodPlacesWithoutAuthentication() throws Exception {
-		when(goodPlaceService.getGroupGoodPlaces(OTHER_USER_ID, GROUP_ID))
-			.thenReturn(List.of(createDetailResponse()));
+		when(goodPlaceService.getGroupGoodPlaces(OTHER_USER_ID, GROUP_ID, 0, 20))
+			.thenReturn(createPageResponse());
 
 		mockMvc.perform(get(
 				"/api/users/{userId}/groups/{groupId}/good-places",
@@ -66,13 +68,33 @@ class GoodPlaceControllerTest {
 				GROUP_ID
 			))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].id").value("good-place-1"))
-			.andExpect(jsonPath("$[0].groupId").value(GROUP_ID))
-			.andExpect(jsonPath("$[0].place.id").value(PLACE_ID))
-			.andExpect(jsonPath("$[0].place.name").value("테스트 맛집"))
-			.andExpect(jsonPath("$[0].place.categoryName").value("음식점"));
+			.andExpect(jsonPath("$.content[0].id").value("good-place-1"))
+			.andExpect(jsonPath("$.content[0].groupId").value(GROUP_ID))
+			.andExpect(jsonPath("$.content[0].place.id").value(PLACE_ID))
+			.andExpect(jsonPath("$.page").value(0))
+			.andExpect(jsonPath("$.size").value(20))
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.totalPages").value(1))
+			.andExpect(jsonPath("$.first").value(true))
+			.andExpect(jsonPath("$.last").value(true));
 
-		verify(goodPlaceService).getGroupGoodPlaces(OTHER_USER_ID, GROUP_ID);
+		verify(goodPlaceService).getGroupGoodPlaces(OTHER_USER_ID, GROUP_ID, 0, 20);
+	}
+
+	@Test
+	@DisplayName("잘못된 페이지 요청은 거부한다")
+	void getGroupGoodPlacesWithInvalidPageFails() throws Exception {
+		mockMvc.perform(get(
+				"/api/users/{userId}/groups/{groupId}/good-places",
+				OTHER_USER_ID,
+				GROUP_ID
+			)
+				.param("page", "-1")
+				.param("size", "101"))
+			.andExpect(status().isBadRequest());
+
+		verify(goodPlaceService, never())
+			.getGroupGoodPlaces(any(), any(), anyInt(), anyInt());
 	}
 
 	@Test
@@ -206,6 +228,18 @@ class GoodPlaceControllerTest {
 		response.setId("good-place-1");
 		response.setGroupId(GROUP_ID);
 		response.setPlace(place);
+		return response;
+	}
+
+	private GoodPlacePageResponse createPageResponse() {
+		GoodPlacePageResponse response = new GoodPlacePageResponse();
+		response.setContent(List.of(createDetailResponse()));
+		response.setPage(0);
+		response.setSize(20);
+		response.setTotalElements(1);
+		response.setTotalPages(1);
+		response.setFirst(true);
+		response.setLast(true);
 		return response;
 	}
 }

@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceCreateRequest;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceDetailResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceEntity;
+import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlacePageResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupEntity;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
@@ -78,10 +79,13 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 	}
 
 	@Override
-	public List<GoodPlaceDetailResponse> getGroupGoodPlaces(
+	public GoodPlacePageResponse getGroupGoodPlaces(
 		String targetUserId,
-		String groupId
+		String groupId,
+		int page,
+		int size
 	) {
+		validatePageRequest(page, size);
 		GroupEntity group = getGroup(groupId);
 
 		// 공개 조회에서는 로그인 사용자가 아니라 URL의 사용자와 그룹 소유자를 비교한다.
@@ -89,7 +93,18 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 			throw new NoSuchElementException("Group not found: " + groupId);
 		}
 
-		return goodPlaceMapper.selectGoodPlacesByGroup(targetUserId, groupId);
+		long totalElements =
+			goodPlaceMapper.countGoodPlacesByGroup(targetUserId, groupId);
+		long offset = (long)page * size;
+		List<GoodPlaceDetailResponse> content =
+			goodPlaceMapper.selectGoodPlacesByGroup(
+				targetUserId,
+				groupId,
+				offset,
+				size
+			);
+
+		return createPageResponse(content, page, size, totalElements);
 	}
 
 	@Override
@@ -121,6 +136,34 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 		if (!group.getUserId().equals(userId)) {
 			throw new IllegalArgumentException("Group does not belong to user");
 		}
+	}
+
+	private void validatePageRequest(int page, int size) {
+		if (page < 0) {
+			throw new IllegalArgumentException("Page must be zero or greater");
+		}
+		if (size < 1 || size > 100) {
+			throw new IllegalArgumentException("Size must be between 1 and 100");
+		}
+	}
+
+	private GoodPlacePageResponse createPageResponse(
+		List<GoodPlaceDetailResponse> content,
+		int page,
+		int size,
+		long totalElements
+	) {
+		int totalPages = (int)((totalElements + size - 1) / size);
+
+		GoodPlacePageResponse response = new GoodPlacePageResponse();
+		response.setContent(content);
+		response.setPage(page);
+		response.setSize(size);
+		response.setTotalElements(totalElements);
+		response.setTotalPages(totalPages);
+		response.setFirst(page == 0);
+		response.setLast(totalPages == 0 || page >= totalPages - 1);
+		return response;
 	}
 
 	private GoodPlaceResponse convertToGoodPlaceResponse(GoodPlaceEntity goodPlace) {

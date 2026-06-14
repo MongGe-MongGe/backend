@@ -21,6 +21,13 @@ public interface GoodPlaceMapper {
 
 	List<GoodPlaceDetailResponse> selectGoodPlacesByGroup(
 		@Param("userId") String userId,
+		@Param("groupId") String groupId,
+		@Param("offset") long offset,
+		@Param("size") int size
+	);
+
+	long countGoodPlacesByGroup(
+		@Param("userId") String userId,
 		@Param("groupId") String groupId
 	);
 

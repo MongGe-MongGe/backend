@@ -37,6 +37,7 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 		GroupEntity group = getGroup(groupId);
 		validateOwner(group, userId);
 
+		// 같은 그룹에 이미 저장된 장소라면 중복 생성 없이 기존 결과를 반환한다.
 		String placeId = request.getPlace().getId();
 		GoodPlaceEntity existingGoodPlace =
 			goodPlaceMapper.selectGoodPlace(userId, groupId, placeId);
@@ -44,6 +45,7 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 			return convertToGoodPlaceResponse(existingGoodPlace);
 		}
 
+		// 장소가 DB에 없으면 카카오 장소 검증 후 places 테이블에 저장한다.
 		PlaceEntity place = placeService.findOrCreatePlace(request.getPlace());
 		if (place == null) {
 			throw new NoSuchElementException("Place not found: " + placeId);
@@ -95,6 +97,7 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 
 		long totalElements =
 			goodPlaceMapper.countGoodPlacesByGroup(targetUserId, groupId);
+		// page는 0부터 시작하므로 앞에서 건너뛸 항목 수를 계산한다.
 		long offset = (long)page * size;
 		List<GoodPlaceDetailResponse> content =
 			goodPlaceMapper.selectGoodPlacesByGroup(
@@ -113,6 +116,7 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 		GroupEntity group = getGroup(groupId);
 		validateOwner(group, userId);
 
+		// 다른 그룹의 동일 장소 저장 기록은 유지하고 지정한 그룹의 기록만 삭제한다.
 		GoodPlaceEntity goodPlace = goodPlaceMapper.selectGoodPlace(userId, groupId, placeId);
 		if (goodPlace == null) {
 			throw new NoSuchElementException("Good place not found: " + placeId);

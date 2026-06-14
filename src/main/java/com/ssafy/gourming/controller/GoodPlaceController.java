@@ -30,6 +30,7 @@ public class GoodPlaceController {
 
 	private final GoodPlaceService goodPlaceService;
 
+	// 그룹 맛집 목록은 공개 API이며 userId는 조회 대상 사용자를 의미한다.
 	@GetMapping("/{userId}/groups/{groupId}/good-places")
 	public ResponseEntity<GoodPlacePageResponse> getGroupGoodPlaces(
 		@PathVariable String userId,
@@ -42,6 +43,7 @@ public class GoodPlaceController {
 		);
 	}
 
+	// 맛집 변경 API는 인증 principal의 사용자 ID를 사용한다.
 	@PostMapping("/me/groups/{groupId}/good-places")
 	public ResponseEntity<GoodPlaceResponse> createGoodPlace(
 		@AuthenticationPrincipal LoginUser loginUser,
@@ -53,6 +55,7 @@ public class GoodPlaceController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+	// places 데이터는 유지하고 해당 그룹의 저장 관계만 삭제한다.
 	@DeleteMapping("/me/groups/{groupId}/good-places/{placeId}")
 	public ResponseEntity<Void> deleteGoodPlaceFromGroup(
 		@AuthenticationPrincipal LoginUser loginUser,

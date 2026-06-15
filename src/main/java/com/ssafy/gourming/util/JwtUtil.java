@@ -19,6 +19,8 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
+    private static final String USER_ID_CLAIM = "userId";
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -34,14 +36,16 @@ public class JwtUtil {
     }
 
     /**
-     * 인증된 사용자(이메일)를 기반으로 JWT 토큰을 생성하여 반환합니다.
-     * 
-     * @param email 토큰의 Subject(주체)로 들어갈 사용자의 이메일
+     * 이메일을 Subject로 유지하고 사용자 ID를 별도 Claim에 저장한 JWT를 생성합니다.
+     *
+     * @param email 토큰의 Subject로 들어갈 사용자의 이메일
+     * @param userId 인증 Principal로 사용할 사용자의 ID
      * @return 서명된 JWT 문자열
      */
-    public String generateToken(String email) {
+    public String generateToken(String email, String userId) {
         return Jwts.builder()
                 .subject(email)
+                .claim(USER_ID_CLAIM, userId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey())
@@ -55,12 +59,17 @@ public class JwtUtil {
      * @return 토큰에 저장된 이메일 문자열
      */
     public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.getSubject();
+        return parseClaims(token).getSubject();
+    }
+
+    /**
+     * 토큰의 서명을 검증하고 사용자 ID Claim을 추출합니다.
+     *
+     * @param token 파싱할 JWT 문자열
+     * @return 토큰에 저장된 사용자 ID
+     */
+    public String getUserIdFromToken(String token) {
+        return parseClaims(token).get(USER_ID_CLAIM, String.class);
     }
 
     /**
@@ -71,14 +80,19 @@ public class JwtUtil {
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token);
+            parseClaims(token);
             return true;
         } catch (Exception e) {
             // 서명 불일치, 만료된 토큰, 잘못된 형식 등인 경우 false 처리
             return false;
         }
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

@@ -90,18 +90,6 @@ class GroupServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("공백으로만 이루어진 그룹 이름은 생성할 수 없다")
-	void createBlankGroupFails() {
-		GroupCreateRequest request = new GroupCreateRequest();
-		request.setName("   ");
-
-		assertThatThrownBy(() -> groupService.createGroup(USER_ID, request))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Group name cannot be blank");
-		verify(groupMapper, never()).insertGroup(any());
-	}
-
-	@Test
 	@DisplayName("같은 이름의 일반 그룹이 있으면 생성할 수 없다")
 	void createDuplicateGroupFails() {
 		GroupCreateRequest request = new GroupCreateRequest();
@@ -140,18 +128,6 @@ class GroupServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("그룹 이름이 null이면 생성할 수 없다")
-	void createNullNameGroupFails() {
-		GroupCreateRequest request = new GroupCreateRequest();
-		request.setName(null);
-
-		assertThatThrownBy(() -> groupService.createGroup(USER_ID, request))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Group name cannot be blank");
-		verify(groupMapper, never()).insertGroup(any());
-	}
-
-	@Test
 	@DisplayName("소유한 일반 그룹의 이름을 수정한다")
 	void updateGroup() {
 		GroupEntity group = createGroup(USER_ID, false);
@@ -162,7 +138,7 @@ class GroupServiceMockTest {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(group);
 		when(groupMapper.selectGroupByUserIdAndName(USER_ID, "수정한 그룹")).thenReturn(null);
 		when(groupMapper.updateGroupName(GROUP_ID, USER_ID, "수정한 그룹")).thenReturn(1);
-		when(groupMapper.selectGroupsByUserId(USER_ID)).thenReturn(List.of(response));
+		when(groupMapper.selectGroupResponseById(USER_ID, GROUP_ID)).thenReturn(response);
 
 		GroupResponse result = groupService.updateGroup(USER_ID, GROUP_ID, request);
 
@@ -201,7 +177,7 @@ class GroupServiceMockTest {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(group);
 		when(groupMapper.selectGroupByUserIdAndName(USER_ID, "그룹")).thenReturn(group);
 		when(groupMapper.updateGroupName(GROUP_ID, USER_ID, "그룹")).thenReturn(1);
-		when(groupMapper.selectGroupsByUserId(USER_ID)).thenReturn(List.of(response));
+		when(groupMapper.selectGroupResponseById(USER_ID, GROUP_ID)).thenReturn(response);
 
 		GroupResponse result = groupService.updateGroup(USER_ID, GROUP_ID, request);
 

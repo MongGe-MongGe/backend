@@ -35,14 +35,14 @@ public class GroupController {
 	public ResponseEntity<List<GroupResponse>> getMyGroups(
 		@AuthenticationPrincipal LoginUser loginUser
 	) {
-		return ResponseEntity.ok(groupService.getMyGroups(loginUser.id()));
+		return ResponseEntity.ok(groupService.getGroupsByUserId(loginUser.id()));
 	}
 
 	@GetMapping("/{userId}/groups")
 	public ResponseEntity<List<GroupResponse>> getUserGroups(
 		@PathVariable String userId
 	) {
-		return ResponseEntity.ok(groupService.getUserGroups(userId));
+		return ResponseEntity.ok(groupService.getGroupsByUserId(userId));
 	}
 
 	@PostMapping("/me/groups")

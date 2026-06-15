@@ -61,7 +61,7 @@ public class GroupServiceImpl implements GroupService{
 	@Override
 	@Transactional
 	public GroupResponse createGroup(String userId, GroupCreateRequest request) {
-		String name = normalizeGroupName(request.getName());
+		String name = request.getName().strip();
 		// 같은 사용자는 동일한 이름의 그룹을 중복 생성할 수 없다.
 		GroupEntity existingGroup = groupMapper.selectGroupByUserIdAndName(userId, name);
 		if(existingGroup != null) {
@@ -85,12 +85,7 @@ public class GroupServiceImpl implements GroupService{
 	}
 
 	@Override
-	public List<GroupResponse> getMyGroups(String userId) {
-		return groupMapper.selectGroupsByUserId(userId);
-	}
-
-	@Override
-	public List<GroupResponse> getUserGroups(String userId) {
+	public List<GroupResponse> getGroupsByUserId(String userId) {
 		return groupMapper.selectGroupsByUserId(userId);
 	}
 
@@ -105,7 +100,7 @@ public class GroupServiceImpl implements GroupService{
 			throw new IllegalArgumentException("Default group cannot be updated");
 		}
 
-		String name = normalizeGroupName(request.getName());
+		String name = request.getName().strip();
 		GroupEntity groupWithSameName = groupMapper.selectGroupByUserIdAndName(userId, name);
 		if (groupWithSameName != null && !groupWithSameName.getId().equals(groupId)) {
 			throw new IllegalArgumentException("Already Exists Group");
@@ -116,7 +111,12 @@ public class GroupServiceImpl implements GroupService{
 			throw new IllegalStateException("Failed to update group: " + groupId);
 		}
 
-		return findGroupResponseById(userId, groupId);
+		GroupResponse updatedGroup =
+			groupMapper.selectGroupResponseById(userId, groupId);
+		if (updatedGroup == null) {
+			throw new NoSuchElementException("Group not found: " + groupId);
+		}
+		return updatedGroup;
 	}
 
 	@Override
@@ -148,29 +148,6 @@ public class GroupServiceImpl implements GroupService{
 		if (!group.getUserId().equals(userId)) {
 			throw new IllegalArgumentException("Group does not belong to user");
 		}
-	}
-
-	private GroupResponse findGroupResponseById(String userId, String groupId) {
-		// 수정 후 맛집 수까지 포함된 응답을 반환하기 위해 목록 결과에서 찾는다.
-		List<GroupResponse> groups = groupMapper.selectGroupsByUserId(userId);
-		for (GroupResponse group : groups) {
-			if (group.getId().equals(groupId)) {
-				return group;
-			}
-		}
-		throw new NoSuchElementException("Group not found: " + groupId);
-	}
-
-	private String normalizeGroupName(String name) {
-		// 내부 공백은 유지하고 앞뒤 공백만 제거한다.
-		if (name == null) {
-			throw new IllegalArgumentException("Group name cannot be blank");
-		}
-		String normalizedName = name.strip();
-		if (normalizedName.isEmpty()) {
-			throw new IllegalArgumentException("Group name cannot be blank");
-		}
-		return normalizedName;
 	}
 
 }

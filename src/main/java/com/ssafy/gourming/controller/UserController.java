@@ -33,6 +33,9 @@ public class UserController {
 	 */
 	@GetMapping("/check-handle")
 	public ResponseEntity<?> checkHandle(@org.springframework.web.bind.annotation.RequestParam String handle) {
+		if (!handle.matches(com.ssafy.gourming.util.ValidationConstants.HANDLE_REGEX)) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(com.ssafy.gourming.util.ValidationConstants.HANDLE_MESSAGE);
+		}
 		boolean isAvailable = userService.isHandleAvailable(handle);
 		return ResponseEntity.ok(java.util.Map.of("available", isAvailable));
 	}

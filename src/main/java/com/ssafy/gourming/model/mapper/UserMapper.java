@@ -17,6 +17,9 @@ public interface UserMapper {
 	// 핸들로 사용자 조회
 	UserDto.UserEntity findByHandle(String handle);
 	
+	// 핸들 존재 여부 확인 (최적화)
+	boolean existsByHandle(String handle);
+	
 	// 프로필 업데이트
 	void updateProfile(@org.apache.ibatis.annotations.Param("id") String id, @org.apache.ibatis.annotations.Param("request") UserDto.UpdateProfileRequest request);
 }

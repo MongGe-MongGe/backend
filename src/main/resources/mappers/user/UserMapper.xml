@@ -34,6 +34,12 @@
         WHERE handle = #{handle}
     </select>
 
+    <select id="existsByHandle" parameterType="String" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM users WHERE handle = #{handle}
+        )
+    </select>
+
     <update id="updateProfile">
         UPDATE users
         SET nickname = #{request.nickname},

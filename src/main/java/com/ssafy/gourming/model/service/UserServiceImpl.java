@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService{
 	 */
 	@Override
 	public boolean isHandleAvailable(String handle) {
-		return userMapper.findByHandle(handle) == null;
+		return !userMapper.existsByHandle(handle);
 	}
 
 	@Override

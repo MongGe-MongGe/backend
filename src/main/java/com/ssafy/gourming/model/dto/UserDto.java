@@ -31,8 +31,8 @@ public class UserDto {
 		private String phone;
 
 		@NotBlank(message = "핸들은 필수 입력값입니다")
-		@Pattern(regexp = "^@[a-zA-Z0-9_.]{6,20}$",
-		         message = "핸들은 @로 시작하고 영문, 숫자, _, .만 사용할 수 있습니다 (6~20자)")
+		@Pattern(regexp = "^@[a-zA-Z0-9_.]{4,20}$",
+		         message = "핸들은 @로 시작하고 영문, 숫자, _, .만 사용할 수 있습니다 (4~20자)")
 		private String handle;
 	}
 	
@@ -98,8 +98,8 @@ public class UserDto {
 		private String nickname;
 
 		@NotBlank(message = "핸들은 필수 입력값입니다")
-		@Pattern(regexp = "^@[a-zA-Z0-9_.]{6,20}$",
-		         message = "핸들은 @로 시작하고 영문, 숫자, _, .만 사용할 수 있습니다 (6~20자)")
+		@Pattern(regexp = "^@[a-zA-Z0-9_.]{4,20}$",
+		         message = "핸들은 @로 시작하고 영문, 숫자, _, .만 사용할 수 있습니다 (4~20자)")
 		private String handle;
 
 		private String profileImage;

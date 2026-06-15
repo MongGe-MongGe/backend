@@ -13,6 +13,9 @@ public interface UserMapper {
 	// 이메일로 사용자 조회
 	// 중복 체크 및 로그인 인증을 위해 사용
 	UserDto.UserEntity findByEmail(String email);	
+
+	// 사용자 ID로 사용자 조회
+	UserDto.UserEntity findById(String id);
 	
 	// 핸들로 사용자 조회
 	UserDto.UserEntity findByHandle(String handle);

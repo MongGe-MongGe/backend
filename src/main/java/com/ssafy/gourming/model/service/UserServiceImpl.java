@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ssafy.gourming.model.dto.UserDto;
 import com.ssafy.gourming.model.mapper.UserMapper;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import com.ssafy.gourming.util.JwtUtil;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,13 +24,9 @@ public class UserServiceImpl implements UserService{
 
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final JwtUtil jwtUtil;
 	private final GroupService groupService;
-	
-	@Value("${jwt.secret}")
-	private String jwtSecret;
-	
-	@Value("${jwt.expiration-ms}")
-	private long jwtExpirationMs;
+	private final ImageService imageService;
 	
 	@Override
 	@Transactional
@@ -66,11 +62,11 @@ public class UserServiceImpl implements UserService{
 		
 		// 2. 사용자가 없거나 비밀번호 불일치 -> 동일 메시지로 예외처리
 		if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-			throw new IllegalArgumentException("Invalid Email or Password");
+			throw new org.springframework.security.authentication.BadCredentialsException("Invalid Email or Password");
 		}
 		
 		// 3. JWT 생성 후 응답 반환 (프로필 정보 전체를 Body에 포함)
-		String token = generateToken(user.getEmail());
+		String token = jwtUtil.generateToken(user.getEmail());
 		return new UserDto.LoginResponse(
 				token, 
 				user.getId(), 
@@ -80,16 +76,16 @@ public class UserServiceImpl implements UserService{
 				user.getProfileImage()
 			);
 	}
-	
-	
-	private String generateToken(String email) {
-		SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-		return Jwts.builder()
-				.subject(email)
-				.issuedAt(new Date())
-				.expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-				.signWith(key)
-				.compact();
+
+	/**
+	 * 주어진 핸들(닉네임 ID 역할)이 사용 가능한지 확인합니다.
+	 * 
+	 * @param handle 중복 검사할 핸들 문자열
+	 * @return 사용 가능하면 true (DB에 존재하지 않음), 이미 사용 중이면 false 반환
+	 */
+	@Override
+	public boolean isHandleAvailable(String handle) {
+		return !userMapper.existsByHandle(handle);
 	}
 
 	@Override
@@ -110,5 +106,50 @@ public class UserServiceImpl implements UserService{
 				user.getProfileImage(), 
 				user.getBio()
 			);
+	}
+
+	/**
+	 * 사용자의 프로필 정보를 수정합니다.
+	 * 수정 시 권한(본인 여부) 검증과 핸들 중복 검사를 수행합니다.
+	 * 
+	 * @param id 수정하려는 대상 사용자의 식별자(UUID)
+	 * @param authenticatedEmail SecurityContext에서 가져온 현재 인증된 사용자의 이메일
+	 * @param request 변경할 프로필 데이터(닉네임, 핸들, 이미지, 소개 등)
+	 * @throws SecurityException 본인의 프로필이 아닐 경우 예외 발생
+	 * @throws IllegalArgumentException 변경하려는 핸들이 이미 타인에 의해 사용 중인 경우 예외 발생
+	 */
+	@Override
+	public void updateProfile(String id, String authenticatedEmail, UserDto.UpdateProfileRequest request) {
+		// 1. 권한 검증: 토큰의 이메일로 조회한 유저의 ID가 수정하려는 대상 ID와 일치하는지 확인합니다.
+		UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
+		if (authUser == null || !authUser.getId().equals(id)) {
+			throw new SecurityException("자신의 프로필만 수정할 수 있습니다.");
+		}
+
+		// 2. 핸들 중복 체크: 사용자가 핸들을 변경하려고 할 때, 해당 핸들이 이미 존재하는지 확인합니다.
+		// (단, 기존에 본인이 사용 중인 핸들을 그대로 유지하는 경우는 허용합니다.)
+		UserDto.UserEntity existingHandleUser = userMapper.findByHandle(request.getHandle());
+		if (existingHandleUser != null && !existingHandleUser.getId().equals(id)) {
+			throw new IllegalArgumentException("Already Exists Handle");
+		}
+		
+		// 3. 이미지 동기화: 새 이미지가 설정된 경우 상태 업데이트
+		String oldImage = authUser.getProfileImage();
+		String newImage = request.getProfileImage();
+		
+		if (newImage != null && !newImage.equals(oldImage)) {
+			String[] oldUrls = oldImage != null ? new String[]{oldImage} : new String[]{};
+			String[] newUrls = new String[]{newImage};
+			imageService.syncImages(oldUrls, newUrls);
+		} else if (newImage == null && oldImage != null) {
+			imageService.syncImages(new String[]{oldImage}, new String[]{});
+		}
+
+		// 4. 모든 검증을 통과하면 DB에 프로필 업데이트 쿼리를 실행합니다.
+		try {
+			userMapper.updateProfile(id, request);
+		} catch (org.springframework.dao.DuplicateKeyException e) {
+			throw new IllegalArgumentException("Already Exists Handle");
+		}
 	}
 }

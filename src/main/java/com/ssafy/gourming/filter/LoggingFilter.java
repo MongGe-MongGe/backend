@@ -1,4 +1,4 @@
-package com.ssafy.gourming.config;
+package com.ssafy.gourming.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

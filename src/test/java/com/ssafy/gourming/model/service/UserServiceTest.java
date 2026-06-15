@@ -15,6 +15,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ssafy.gourming.model.dto.UserDto;
 import com.ssafy.gourming.model.mapper.UserMapper;
+import com.ssafy.gourming.util.JwtUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,15 +25,14 @@ class UserServiceTest {
 
     @Mock UserMapper userMapper;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock JwtUtil jwtUtil;
     @Mock GroupService groupService;
+    @Mock ImageService imageService;
     @InjectMocks UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(userService, "jwtSecret",
-            "gourming-secret-key-minimum-32-characters-long!!");
-        ReflectionTestUtils.setField(userService, "jwtExpirationMs", 3600000L);
-        log.info(">>> Mock 설정 및 JWT 필드 주입 완료");
+        log.info(">>> Mock 설정 준비 완료");
     }
 
     @Test
@@ -88,10 +88,11 @@ class UserServiceTest {
         UserDto.UserEntity entity = makeEntity("user@email.com", "$2a$hashed");
         when(userMapper.findByEmail("user@email.com")).thenReturn(entity);
         when(passwordEncoder.matches("plainPw", "$2a$hashed")).thenReturn(true);
-        log.info("Mock: findByEmail → entity, matches → true");
+        when(jwtUtil.generateToken("user@email.com")).thenReturn("mock.jwt.token");
+        log.info("Mock: findByEmail → entity, matches → true, generateToken → mock");
 
         UserDto.LoginResponse res = userService.login(req);
-        log.info("LoginResponse token: {}...", res.getToken().substring(0, 20));
+        log.info("LoginResponse token: {}", res.getToken());
 
         assertNotNull(res.getToken());
         assertFalse(res.getToken().isEmpty());
@@ -105,8 +106,8 @@ class UserServiceTest {
         when(userMapper.findByEmail("ghost@email.com")).thenReturn(null);
         log.info("Mock: findByEmail → null");
 
-        assertThrows(IllegalArgumentException.class, () -> userService.login(req));
-        log.info("✔ IllegalArgumentException 발생");
+        assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> userService.login(req));
+        log.info("✔ BadCredentialsException 발생");
     }
 
     @Test
@@ -118,8 +119,8 @@ class UserServiceTest {
         when(passwordEncoder.matches("wrongPw", "$2a$hashed")).thenReturn(false);
         log.info("Mock: matches → false (비밀번호 불일치)");
 
-        assertThrows(IllegalArgumentException.class, () -> userService.login(req));
-        log.info("✔ IllegalArgumentException 발생");
+        assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> userService.login(req));
+        log.info("✔ BadCredentialsException 발생");
     }
 
     // ─── 헬퍼 ────────────────────────────────────────────────────────

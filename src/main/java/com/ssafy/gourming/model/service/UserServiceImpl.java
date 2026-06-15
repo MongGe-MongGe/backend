@@ -26,6 +26,7 @@ public class UserServiceImpl implements UserService{
 	private final PasswordEncoder passwordEncoder;
 	private final JwtUtil jwtUtil;
 	private final GroupService groupService;
+	private final ImageService imageService;
 	
 	@Override
 	@Transactional
@@ -132,7 +133,19 @@ public class UserServiceImpl implements UserService{
 			throw new IllegalArgumentException("Already Exists Handle");
 		}
 		
-		// 3. 모든 검증을 통과하면 DB에 프로필 업데이트 쿼리를 실행합니다.
+		// 3. 이미지 동기화: 새 이미지가 설정된 경우 상태 업데이트 (피드백 1)
+		String oldImage = authUser.getProfileImage();
+		String newImage = request.getProfileImage();
+		
+		if (newImage != null && !newImage.equals(oldImage)) {
+			String[] oldUrls = oldImage != null ? new String[]{oldImage} : new String[]{};
+			String[] newUrls = new String[]{newImage};
+			imageService.syncImages(oldUrls, newUrls);
+		} else if (newImage == null && oldImage != null) {
+			imageService.syncImages(new String[]{oldImage}, new String[]{});
+		}
+
+		// 4. 모든 검증을 통과하면 DB에 프로필 업데이트 쿼리를 실행합니다.
 		userMapper.updateProfile(id, request);
 	}
 }

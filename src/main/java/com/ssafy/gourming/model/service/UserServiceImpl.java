@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService{
 		
 		// 2. 사용자가 없거나 비밀번호 불일치 -> 동일 메시지로 예외처리
 		if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-			throw new IllegalArgumentException("Invalid Email or Password");
+			throw new org.springframework.security.authentication.BadCredentialsException("Invalid Email or Password");
 		}
 		
 		// 3. JWT 생성 후 응답 반환 (프로필 정보 전체를 Body에 포함)

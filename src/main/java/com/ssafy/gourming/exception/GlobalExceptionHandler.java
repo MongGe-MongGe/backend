@@ -34,6 +34,14 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * 401 Unauthorized: 인증 실패 (비밀번호 불일치 등)
+	 */
+	@ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+	public ResponseEntity<?> handleBadCredentialsException(org.springframework.security.authentication.BadCredentialsException ex) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+	}
+
+	/**
 	 * 403 Forbidden: 접근 권한 없음 (타인 프로필 수정 등)
 	 */
 	@ExceptionHandler(SecurityException.class)

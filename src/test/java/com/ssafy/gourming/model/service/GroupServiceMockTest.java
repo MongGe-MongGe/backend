@@ -138,7 +138,7 @@ class GroupServiceMockTest {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(group);
 		when(groupMapper.selectGroupByUserIdAndName(USER_ID, "수정한 그룹")).thenReturn(null);
 		when(groupMapper.updateGroupName(GROUP_ID, USER_ID, "수정한 그룹")).thenReturn(1);
-		when(groupMapper.selectGroupsByUserId(USER_ID)).thenReturn(List.of(response));
+		when(groupMapper.selectGroupResponseById(USER_ID, GROUP_ID)).thenReturn(response);
 
 		GroupResponse result = groupService.updateGroup(USER_ID, GROUP_ID, request);
 
@@ -177,7 +177,7 @@ class GroupServiceMockTest {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(group);
 		when(groupMapper.selectGroupByUserIdAndName(USER_ID, "그룹")).thenReturn(group);
 		when(groupMapper.updateGroupName(GROUP_ID, USER_ID, "그룹")).thenReturn(1);
-		when(groupMapper.selectGroupsByUserId(USER_ID)).thenReturn(List.of(response));
+		when(groupMapper.selectGroupResponseById(USER_ID, GROUP_ID)).thenReturn(response);
 
 		GroupResponse result = groupService.updateGroup(USER_ID, GROUP_ID, request);
 

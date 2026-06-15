@@ -21,6 +21,12 @@ public interface GroupMapper {
 	// 기본 그룹 우선 정렬 및 그룹별 맛집 수 집계
 	List<GroupResponse> selectGroupsByUserId(String userId);
 
+	// 수정된 그룹의 맛집 수를 포함한 응답 단건 조회
+	GroupResponse selectGroupResponseById(
+		@Param("userId") String userId,
+		@Param("groupId") String groupId
+	);
+
 	// 그룹 생성·수정 전 사용자별 이름 중복 확인
 	GroupEntity selectGroupByUserIdAndName(
 		@Param("userId") String userId,

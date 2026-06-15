@@ -100,6 +100,25 @@ class GroupMapperTest {
 	}
 
 	@Test
+	@DisplayName("그룹 ID로 맛집 수를 포함한 응답을 조회한다")
+	void selectGroupResponseById() {
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "친구 추천", false));
+		String groupId =
+			groupMapper.selectGroupByUserIdAndName(TEST_USER_ID, "친구 추천").getId();
+
+		GroupResponse response =
+			groupMapper.selectGroupResponseById(TEST_USER_ID, groupId);
+		GroupResponse otherUserResponse =
+			groupMapper.selectGroupResponseById(OTHER_USER_ID, groupId);
+
+		assertThat(response).isNotNull();
+		assertThat(response.getId()).isEqualTo(groupId);
+		assertThat(response.getName()).isEqualTo("친구 추천");
+		assertThat(response.getGoodPlaceCount()).isZero();
+		assertThat(otherUserResponse).isNull();
+	}
+
+	@Test
 	@DisplayName("소유자만 그룹 이름을 수정하고 그룹을 삭제할 수 있다")
 	void updateAndDeleteGroupChecksOwner() {
 		groupMapper.insertGroup(createGroup(TEST_USER_ID, "수정 전", false));

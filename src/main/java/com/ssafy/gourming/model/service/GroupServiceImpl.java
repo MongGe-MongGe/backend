@@ -111,7 +111,12 @@ public class GroupServiceImpl implements GroupService{
 			throw new IllegalStateException("Failed to update group: " + groupId);
 		}
 
-		return findGroupResponseById(userId, groupId);
+		GroupResponse updatedGroup =
+			groupMapper.selectGroupResponseById(userId, groupId);
+		if (updatedGroup == null) {
+			throw new NoSuchElementException("Group not found: " + groupId);
+		}
+		return updatedGroup;
 	}
 
 	@Override
@@ -143,17 +148,6 @@ public class GroupServiceImpl implements GroupService{
 		if (!group.getUserId().equals(userId)) {
 			throw new IllegalArgumentException("Group does not belong to user");
 		}
-	}
-
-	private GroupResponse findGroupResponseById(String userId, String groupId) {
-		// 수정 후 맛집 수까지 포함된 응답을 반환하기 위해 목록 결과에서 찾는다.
-		List<GroupResponse> groups = groupMapper.selectGroupsByUserId(userId);
-		for (GroupResponse group : groups) {
-			if (group.getId().equals(groupId)) {
-				return group;
-			}
-		}
-		throw new NoSuchElementException("Group not found: " + groupId);
 	}
 
 }

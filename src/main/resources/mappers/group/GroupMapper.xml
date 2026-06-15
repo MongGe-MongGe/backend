@@ -78,6 +78,24 @@
 			g.created_at ASC
 	</select>
 
+	<select id="selectGroupResponseById" resultMap="groupResponseResultMap">
+		SELECT
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at,
+			COUNT(gp.id) AS good_place_count
+		FROM `groups` g
+		LEFT JOIN good_places gp ON gp.group_id = g.id
+		WHERE g.user_id = #{userId}
+		  AND g.id = #{groupId}
+		GROUP BY
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at
+	</select>
+
 	<select id="selectGroupByUserIdAndName" resultMap="groupEntityResultMap">
 		SELECT
 			id,

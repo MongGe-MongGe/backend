@@ -27,6 +27,7 @@ class UserServiceTest {
     @Mock PasswordEncoder passwordEncoder;
     @Mock JwtUtil jwtUtil;
     @Mock GroupService groupService;
+    @Mock ImageService imageService;
     @InjectMocks UserServiceImpl userService;
 
     @BeforeEach

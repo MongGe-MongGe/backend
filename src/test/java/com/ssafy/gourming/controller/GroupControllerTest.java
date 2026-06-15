@@ -32,6 +32,7 @@ import com.ssafy.gourming.model.dto.GroupDto.GroupResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupUpdateRequest;
 import com.ssafy.gourming.model.service.GroupService;
 import com.ssafy.gourming.security.LoginUser;
+import com.ssafy.gourming.util.JwtUtil;
 
 @WebMvcTest(GroupController.class)
 @Import(SecurityConfig.class)
@@ -51,11 +52,14 @@ class GroupControllerTest {
 	@MockitoBean
 	private GroupService groupService;
 
+	@MockitoBean
+	private JwtUtil jwtUtil;
+
 	@Test
 	@DisplayName("인증 없이 내 그룹 목록을 조회할 수 없다")
 	void getMyGroupsWithoutAuthenticationFails() throws Exception {
 		mockMvc.perform(get("/api/users/me/groups"))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isUnauthorized());
 
 		verify(groupService, never()).getGroupsByUserId(any());
 	}
@@ -119,7 +123,7 @@ class GroupControllerTest {
 		mockMvc.perform(post("/api/users/me/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isUnauthorized());
 
 		verify(groupService, never()).createGroup(any(), any());
 	}
@@ -174,7 +178,7 @@ class GroupControllerTest {
 		mockMvc.perform(put("/api/users/me/groups/{groupId}", GROUP_ID)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isUnauthorized());
 
 		verify(groupService, never()).updateGroup(any(), any(), any());
 	}
@@ -208,7 +212,7 @@ class GroupControllerTest {
 	@DisplayName("인증 없이 그룹을 삭제할 수 없다")
 	void deleteGroupWithoutAuthenticationFails() throws Exception {
 		mockMvc.perform(delete("/api/users/me/groups/{groupId}", GROUP_ID))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isUnauthorized());
 
 		verify(groupService, never()).deleteGroup(any(), any());
 	}

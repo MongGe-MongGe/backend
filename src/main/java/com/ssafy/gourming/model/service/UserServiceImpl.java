@@ -133,7 +133,7 @@ public class UserServiceImpl implements UserService{
 			throw new IllegalArgumentException("Already Exists Handle");
 		}
 		
-		// 3. 이미지 동기화: 새 이미지가 설정된 경우 상태 업데이트 (피드백 1)
+		// 3. 이미지 동기화: 새 이미지가 설정된 경우 상태 업데이트
 		String oldImage = authUser.getProfileImage();
 		String newImage = request.getProfileImage();
 		

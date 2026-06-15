@@ -30,20 +30,17 @@ public class UserController {
 	private final UserService userService;
 
 	/**
-	 * 핸들 중복 여부를 확인하는 엔드포인트입니다.
+	 * 핸들 존재 여부를 확인하는 엔드포인트입니다.
 	 * 프론트엔드에서 디바운싱을 통해 입력 도중 호출되며,
-	 * 사용 가능한 핸들일 경우 true, 이미 존재하는 핸들일 경우 false를 반환합니다.
+	 * 이미 존재하는 핸들일 경우 true, 사용 가능한 핸들일 경우 false를 반환합니다.
 	 * 
 	 * @param handle 중복을 검사할 사용자 핸들(예: @testUser)
-	 * @return { "available": boolean } 형태의 JSON 객체
+	 * @return 존재하면 true, 존재하지 않으면 false
 	 */
 	@GetMapping("/check-handle")
-	public ResponseEntity<?> checkHandle(@RequestParam String handle) {
-		if (!handle.matches(com.ssafy.gourming.util.ValidationConstants.HANDLE_REGEX)) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(com.ssafy.gourming.util.ValidationConstants.HANDLE_MESSAGE);
-		}
-		boolean isAvailable = userService.isHandleAvailable(handle);
-		return ResponseEntity.ok(Map.of("available", isAvailable));
+	public ResponseEntity<Boolean> checkHandle(@RequestParam String handle) {
+		boolean exists = !userService.isHandleAvailable(handle);
+		return ResponseEntity.ok(exists);
 	}
 
 	@GetMapping("/{handle}")

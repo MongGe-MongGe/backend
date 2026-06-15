@@ -117,14 +117,9 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 		validateOwner(group, userId);
 
 		// 다른 그룹의 동일 장소 저장 기록은 유지하고 지정한 그룹의 기록만 삭제한다.
-		GoodPlaceEntity goodPlace = goodPlaceMapper.selectGoodPlace(userId, groupId, placeId);
-		if (goodPlace == null) {
-			throw new NoSuchElementException("Good place not found: " + placeId);
-		}
-
 		int deletedCount = goodPlaceMapper.deleteGoodPlaceFromGroup(userId, groupId, placeId);
 		if (deletedCount == 0) {
-			throw new IllegalStateException("Failed to delete good place: " + placeId);
+			throw new NoSuchElementException("Good place not found: " + placeId);
 		}
 	}
 

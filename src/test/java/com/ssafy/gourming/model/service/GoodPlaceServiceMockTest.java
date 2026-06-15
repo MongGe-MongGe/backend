@@ -239,13 +239,12 @@ class GoodPlaceServiceMockTest {
 	@DisplayName("소유한 그룹에서 맛집을 삭제한다")
 	void deleteGoodPlaceFromGroup() {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(createGroup(USER_ID));
-		when(goodPlaceMapper.selectGoodPlace(USER_ID, GROUP_ID, PLACE_ID))
-			.thenReturn(createGoodPlaceEntity());
 		when(goodPlaceMapper.deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID))
 			.thenReturn(1);
 
 		goodPlaceService.deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID);
 
+		verify(goodPlaceMapper, never()).selectGoodPlace(any(), any(), any());
 		verify(goodPlaceMapper).deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID);
 	}
 
@@ -266,29 +265,16 @@ class GoodPlaceServiceMockTest {
 	@DisplayName("그룹에 저장되지 않은 맛집은 삭제할 수 없다")
 	void deleteMissingGoodPlaceFails() {
 		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(createGroup(USER_ID));
-		when(goodPlaceMapper.selectGoodPlace(USER_ID, GROUP_ID, PLACE_ID)).thenReturn(null);
+		when(goodPlaceMapper.deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID))
+			.thenReturn(0);
 
 		assertThatThrownBy(() ->
 			goodPlaceService.deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID))
 			.isInstanceOf(NoSuchElementException.class)
 			.hasMessage("Good place not found: " + PLACE_ID);
 
-		verify(goodPlaceMapper, never()).deleteGoodPlaceFromGroup(any(), any(), any());
-	}
-
-	@Test
-	@DisplayName("맛집 삭제가 DB에 반영되지 않으면 실패한다")
-	void deleteGoodPlaceDatabaseFails() {
-		when(groupMapper.selectGroupById(GROUP_ID)).thenReturn(createGroup(USER_ID));
-		when(goodPlaceMapper.selectGoodPlace(USER_ID, GROUP_ID, PLACE_ID))
-			.thenReturn(createGoodPlaceEntity());
-		when(goodPlaceMapper.deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID))
-			.thenReturn(0);
-
-		assertThatThrownBy(() ->
-			goodPlaceService.deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID))
-			.isInstanceOf(IllegalStateException.class)
-			.hasMessage("Failed to delete good place: " + PLACE_ID);
+		verify(goodPlaceMapper, never()).selectGoodPlace(any(), any(), any());
+		verify(goodPlaceMapper).deleteGoodPlaceFromGroup(USER_ID, GROUP_ID, PLACE_ID);
 	}
 
 	private GoodPlaceCreateRequest createRequest() {

@@ -146,6 +146,10 @@ public class UserServiceImpl implements UserService{
 		}
 
 		// 4. 모든 검증을 통과하면 DB에 프로필 업데이트 쿼리를 실행합니다.
-		userMapper.updateProfile(id, request);
+		try {
+			userMapper.updateProfile(id, request);
+		} catch (org.springframework.dao.DuplicateKeyException e) {
+			throw new IllegalArgumentException("Already Exists Handle");
+		}
 	}
 }

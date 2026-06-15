@@ -1,15 +1,21 @@
 package com.ssafy.gourming.controller;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
 
 import com.ssafy.gourming.model.dto.UserDto;
 import com.ssafy.gourming.model.service.UserService;
@@ -32,12 +38,12 @@ public class UserController {
 	 * @return { "available": boolean } 형태의 JSON 객체
 	 */
 	@GetMapping("/check-handle")
-	public ResponseEntity<?> checkHandle(@org.springframework.web.bind.annotation.RequestParam String handle) {
+	public ResponseEntity<?> checkHandle(@RequestParam String handle) {
 		if (!handle.matches(com.ssafy.gourming.util.ValidationConstants.HANDLE_REGEX)) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(com.ssafy.gourming.util.ValidationConstants.HANDLE_MESSAGE);
 		}
 		boolean isAvailable = userService.isHandleAvailable(handle);
-		return ResponseEntity.ok(java.util.Map.of("available", isAvailable));
+		return ResponseEntity.ok(Map.of("available", isAvailable));
 	}
 
 	@GetMapping("/{handle}")
@@ -55,9 +61,9 @@ public class UserController {
 	 * @return 성공 시 200 OK
 	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<?> updateProfile(@PathVariable String id, @jakarta.validation.Valid @RequestBody UserDto.UpdateProfileRequest request) {
+	public ResponseEntity<?> updateProfile(@PathVariable String id, @Valid @RequestBody UserDto.UpdateProfileRequest request) {
 		// 1. SecurityContext에서 JwtFilter를 통해 등록된 현재 인증된 사용자의 식별자(이메일)를 가져옵니다.
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		String authenticatedEmail = (String) auth.getPrincipal();
 
 		// 2. 서비스 레이어에 대상 id, 인증된 이메일, 수정 요청 데이터를 전달하여 비즈니스 로직(검증 및 업데이트)을 수행합니다.

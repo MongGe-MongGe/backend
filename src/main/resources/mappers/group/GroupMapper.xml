@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.GroupMapper">
+
+	<resultMap id="groupEntityResultMap" type="com.ssafy.gourming.model.dto.GroupDto$GroupEntity">
+		<id property="id" column="id" />
+		<result property="userId" column="user_id" />
+		<result property="name" column="name" />
+		<result property="defaultGroup" column="default_group" />
+		<result property="createdAt" column="created_at" />
+	</resultMap>
+
+	<resultMap id="groupResponseResultMap" type="com.ssafy.gourming.model.dto.GroupDto$GroupResponse">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="defaultGroup" column="default_group" />
+		<result property="goodPlaceCount" column="good_place_count" />
+		<result property="createdAt" column="created_at" />
+	</resultMap>
+
+	<insert id="insertGroup" parameterType="com.ssafy.gourming.model.dto.GroupDto$GroupEntity">
+		INSERT INTO `groups` (
+			user_id,
+			name,
+			default_group
+		)
+		VALUES (
+			#{userId},
+			#{name},
+			#{defaultGroup}
+		)
+	</insert>
+
+	<select id="selectGroupById" resultMap="groupEntityResultMap">
+		SELECT
+			id,
+			user_id,
+			name,
+			default_group,
+			created_at
+		FROM `groups`
+		WHERE id = #{groupId}
+	</select>
+
+	<select id="selectDefaultGroupByUserId" resultMap="groupEntityResultMap">
+		SELECT
+			id,
+			user_id,
+			name,
+			default_group,
+			created_at
+		FROM `groups`
+		WHERE user_id = #{userId}
+		  AND default_group = TRUE
+		LIMIT 1
+	</select>
+
+	<select id="selectGroupsByUserId" resultMap="groupResponseResultMap">
+		SELECT
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at,
+			COUNT(gp.id) AS good_place_count
+		FROM `groups` g
+		LEFT JOIN good_places gp ON gp.group_id = g.id
+		WHERE g.user_id = #{userId}
+		GROUP BY
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at
+		ORDER BY
+			g.default_group DESC,
+			g.created_at ASC
+	</select>
+
+	<select id="selectGroupResponseById" resultMap="groupResponseResultMap">
+		SELECT
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at,
+			COUNT(gp.id) AS good_place_count
+		FROM `groups` g
+		LEFT JOIN good_places gp ON gp.group_id = g.id
+		WHERE g.user_id = #{userId}
+		  AND g.id = #{groupId}
+		GROUP BY
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at
+	</select>
+
+	<select id="selectGroupByUserIdAndName" resultMap="groupEntityResultMap">
+		SELECT
+			id,
+			user_id,
+			name,
+			default_group,
+			created_at
+		FROM `groups`
+		WHERE user_id = #{userId}
+		  AND name = #{name}
+		LIMIT 1
+	</select>
+
+	<update id="updateGroupName">
+		UPDATE `groups`
+		SET name = #{name}
+		WHERE id = #{groupId}
+		  AND user_id = #{userId}
+	</update>
+
+	<delete id="deleteGroup">
+		DELETE FROM `groups`
+		WHERE id = #{groupId}
+		  AND user_id = #{userId}
+	</delete>
+
+</mapper>

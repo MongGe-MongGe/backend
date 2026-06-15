@@ -93,10 +93,11 @@ CREATE TABLE follows (
 -- Groups (굿플레이스 그룹)
 -- ============================================================
 CREATE TABLE `groups` (
-    id          CHAR(36)      NOT NULL DEFAULT (UUID()),
-    user_id     CHAR(36)      NOT NULL,
-    name        VARCHAR(100)  NOT NULL,
-    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id             CHAR(36)      NOT NULL DEFAULT (UUID()),
+    user_id        CHAR(36)      NOT NULL,
+    name           VARCHAR(100)  NOT NULL,
+    default_group  BOOLEAN       NOT NULL DEFAULT FALSE,
+    created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
     CONSTRAINT fk_groups_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE

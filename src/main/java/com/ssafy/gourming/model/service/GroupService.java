@@ -14,11 +14,7 @@ public interface GroupService {
 
 	GroupResponse createGroup(String userId, GroupCreateRequest request);
 
-	// 인증된 사용자의 그룹 목록 조회
-	List<GroupResponse> getMyGroups(String userId);
-
-	// 프로필에 표시할 특정 사용자의 그룹 목록 조회
-	List<GroupResponse> getUserGroups(String userId);
+	List<GroupResponse> getGroupsByUserId(String userId);
 
 	GroupResponse updateGroup(String userId, String groupId, GroupUpdateRequest request);
 

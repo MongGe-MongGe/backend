@@ -57,13 +57,13 @@ class GroupControllerTest {
 		mockMvc.perform(get("/api/users/me/groups"))
 			.andExpect(status().isForbidden());
 
-		verify(groupService, never()).getMyGroups(any());
+		verify(groupService, never()).getGroupsByUserId(any());
 	}
 
 	@Test
 	@DisplayName("내 그룹 목록을 조회한다")
 	void getMyGroups() throws Exception {
-		when(groupService.getMyGroups(USER_ID)).thenReturn(List.of(createResponse()));
+		when(groupService.getGroupsByUserId(USER_ID)).thenReturn(List.of(createResponse()));
 
 		mockMvc.perform(get("/api/users/me/groups").with(authentication(loginAuthentication())))
 			.andExpect(status().isOk())
@@ -71,19 +71,20 @@ class GroupControllerTest {
 			.andExpect(jsonPath("$[0].name").value("친구 추천"))
 			.andExpect(jsonPath("$[0].goodPlaceCount").value(2));
 
-		verify(groupService).getMyGroups(USER_ID);
+		verify(groupService).getGroupsByUserId(USER_ID);
 	}
 
 	@Test
 	@DisplayName("다른 사용자의 그룹 목록을 조회한다")
 	void getUserGroups() throws Exception {
-		when(groupService.getUserGroups(OTHER_USER_ID)).thenReturn(List.of(createResponse()));
+		when(groupService.getGroupsByUserId(OTHER_USER_ID))
+			.thenReturn(List.of(createResponse()));
 
 		mockMvc.perform(get("/api/users/{userId}/groups", OTHER_USER_ID))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].id").value(GROUP_ID));
 
-		verify(groupService).getUserGroups(OTHER_USER_ID);
+		verify(groupService).getGroupsByUserId(OTHER_USER_ID);
 	}
 
 	@Test

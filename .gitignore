@@ -164,5 +164,8 @@ coverage/
 *.war
 *.ear
 
+bin/
 # Maven Wrapper jar는 위에서 이미 제외됨.
 # 나중에 jar 파일을 직접 Git에 올려야 하는 특별한 상황이면 예외 규칙을 따로 추가하면 된다.
+# Uploaded files
+uploads/

@@ -1,5 +1,6 @@
 package com.ssafy.gourming.controller;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -15,6 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.mapper.GroupMapper;
+import com.ssafy.gourming.model.mapper.UserMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,14 +29,17 @@ class AuthControllerTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
+    @Autowired UserMapper userMapper;
+    @Autowired GroupMapper groupMapper;
 
     private String uid() { return String.valueOf(System.currentTimeMillis()); }
 
     @Test
     @DisplayName("[Auth] 회원가입 성공 → 201 Created")
     void signup_201() throws Exception {
+        String email = "s_" + uid() + "@test.com";
         Map<String, String> body = Map.of(
-            "email",    "s_" + uid() + "@test.com",
+            "email",    email,
             "password", "password123!",
             "nickname", "신규유저",
             "handle",   "@new_" + uid()
@@ -43,6 +50,10 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isCreated())
             .andDo(print());
+
+        UserDto.UserEntity createdUser = userMapper.findByEmail(email);
+        assertNotNull(createdUser);
+        assertNotNull(groupMapper.selectDefaultGroupByUserId(createdUser.getId()));
     }
 
     @Test

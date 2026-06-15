@@ -9,6 +9,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ssafy.gourming.model.dto.UserDto;
 import com.ssafy.gourming.model.mapper.UserMapper;
@@ -24,8 +25,10 @@ public class UserServiceImpl implements UserService{
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtUtil jwtUtil;
+	private final GroupService groupService;
 	
 	@Override
+	@Transactional
 	public void signup(UserDto.SignupRequest request) {
 		// 1. 이메일 중복 체크
 		if (userMapper.findByEmail(request.getEmail()) != null) {
@@ -42,6 +45,13 @@ public class UserServiceImpl implements UserService{
 
 		// 4. DB INSERT
 		userMapper.insertUser(request);
+
+		// DB에서 생성된 사용자 ID로 기본 그룹을 생성한다.
+		UserDto.UserEntity createdUser = userMapper.findByEmail(request.getEmail());
+		if (createdUser == null) {
+			throw new IllegalStateException("Failed to find created user");
+		}
+		groupService.createDefaultGroup(createdUser.getId());
 	}
 
 	@Override

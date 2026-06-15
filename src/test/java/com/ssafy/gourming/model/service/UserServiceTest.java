@@ -26,6 +26,7 @@ class UserServiceTest {
     @Mock UserMapper userMapper;
     @Mock PasswordEncoder passwordEncoder;
     @Mock JwtUtil jwtUtil;
+    @Mock GroupService groupService;
     @InjectMocks UserServiceImpl userService;
 
     @BeforeEach
@@ -37,12 +38,14 @@ class UserServiceTest {
     @DisplayName("[Service] 회원가입 성공")
     void signUp_success() {
         UserDto.SignupRequest req = makeSignupReq("new@email.com");
-        when(userMapper.findByEmail("new@email.com")).thenReturn(null);
+        UserDto.UserEntity createdUser = makeEntity("new@email.com", "$2a$encoded");
+        when(userMapper.findByEmail("new@email.com")).thenReturn(null, createdUser);
         when(passwordEncoder.encode(any())).thenReturn("$2a$encoded");
         log.info("Mock: findByEmail → null (중복 없음), encode → $2a$encoded");
 
         assertDoesNotThrow(() -> userService.signup(req));
         verify(userMapper, times(1)).insertUser(req);
+        verify(groupService).createDefaultGroup("uuid-001");
         log.info("✔ insertUser 1회 호출 확인");
     }
 
@@ -58,7 +61,23 @@ class UserServiceTest {
             IllegalArgumentException.class, () -> userService.signup(req));
         assertEquals("Already Exists Email", ex.getMessage());
         verify(userMapper, never()).insertUser(any());
+        verify(groupService, never()).createDefaultGroup(anyString());
         log.info("✔ 예외 메시지: '{}', insertUser 미호출 확인", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("[Service] 회원 저장 후 조회 실패 시 기본 그룹을 생성하지 않음")
+    void signUp_createdUserNotFound() {
+        UserDto.SignupRequest req = makeSignupReq("missing@email.com");
+        when(userMapper.findByEmail("missing@email.com")).thenReturn(null);
+        when(passwordEncoder.encode(any())).thenReturn("$2a$encoded");
+
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class, () -> userService.signup(req));
+
+        assertEquals("Failed to find created user", ex.getMessage());
+        verify(userMapper).insertUser(req);
+        verify(groupService, never()).createDefaultGroup(anyString());
     }
 
     @Test

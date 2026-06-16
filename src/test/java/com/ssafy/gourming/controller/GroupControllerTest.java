@@ -31,7 +31,6 @@ import com.ssafy.gourming.model.dto.GroupDto.GroupCreateRequest;
 import com.ssafy.gourming.model.dto.GroupDto.GroupResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupUpdateRequest;
 import com.ssafy.gourming.model.service.GroupService;
-import com.ssafy.gourming.security.LoginUser;
 import com.ssafy.gourming.util.JwtUtil;
 
 @WebMvcTest(GroupController.class)
@@ -218,8 +217,7 @@ class GroupControllerTest {
 	}
 
 	private Authentication loginAuthentication() {
-		LoginUser loginUser = new LoginUser(USER_ID, "user@test.com");
-		return new UsernamePasswordAuthenticationToken(loginUser, null, List.of());
+		return new UsernamePasswordAuthenticationToken(USER_ID, null, List.of());
 	}
 
 	private GroupResponse createResponse() {

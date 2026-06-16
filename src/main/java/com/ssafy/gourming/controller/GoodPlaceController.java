@@ -16,7 +16,6 @@ import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceCreateRequest;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlacePageResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceResponse;
 import com.ssafy.gourming.model.service.GoodPlaceService;
-import com.ssafy.gourming.security.LoginUser;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -46,23 +45,23 @@ public class GoodPlaceController {
 	// 맛집 변경 API는 인증 principal의 사용자 ID를 사용한다.
 	@PostMapping("/me/groups/{groupId}/good-places")
 	public ResponseEntity<GoodPlaceResponse> createGoodPlace(
-		@AuthenticationPrincipal LoginUser loginUser,
+		@AuthenticationPrincipal String userId,
 		@PathVariable String groupId,
 		@Valid @RequestBody GoodPlaceCreateRequest request
 	) {
 		GoodPlaceResponse response =
-			goodPlaceService.createGoodPlace(loginUser.id(), groupId, request);
+			goodPlaceService.createGoodPlace(userId, groupId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
 	// places 데이터는 유지하고 해당 그룹의 저장 관계만 삭제한다.
 	@DeleteMapping("/me/groups/{groupId}/good-places/{placeId}")
 	public ResponseEntity<Void> deleteGoodPlaceFromGroup(
-		@AuthenticationPrincipal LoginUser loginUser,
+		@AuthenticationPrincipal String userId,
 		@PathVariable String groupId,
 		@PathVariable String placeId
 	) {
-		goodPlaceService.deleteGoodPlaceFromGroup(loginUser.id(), groupId, placeId);
+		goodPlaceService.deleteGoodPlaceFromGroup(userId, groupId, placeId);
 		return ResponseEntity.noContent().build();
 	}
 }

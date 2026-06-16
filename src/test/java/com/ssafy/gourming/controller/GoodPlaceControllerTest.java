@@ -35,7 +35,7 @@ import com.ssafy.gourming.model.dto.GoodPlaceDto.GoodPlaceResponse;
 import com.ssafy.gourming.model.dto.GoodPlaceDto.PlaceSummary;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 import com.ssafy.gourming.model.service.GoodPlaceService;
-import com.ssafy.gourming.security.LoginUser;
+import com.ssafy.gourming.util.JwtUtil;
 
 @WebMvcTest(GoodPlaceController.class)
 @Import(SecurityConfig.class)
@@ -55,6 +55,9 @@ class GoodPlaceControllerTest {
 
 	@MockitoBean
 	private GoodPlaceService goodPlaceService;
+
+	@MockitoBean
+	private JwtUtil jwtUtil;
 
 	@Test
 	@DisplayName("인증 없이 다른 사용자의 그룹 맛집을 조회한다")
@@ -129,7 +132,7 @@ class GoodPlaceControllerTest {
 		mockMvc.perform(post("/api/users/me/groups/{groupId}/good-places", GROUP_ID)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(createRequest())))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isUnauthorized());
 
 		verify(goodPlaceService, never()).createGoodPlace(any(), any(), any());
 	}
@@ -185,14 +188,13 @@ class GoodPlaceControllerTest {
 				GROUP_ID,
 				PLACE_ID
 			))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isUnauthorized());
 
 		verify(goodPlaceService, never()).deleteGoodPlaceFromGroup(any(), any(), any());
 	}
 
 	private Authentication loginAuthentication() {
-		LoginUser loginUser = new LoginUser(USER_ID, "user@test.com");
-		return new UsernamePasswordAuthenticationToken(loginUser, null, List.of());
+		return new UsernamePasswordAuthenticationToken(USER_ID, null, List.of());
 	}
 
 	private GoodPlaceCreateRequest createRequest() {

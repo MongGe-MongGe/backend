@@ -26,6 +26,14 @@
         WHERE email = #{email}
     </select>
 
+    <select id="findById"
+            parameterType="String"
+            resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
+        SELECT id, email, password, nickname, handle, profile_image, phone, bio
+        FROM users
+        WHERE id = #{id}
+    </select>
+
     <select id="findByHandle"
             parameterType="String"
             resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
@@ -33,5 +41,20 @@
         FROM users
         WHERE handle = #{handle}
     </select>
+
+    <select id="existsByHandle" parameterType="String" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM users WHERE handle = #{handle}
+        )
+    </select>
+
+    <update id="updateProfile">
+        UPDATE users
+        SET nickname = #{request.nickname},
+            handle = #{request.handle},
+            profile_image = #{request.profileImage},
+            bio = #{request.bio}
+        WHERE id = #{id}
+    </update>
 
 </mapper>

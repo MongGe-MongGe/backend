@@ -74,6 +74,31 @@ public class UserMapperTest {
 	}
 
 	@Test
+	@DisplayName("[Mapper] 사용자 ID로 조회 성공")
+	void findById_success() {
+		String email = "id_" + uid() + "@test.com";
+		String handle = "@id_" + uid();
+
+		UserDto.SignupRequest req = new UserDto.SignupRequest();
+		ReflectionTestUtils.setField(req, "email", email);
+		ReflectionTestUtils.setField(req, "password", "$2a$12$hashedPw");
+		ReflectionTestUtils.setField(req, "nickname", "아이디조회유저");
+		ReflectionTestUtils.setField(req, "handle", handle);
+
+		userMapper.insertUser(req);
+		UserDto.UserEntity insertedUser = userMapper.findByEmail(email);
+
+		assertNotNull(insertedUser);
+
+		UserDto.UserEntity result = userMapper.findById(insertedUser.getId());
+
+		assertNotNull(result);
+		assertEquals(insertedUser.getId(), result.getId());
+		assertEquals(email, result.getEmail());
+		assertEquals(handle, result.getHandle());
+	}
+
+	@Test
 	@DisplayName("[Mapper] handle로 사용자 조회 성공")
 	void findByHandle_success() {
 		String handle = "@h_" + uid();

@@ -1,12 +1,7 @@
 package com.ssafy.gourming.controller;
 
-import java.util.Map;
-import java.util.NoSuchElementException;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -54,17 +49,17 @@ public class UserController {
 	 * 보안을 위해 URL 경로의 id와 토큰에 저장된 유저의 id가 일치하는지 검증합니다.
 	 * 
 	 * @param id 수정 대상 유저의 고유 식별자(UUID 등)
+	 * @param authenticatedUserId JWT에서 추출한 현재 인증 사용자의 ID
 	 * @param request 변경할 프로필 정보가 담긴 요청 객체
 	 * @return 성공 시 200 OK
 	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<?> updateProfile(@PathVariable String id, @Valid @RequestBody UserDto.UpdateProfileRequest request) {
-		// 1. SecurityContext에서 JwtFilter를 통해 등록된 현재 인증된 사용자의 식별자(이메일)를 가져옵니다.
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedEmail = (String) auth.getPrincipal();
-
-		// 2. 서비스 레이어에 대상 id, 인증된 이메일, 수정 요청 데이터를 전달하여 비즈니스 로직(검증 및 업데이트)을 수행합니다.
-		userService.updateProfile(id, authenticatedEmail, request);
+	public ResponseEntity<?> updateProfile(
+			@PathVariable String id,
+			@AuthenticationPrincipal String authenticatedUserId,
+			@Valid @RequestBody UserDto.UpdateProfileRequest request
+	) {
+		userService.updateProfile(id, authenticatedUserId, request);
 		return ResponseEntity.ok().build();
 	}
 }

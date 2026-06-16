@@ -18,7 +18,6 @@ import com.ssafy.gourming.model.dto.GroupDto.GroupCreateRequest;
 import com.ssafy.gourming.model.dto.GroupDto.GroupResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupUpdateRequest;
 import com.ssafy.gourming.model.service.GroupService;
-import com.ssafy.gourming.security.LoginUser;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +29,12 @@ public class GroupController {
 
 	private final GroupService groupService;
 
-	// LoginUser는 JWT 필터가 SecurityContext에 등록할 인증 사용자 정보다.
+	// JWT 필터가 SecurityContext에 등록한 사용자 ID를 사용한다.
 	@GetMapping("/me/groups")
 	public ResponseEntity<List<GroupResponse>> getMyGroups(
-		@AuthenticationPrincipal LoginUser loginUser
+		@AuthenticationPrincipal String userId
 	) {
-		return ResponseEntity.ok(groupService.getGroupsByUserId(loginUser.id()));
+		return ResponseEntity.ok(groupService.getGroupsByUserId(userId));
 	}
 
 	@GetMapping("/{userId}/groups")
@@ -47,28 +46,28 @@ public class GroupController {
 
 	@PostMapping("/me/groups")
 	public ResponseEntity<GroupResponse> createGroup(
-		@AuthenticationPrincipal LoginUser loginUser,
+		@AuthenticationPrincipal String userId,
 		@Valid @RequestBody GroupCreateRequest request
 	) {
-		GroupResponse response = groupService.createGroup(loginUser.id(), request);
+		GroupResponse response = groupService.createGroup(userId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
 	@PutMapping("/me/groups/{groupId}")
 	public ResponseEntity<GroupResponse> updateGroup(
-		@AuthenticationPrincipal LoginUser loginUser,
+		@AuthenticationPrincipal String userId,
 		@PathVariable String groupId,
 		@Valid @RequestBody GroupUpdateRequest request
 	) {
-		return ResponseEntity.ok(groupService.updateGroup(loginUser.id(), groupId, request));
+		return ResponseEntity.ok(groupService.updateGroup(userId, groupId, request));
 	}
 
 	@DeleteMapping("/me/groups/{groupId}")
 	public ResponseEntity<Void> deleteGroup(
-		@AuthenticationPrincipal LoginUser loginUser,
+		@AuthenticationPrincipal String userId,
 		@PathVariable String groupId
 	) {
-		groupService.deleteGroup(loginUser.id(), groupId);
+		groupService.deleteGroup(userId, groupId);
 		return ResponseEntity.noContent().build();
 	}
 }

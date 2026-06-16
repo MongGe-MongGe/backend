@@ -3,6 +3,7 @@ package com.ssafy.gourming.model.service;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import javax.crypto.SecretKey;
 
@@ -66,7 +67,7 @@ public class UserServiceImpl implements UserService{
 		}
 		
 		// 3. JWT 생성 후 응답 반환 (프로필 정보 전체를 Body에 포함)
-		String token = jwtUtil.generateToken(user.getEmail());
+		String token = jwtUtil.generateToken(user.getEmail(), user.getId());
 		return new UserDto.LoginResponse(
 				token, 
 				user.getId(), 
@@ -112,24 +113,32 @@ public class UserServiceImpl implements UserService{
 	 * 사용자의 프로필 정보를 수정합니다.
 	 * 수정 시 권한(본인 여부) 검증과 핸들 중복 검사를 수행합니다.
 	 * 
-	 * @param id 수정하려는 대상 사용자의 식별자(UUID)
-	 * @param authenticatedEmail SecurityContext에서 가져온 현재 인증된 사용자의 이메일
+	 * @param targetUserId 수정하려는 대상 사용자의 식별자(UUID)
+	 * @param authenticatedUserId SecurityContext에서 가져온 현재 인증된 사용자의 ID
 	 * @param request 변경할 프로필 데이터(닉네임, 핸들, 이미지, 소개 등)
 	 * @throws SecurityException 본인의 프로필이 아닐 경우 예외 발생
 	 * @throws IllegalArgumentException 변경하려는 핸들이 이미 타인에 의해 사용 중인 경우 예외 발생
 	 */
 	@Override
-	public void updateProfile(String id, String authenticatedEmail, UserDto.UpdateProfileRequest request) {
-		// 1. 권한 검증: 토큰의 이메일로 조회한 유저의 ID가 수정하려는 대상 ID와 일치하는지 확인합니다.
-		UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-		if (authUser == null || !authUser.getId().equals(id)) {
+	public void updateProfile(
+			String targetUserId,
+			String authenticatedUserId,
+			UserDto.UpdateProfileRequest request
+	) {
+		// 1. 토큰의 사용자 ID와 수정 대상 ID를 비교해 본인 요청인지 확인합니다.
+		if (!Objects.equals(authenticatedUserId, targetUserId)) {
 			throw new SecurityException("자신의 프로필만 수정할 수 있습니다.");
+		}
+
+		UserDto.UserEntity authUser = userMapper.findById(authenticatedUserId);
+		if (authUser == null) {
+			throw new NoSuchElementException("User not found: " + authenticatedUserId);
 		}
 
 		// 2. 핸들 중복 체크: 사용자가 핸들을 변경하려고 할 때, 해당 핸들이 이미 존재하는지 확인합니다.
 		// (단, 기존에 본인이 사용 중인 핸들을 그대로 유지하는 경우는 허용합니다.)
 		UserDto.UserEntity existingHandleUser = userMapper.findByHandle(request.getHandle());
-		if (existingHandleUser != null && !existingHandleUser.getId().equals(id)) {
+		if (existingHandleUser != null && !existingHandleUser.getId().equals(targetUserId)) {
 			throw new IllegalArgumentException("Already Exists Handle");
 		}
 		
@@ -147,7 +156,7 @@ public class UserServiceImpl implements UserService{
 
 		// 4. 모든 검증을 통과하면 DB에 프로필 업데이트 쿼리를 실행합니다.
 		try {
-			userMapper.updateProfile(id, request);
+			userMapper.updateProfile(targetUserId, request);
 		} catch (org.springframework.dao.DuplicateKeyException e) {
 			throw new IllegalArgumentException("Already Exists Handle");
 		}

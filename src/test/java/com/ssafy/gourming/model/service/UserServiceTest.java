@@ -3,6 +3,8 @@ package com.ssafy.gourming.model.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.NoSuchElementException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -88,7 +90,7 @@ class UserServiceTest {
         UserDto.UserEntity entity = makeEntity("user@email.com", "$2a$hashed");
         when(userMapper.findByEmail("user@email.com")).thenReturn(entity);
         when(passwordEncoder.matches("plainPw", "$2a$hashed")).thenReturn(true);
-        when(jwtUtil.generateToken("user@email.com")).thenReturn("mock.jwt.token");
+        when(jwtUtil.generateToken("user@email.com", "uuid-001")).thenReturn("mock.jwt.token");
         log.info("Mock: findByEmail → entity, matches → true, generateToken → mock");
 
         UserDto.LoginResponse res = userService.login(req);
@@ -96,6 +98,7 @@ class UserServiceTest {
 
         assertNotNull(res.getToken());
         assertFalse(res.getToken().isEmpty());
+        verify(jwtUtil).generateToken("user@email.com", "uuid-001");
         log.info("✔ JWT 토큰 정상 발급");
     }
 
@@ -121,6 +124,57 @@ class UserServiceTest {
 
         assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> userService.login(req));
         log.info("✔ BadCredentialsException 발생");
+    }
+
+    @Test
+    @DisplayName("[Service] 본인 프로필 수정 성공")
+    void updateProfile_success() {
+        UserDto.UpdateProfileRequest request =
+            new UserDto.UpdateProfileRequest("새닉네임", "@newhandle", "new-image", "소개");
+        UserDto.UserEntity authUser = makeEntity("user@email.com", "$2a$hashed");
+        ReflectionTestUtils.setField(authUser, "profileImage", "old-image");
+
+        when(userMapper.findById("uuid-001")).thenReturn(authUser);
+        when(userMapper.findByHandle("@newhandle")).thenReturn(null);
+
+        assertDoesNotThrow(() -> userService.updateProfile("uuid-001", "uuid-001", request));
+
+        verify(userMapper).findById("uuid-001");
+        verify(userMapper, never()).findByEmail(anyString());
+        verify(imageService).syncImages(any(String[].class), any(String[].class));
+        verify(userMapper).updateProfile("uuid-001", request);
+    }
+
+    @Test
+    @DisplayName("[Service] 다른 사용자의 프로필 수정 차단")
+    void updateProfile_forbidden() {
+        UserDto.UpdateProfileRequest request =
+            new UserDto.UpdateProfileRequest("새닉네임", "@newhandle", null, "소개");
+
+        SecurityException ex = assertThrows(
+            SecurityException.class,
+            () -> userService.updateProfile("user-2", "user-1", request)
+        );
+
+        assertEquals("자신의 프로필만 수정할 수 있습니다.", ex.getMessage());
+        verify(userMapper, never()).findById(anyString());
+        verify(userMapper, never()).updateProfile(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("[Service] 존재하지 않는 사용자 프로필 수정 실패")
+    void updateProfile_userNotFound() {
+        UserDto.UpdateProfileRequest request =
+            new UserDto.UpdateProfileRequest("새닉네임", "@newhandle", null, "소개");
+        when(userMapper.findById("user-1")).thenReturn(null);
+
+        NoSuchElementException ex = assertThrows(
+            NoSuchElementException.class,
+            () -> userService.updateProfile("user-1", "user-1", request)
+        );
+
+        assertEquals("User not found: user-1", ex.getMessage());
+        verify(userMapper, never()).updateProfile(anyString(), any());
     }
 
     // ─── 헬퍼 ────────────────────────────────────────────────────────

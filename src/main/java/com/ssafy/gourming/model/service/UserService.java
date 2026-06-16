@@ -7,5 +7,5 @@ public interface UserService {
 	UserDto.LoginResponse login(UserDto.LoginRequest request);
 	boolean isHandleAvailable(String handle);
 	UserDto.UserProfileResponse getUserProfile(String handle);
-	void updateProfile(String id, String authenticatedEmail, UserDto.UpdateProfileRequest request);
+	void updateProfile(String targetUserId, String authenticatedUserId, UserDto.UpdateProfileRequest request);
 }

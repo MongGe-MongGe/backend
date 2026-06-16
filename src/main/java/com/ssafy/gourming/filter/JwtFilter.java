@@ -42,12 +42,12 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtil.validateToken(jwt)) {
-                // 토큰이 정상일 경우 이메일을 추출하여 인증 주체(Principal)로 설정합니다.
-                String email = jwtUtil.getEmailFromToken(jwt);
+                // 토큰이 정상일 경우 사용자 ID를 인증 주체(Principal)로 설정합니다.
+                String userId = jwtUtil.getUserIdFromToken(jwt);
 
                 // Authentication 객체 생성 (비밀번호는 null, 권한은 빈 리스트)
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, new ArrayList<>());
+                        userId, null, new ArrayList<>());
                 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

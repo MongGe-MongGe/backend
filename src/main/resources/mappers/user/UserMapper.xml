@@ -26,6 +26,14 @@
         WHERE email = #{email}
     </select>
 
+    <select id="findById"
+            parameterType="String"
+            resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
+        SELECT id, email, password, nickname, handle, profile_image, phone, bio
+        FROM users
+        WHERE id = #{id}
+    </select>
+
     <select id="findByHandle"
             parameterType="String"
             resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">

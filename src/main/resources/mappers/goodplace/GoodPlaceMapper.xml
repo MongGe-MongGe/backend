@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.GoodPlaceMapper">
+
+	<resultMap id="goodPlaceEntityResultMap"
+		type="com.ssafy.gourming.model.dto.GoodPlaceDto$GoodPlaceEntity">
+		<id property="id" column="id" />
+		<result property="userId" column="user_id" />
+		<result property="groupId" column="group_id" />
+		<result property="placeId" column="place_id" />
+		<result property="createdAt" column="created_at" />
+	</resultMap>
+
+	<resultMap id="goodPlaceDetailResultMap"
+		type="com.ssafy.gourming.model.dto.GoodPlaceDto$GoodPlaceDetailResponse">
+		<id property="id" column="good_place_id" />
+		<result property="groupId" column="group_id" />
+		<result property="createdAt" column="good_place_created_at" />
+		<association property="place"
+			javaType="com.ssafy.gourming.model.dto.GoodPlaceDto$PlaceSummary">
+			<id property="id" column="place_id" />
+			<result property="name" column="place_name" />
+			<result property="categoryName" column="category_name" />
+			<result property="roadAddressName" column="road_address_name" />
+			<result property="x" column="x" />
+			<result property="y" column="y" />
+		</association>
+	</resultMap>
+
+	<insert id="insertGoodPlace"
+		parameterType="com.ssafy.gourming.model.dto.GoodPlaceDto$GoodPlaceEntity">
+		INSERT INTO good_places (
+			user_id,
+			group_id,
+			place_id
+		)
+		VALUES (
+			#{userId},
+			#{groupId},
+			#{placeId}
+		)
+	</insert>
+
+	<select id="selectGoodPlace" resultMap="goodPlaceEntityResultMap">
+		SELECT
+			id,
+			user_id,
+			group_id,
+			place_id,
+			created_at
+		FROM good_places
+		WHERE user_id = #{userId}
+		  AND group_id = #{groupId}
+		  AND place_id = #{placeId}
+	</select>
+
+	<select id="selectGoodPlacesByGroup" resultMap="goodPlaceDetailResultMap">
+		SELECT
+			gp.id AS good_place_id,
+			gp.group_id,
+			gp.created_at AS good_place_created_at,
+			p.id AS place_id,
+			p.name AS place_name,
+			p.category_name,
+			p.road_address_name,
+			p.x,
+			p.y
+		FROM good_places gp
+		JOIN places p ON p.id = gp.place_id
+		WHERE gp.user_id = #{userId}
+		  AND gp.group_id = #{groupId}
+		ORDER BY gp.created_at DESC, gp.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countGoodPlacesByGroup" resultType="long">
+		SELECT COUNT(*)
+		FROM good_places
+		WHERE user_id = #{userId}
+		  AND group_id = #{groupId}
+	</select>
+
+	<delete id="deleteGoodPlaceFromGroup">
+		DELETE FROM good_places
+		WHERE user_id = #{userId}
+		  AND group_id = #{groupId}
+		  AND place_id = #{placeId}
+	</delete>
+
+</mapper>

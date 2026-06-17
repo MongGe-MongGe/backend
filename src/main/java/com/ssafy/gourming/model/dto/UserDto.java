@@ -56,6 +56,7 @@ public class UserDto {
 		private String email;
 		private String handle;
 		private String profileImage;
+		private String role;
 	}
 	
 	@Getter
@@ -68,6 +69,7 @@ public class UserDto {
 		private String handle;
 		private String phone;
 		private String profileImage;
+		private String role;      // 사용자 권한
 		private String bio;       // 자기소개 (프로필 조회에서 사용)
 	}
 	
@@ -84,6 +86,7 @@ public class UserDto {
 		private String nickname;
 		private String handle;
 		private String profileImage;
+		private String role;
 		private String bio;
 		
 		// 확장 필드

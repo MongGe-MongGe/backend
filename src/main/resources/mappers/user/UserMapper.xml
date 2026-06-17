@@ -21,7 +21,7 @@
     <select id="findByEmail"
             parameterType="String"
             resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
-        SELECT id, email, password, nickname, handle, profile_image, phone
+        SELECT id, email, password, nickname, handle, profile_image, phone, role
         FROM users
         WHERE email = #{email}
     </select>
@@ -29,7 +29,7 @@
     <select id="findById"
             parameterType="String"
             resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
-        SELECT id, email, password, nickname, handle, profile_image, phone, bio
+        SELECT id, email, password, nickname, handle, profile_image, phone, bio, role
         FROM users
         WHERE id = #{id}
     </select>
@@ -37,7 +37,7 @@
     <select id="findByHandle"
             parameterType="String"
             resultType="com.ssafy.gourming.model.dto.UserDto$UserEntity">
-        SELECT id, nickname, handle, profile_image, bio
+        SELECT id, nickname, handle, profile_image, bio, role
         FROM users
         WHERE handle = #{handle}
     </select>

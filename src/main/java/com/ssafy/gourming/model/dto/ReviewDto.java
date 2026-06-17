@@ -24,7 +24,7 @@ public class ReviewDto {
 
 		private String id;
 		private String content;
-		private String imagesJson;
+		private List<String> images;
 		private Integer ratingScore;
 		private LocalDate visitedAt;
 		private String placeId;

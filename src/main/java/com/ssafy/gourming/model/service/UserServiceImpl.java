@@ -90,23 +90,28 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public UserDto.UserProfileResponse getUserProfile(String handle) {
-		// 1. handle로 사용자 조회 (내부 전용 UserEntity로 받음)
-		UserDto.UserEntity user = userMapper.findByHandle(handle);
-		
-		// 2. 존재하지 않는 handle이면 예외처리
-		if(user == null) {
-			throw new NoSuchElementException("User not found: " + handle);
+	public UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId) {
+		String currentUserId = null;
+		// SecurityContext에서 얻어온 주체가 익명 사용자(anonymousUser)가 아닐 경우 식별자를 매핑합니다.
+		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
+			currentUserId = authenticatedUserId;
 		}
 		
-		// 3. 민감 필드(password, phone, email)를 제외하고 안전 필드만 UserProfileResponse로 변환
-		return new UserDto.UserProfileResponse(
-				user.getId(), 
-				user.getNickname(), 
-				user.getHandle(), 
-				user.getProfileImage(), 
-				user.getBio()
-			);
+		UserDto.UserProfileResponse profile = userMapper.getUserProfileWithStats(handle, currentUserId);
+		if(profile == null) {
+			throw new NoSuchElementException("User not found: " + handle);
+		}
+		return profile;
+	}
+
+	@Override
+	public java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedUserId, int limit, int offset) {
+		String currentUserId = null;
+		// 검색을 요청한 현재 인증 사용자가 있을 경우, 목록 데이터와 함께 팔로우 상태를 도출할 수 있도록 식별자를 준비합니다.
+		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
+			currentUserId = authenticatedUserId;
+		}
+		return userMapper.searchUsers(keyword, currentUserId, limit, offset);
 	}
 
 	/**

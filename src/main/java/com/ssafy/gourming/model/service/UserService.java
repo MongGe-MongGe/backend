@@ -6,6 +6,7 @@ public interface UserService {
 	void signup(UserDto.SignupRequest request);
 	UserDto.LoginResponse login(UserDto.LoginRequest request);
 	boolean isHandleAvailable(String handle);
-	UserDto.UserProfileResponse getUserProfile(String handle);
-	void updateProfile(String targetUserId, String authenticatedUserId, UserDto.UpdateProfileRequest request);
+	UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId);
+	java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedUserId, int limit, int offset);
+	void updateProfile(String id, String authenticatedEmail, UserDto.UpdateProfileRequest request);
 }

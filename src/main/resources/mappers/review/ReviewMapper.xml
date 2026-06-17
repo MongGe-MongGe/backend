@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.ReviewMapper">
+
+	<resultMap id="reviewEntityResultMap"
+		type="com.ssafy.gourming.model.dto.ReviewDto$ReviewEntity">
+		<id property="id" column="id" />
+		<result property="content" column="content" />
+		<result property="images" column="images"
+			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="ratingScore" column="rating_score" />
+		<result property="visitedAt" column="visited_at" />
+		<result property="placeId" column="place_id" />
+		<result property="userId" column="user_id" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<resultMap id="reviewResponseResultMap"
+		type="com.ssafy.gourming.model.dto.ReviewDto$ReviewResponse">
+		<id property="id" column="review_id" />
+		<result property="content" column="content" />
+		<result property="images" column="images"
+			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="ratingScore" column="rating_score" />
+		<result property="visitedAt" column="visited_at" />
+		<result property="likeCount" column="like_count" />
+		<result property="commentCount" column="comment_count" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+		<association property="place"
+			javaType="com.ssafy.gourming.model.dto.ReviewDto$PlaceSummary">
+			<id property="id" column="place_id" />
+			<result property="name" column="place_name" />
+			<result property="categoryName" column="category_name" />
+			<result property="roadAddressName" column="road_address_name" />
+			<result property="x" column="x" />
+			<result property="y" column="y" />
+		</association>
+		<association property="author"
+			javaType="com.ssafy.gourming.model.dto.ReviewDto$AuthorSummary">
+			<id property="id" column="author_id" />
+			<result property="nickname" column="author_nickname" />
+			<result property="handle" column="author_handle" />
+			<result property="profileImage" column="author_profile_image" />
+		</association>
+	</resultMap>
+
+	<sql id="reviewResponseColumns">
+		r.id AS review_id,
+		r.content,
+		r.images,
+		r.rating_score,
+		r.visited_at,
+		r.created_at,
+		r.updated_at,
+		p.id AS place_id,
+		p.name AS place_name,
+		p.category_name,
+		p.road_address_name,
+		p.x,
+		p.y,
+		u.id AS author_id,
+		u.nickname AS author_nickname,
+		u.handle AS author_handle,
+		u.profile_image AS author_profile_image,
+		(
+			SELECT COUNT(*)
+			FROM likes l
+			WHERE l.review_id = r.id
+		) AS like_count,
+		(
+			SELECT COUNT(*)
+			FROM comments c
+			WHERE c.review_id = r.id
+		) AS comment_count
+	</sql>
+
+	<insert id="insertReview"
+		parameterType="com.ssafy.gourming.model.dto.ReviewDto$ReviewEntity">
+		INSERT INTO reviews (
+			id,
+			content,
+			images,
+			rating_score,
+			visited_at,
+			place_id,
+			user_id
+		)
+		VALUES (
+			#{id},
+			#{content},
+			#{images, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{ratingScore},
+			#{visitedAt},
+			#{placeId},
+			#{userId}
+		)
+	</insert>
+
+	<select id="selectReviewEntityById" resultMap="reviewEntityResultMap">
+		SELECT
+			id,
+			content,
+			images,
+			rating_score,
+			visited_at,
+			place_id,
+			user_id,
+			created_at,
+			updated_at
+		FROM reviews
+		WHERE id = #{reviewId}
+	</select>
+
+	<select id="selectReviewById" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE r.id = #{reviewId}
+	</select>
+
+	<update id="updateReview"
+		parameterType="com.ssafy.gourming.model.dto.ReviewDto$ReviewEntity">
+		UPDATE reviews
+		SET
+			content = #{content},
+			images = #{images, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			rating_score = #{ratingScore},
+			visited_at = #{visitedAt}
+		WHERE id = #{id}
+		  AND user_id = #{userId}
+	</update>
+
+	<delete id="deleteReview">
+		DELETE FROM reviews
+		WHERE id = #{reviewId}
+		  AND user_id = #{userId}
+	</delete>
+
+	<select id="selectReviewsByPlace" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE r.place_id = #{placeId}
+		ORDER BY r.created_at DESC, r.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countReviewsByPlace" resultType="long">
+		SELECT COUNT(*)
+		FROM reviews
+		WHERE place_id = #{placeId}
+	</select>
+
+	<select id="selectReviewsByUser" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE r.user_id = #{userId}
+		ORDER BY r.created_at DESC, r.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countReviewsByUser" resultType="long">
+		SELECT COUNT(*)
+		FROM reviews
+		WHERE user_id = #{userId}
+	</select>
+
+</mapper>

@@ -82,4 +82,56 @@ class UserControllerMockTest {
 
         verify(userService, never()).updateProfile(any(), any(), any());
     }
+
+    @Test
+    @DisplayName("인증된 사용자는 다른 사용자를 팔로우할 수 있다")
+    void followUser_authenticated() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/users/follow/{userId}", "target-user")
+                .with(authentication(new UsernamePasswordAuthenticationToken(USER_ID, null, java.util.List.of()))))
+            .andExpect(status().isOk());
+
+        verify(followService).followUser(USER_ID, "target-user");
+    }
+
+    @Test
+    @DisplayName("인증된 사용자는 팔로우를 취소할 수 있다")
+    void unfollowUser_authenticated() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/users/follow/{userId}", "target-user")
+                .with(authentication(new UsernamePasswordAuthenticationToken(USER_ID, null, java.util.List.of()))))
+            .andExpect(status().isOk());
+
+        verify(followService).unfollowUser(USER_ID, "target-user");
+    }
+
+    @Test
+    @DisplayName("팔로워 목록을 조회할 수 있다")
+    void getFollowers_success() throws Exception {
+        UserDto.UserProfileResponse mockResponse = new UserDto.UserProfileResponse();
+        mockResponse.setHandle("@follower");
+        org.mockito.Mockito.when(followService.getFollowers("target-user", USER_ID))
+            .thenReturn(java.util.List.of(mockResponse));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/users/{userId}/followers", "target-user")
+                .with(authentication(new UsernamePasswordAuthenticationToken(USER_ID, null, java.util.List.of()))))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].handle").value("@follower"));
+
+        verify(followService).getFollowers("target-user", USER_ID);
+    }
+
+    @Test
+    @DisplayName("팔로잉 목록을 조회할 수 있다")
+    void getFollowings_success() throws Exception {
+        UserDto.UserProfileResponse mockResponse = new UserDto.UserProfileResponse();
+        mockResponse.setHandle("@following");
+        org.mockito.Mockito.when(followService.getFollowings("target-user", USER_ID))
+            .thenReturn(java.util.List.of(mockResponse));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/users/{userId}/followings", "target-user")
+                .with(authentication(new UsernamePasswordAuthenticationToken(USER_ID, null, java.util.List.of()))))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].handle").value("@following"));
+
+        verify(followService).getFollowings("target-user", USER_ID);
+    }
 }

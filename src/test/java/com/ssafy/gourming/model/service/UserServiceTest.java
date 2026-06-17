@@ -177,6 +177,43 @@ class UserServiceTest {
         verify(userMapper, never()).updateProfile(anyString(), any());
     }
 
+    @Test
+    @DisplayName("[Service] 프로필 조회 성공")
+    void getUserProfile_success() {
+        UserDto.UserProfileResponse mockResponse = new UserDto.UserProfileResponse();
+        mockResponse.setHandle("@tester");
+        when(userMapper.getUserProfileWithStats("@tester", "user-1")).thenReturn(mockResponse);
+
+        UserDto.UserProfileResponse response = userService.getUserProfile("@tester", "user-1");
+
+        assertNotNull(response);
+        assertEquals("@tester", response.getHandle());
+        verify(userMapper).getUserProfileWithStats("@tester", "user-1");
+    }
+
+    @Test
+    @DisplayName("[Service] 프로필 조회 실패 - 사용자 없음")
+    void getUserProfile_notFound() {
+        when(userMapper.getUserProfileWithStats("@ghost", "user-1")).thenReturn(null);
+
+        assertThrows(NoSuchElementException.class, () -> userService.getUserProfile("@ghost", "user-1"));
+    }
+
+    @Test
+    @DisplayName("[Service] 유저 검색 성공")
+    void searchUsers_success() {
+        UserDto.UserProfileResponse mockResponse = new UserDto.UserProfileResponse();
+        mockResponse.setNickname("테스터");
+        when(userMapper.searchUsers("테스트", "user-1", 20, 0))
+            .thenReturn(java.util.List.of(mockResponse));
+
+        java.util.List<UserDto.UserProfileResponse> result = userService.searchUsers("테스트", "user-1", 20, 0);
+
+        assertEquals(1, result.size());
+        assertEquals("테스터", result.get(0).getNickname());
+        verify(userMapper).searchUsers("테스트", "user-1", 20, 0);
+    }
+
     // ─── 헬퍼 ────────────────────────────────────────────────────────
 
     private UserDto.SignupRequest makeSignupReq(String email) {

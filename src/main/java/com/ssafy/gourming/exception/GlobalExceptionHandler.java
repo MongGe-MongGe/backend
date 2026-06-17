@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -23,6 +24,14 @@ public class GlobalExceptionHandler {
 		// 첫 번째로 발생한 에러 메시지를 반환
 		String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
 		return ResponseEntity.badRequest().body(errorMessage);
+	}
+
+	/**
+	 * 400 Bad Request: 쿼리 파라미터 등 컨트롤러 메서드 파라미터 유효성 검사 실패
+	 */
+	@ExceptionHandler(HandlerMethodValidationException.class)
+	public ResponseEntity<?> handleHandlerMethodValidationException(HandlerMethodValidationException ex) {
+		return ResponseEntity.badRequest().body("요청 파라미터가 올바르지 않습니다.");
 	}
 
 	/**

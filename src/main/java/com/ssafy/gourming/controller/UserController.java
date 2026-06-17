@@ -50,18 +50,18 @@ public class UserController {
 			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "20") int limit,
 			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "0") int offset) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedEmail = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
+		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
 		
-		java.util.List<UserDto.UserProfileResponse> users = userService.searchUsers(keyword, authenticatedEmail, limit, offset);
+		java.util.List<UserDto.UserProfileResponse> users = userService.searchUsers(keyword, authenticatedUserId, limit, offset);
 		return ResponseEntity.ok(users);
 	}
 
 	@GetMapping("/{handle}")
 	public ResponseEntity<?> getUserProfile(@PathVariable String handle) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedEmail = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
+		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
 		
-		UserDto.UserProfileResponse profile = userService.getUserProfile(handle, authenticatedEmail);
+		UserDto.UserProfileResponse profile = userService.getUserProfile(handle, authenticatedUserId);
 		return ResponseEntity.ok(profile);
 	}
 
@@ -71,11 +71,9 @@ public class UserController {
 		if (auth == null || !(auth.getPrincipal() instanceof String) || auth.getPrincipal().equals("anonymousUser")) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-		String authenticatedEmail = (String) auth.getPrincipal();
-		UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-		if(authUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		String authenticatedUserId = (String) auth.getPrincipal();
 
-		followService.followUser(authUser.getId(), userId);
+		followService.followUser(authenticatedUserId, userId);
 		return ResponseEntity.ok().build();
 	}
 
@@ -85,22 +83,19 @@ public class UserController {
 		if (auth == null || !(auth.getPrincipal() instanceof String) || auth.getPrincipal().equals("anonymousUser")) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-		String authenticatedEmail = (String) auth.getPrincipal();
-		UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-		if(authUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		String authenticatedUserId = (String) auth.getPrincipal();
 
-		followService.unfollowUser(authUser.getId(), userId);
+		followService.unfollowUser(authenticatedUserId, userId);
 		return ResponseEntity.ok().build();
 	}
 
 	@GetMapping("/{userId}/followers")
 	public ResponseEntity<?> getFollowers(@PathVariable String userId) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedEmail = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
+		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
 		String currentUserId = null;
-		if (authenticatedEmail != null && !authenticatedEmail.equals("anonymousUser")) {
-			UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-			if (authUser != null) currentUserId = authUser.getId();
+		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
+			currentUserId = authenticatedUserId;
 		}
 
 		java.util.List<UserDto.UserProfileResponse> followers = followService.getFollowers(userId, currentUserId);
@@ -110,11 +105,10 @@ public class UserController {
 	@GetMapping("/{userId}/followings")
 	public ResponseEntity<?> getFollowings(@PathVariable String userId) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedEmail = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
+		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
 		String currentUserId = null;
-		if (authenticatedEmail != null && !authenticatedEmail.equals("anonymousUser")) {
-			UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-			if (authUser != null) currentUserId = authUser.getId();
+		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
+			currentUserId = authenticatedUserId;
 		}
 
 		java.util.List<UserDto.UserProfileResponse> followings = followService.getFollowings(userId, currentUserId);

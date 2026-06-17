@@ -92,6 +92,9 @@ public class UserDto {
 		
 		@com.fasterxml.jackson.annotation.JsonProperty("isFollowing")
 		private boolean isFollowing;
+
+		@com.fasterxml.jackson.annotation.JsonProperty("isFollower")
+		private boolean isFollower;
 	}
 
 	/**

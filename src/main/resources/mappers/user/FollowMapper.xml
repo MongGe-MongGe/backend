@@ -21,10 +21,12 @@
         SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
                (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
-               CASE WHEN f2.id IS NOT NULL THEN true ELSE false END as isFollowing
+               CASE WHEN f2.id IS NOT NULL THEN true ELSE false END as isFollowing,
+               CASE WHEN f3.id IS NOT NULL THEN true ELSE false END as isFollower
         FROM follows f
         JOIN users u ON f.target_user_id = u.id
         LEFT JOIN follows f2 ON f2.target_user_id = u.id AND f2.user_id = #{currentUserId}
+        LEFT JOIN follows f3 ON f3.user_id = u.id AND f3.target_user_id = #{currentUserId}
         WHERE f.user_id = #{userId}
     </select>
 
@@ -32,10 +34,12 @@
         SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
                (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
-               CASE WHEN f2.id IS NOT NULL THEN true ELSE false END as isFollowing
+               CASE WHEN f2.id IS NOT NULL THEN true ELSE false END as isFollowing,
+               CASE WHEN f3.id IS NOT NULL THEN true ELSE false END as isFollower
         FROM follows f
         JOIN users u ON f.user_id = u.id
         LEFT JOIN follows f2 ON f2.target_user_id = u.id AND f2.user_id = #{currentUserId}
+        LEFT JOIN follows f3 ON f3.user_id = u.id AND f3.target_user_id = #{currentUserId}
         WHERE f.target_user_id = #{userId}
     </select>
 </mapper>

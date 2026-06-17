@@ -90,13 +90,10 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedEmail) {
+	public UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId) {
 		String currentUserId = null;
-		if (authenticatedEmail != null && !authenticatedEmail.equals("anonymousUser")) {
-			UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-			if (authUser != null) {
-				currentUserId = authUser.getId();
-			}
+		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
+			currentUserId = authenticatedUserId;
 		}
 		
 		UserDto.UserProfileResponse profile = userMapper.getUserProfileWithStats(handle, currentUserId);
@@ -107,13 +104,10 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedEmail, int limit, int offset) {
+	public java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedUserId, int limit, int offset) {
 		String currentUserId = null;
-		if (authenticatedEmail != null && !authenticatedEmail.equals("anonymousUser")) {
-			UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
-			if (authUser != null) {
-				currentUserId = authUser.getId();
-			}
+		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
+			currentUserId = authenticatedUserId;
 		}
 		return userMapper.searchUsers(keyword, currentUserId, limit, offset);
 	}

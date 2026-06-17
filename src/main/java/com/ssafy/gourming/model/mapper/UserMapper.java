@@ -26,9 +26,23 @@ public interface UserMapper {
 	// 프로필 업데이트
 	void updateProfile(@org.apache.ibatis.annotations.Param("id") String id, @org.apache.ibatis.annotations.Param("request") UserDto.UpdateProfileRequest request);
 
-	// 유저 검색 (keyword 포함 닉네임/핸들) 및 팔로우 여부 등 통계 반환 (Pagination 포함)
+	/**
+	 * 키워드가 포함된 닉네임이나 핸들을 가진 사용자를 검색합니다.
+	 * 
+	 * @param keyword 검색어
+	 * @param currentUserId 현재 요청을 보낸 사용자의 ID (팔로우 상태 조회를 위해 사용)
+	 * @param limit 조회할 최대 개수 (페이지네이션)
+	 * @param offset 조회를 시작할 오프셋 (페이지네이션)
+	 * @return 조건에 맞는 사용자 프로필 목록
+	 */
 	java.util.List<UserDto.UserProfileResponse> searchUsers(@org.apache.ibatis.annotations.Param("keyword") String keyword, @org.apache.ibatis.annotations.Param("currentUserId") String currentUserId, @org.apache.ibatis.annotations.Param("limit") int limit, @org.apache.ibatis.annotations.Param("offset") int offset);
 
-	// 특정 핸들의 프로필 정보 및 팔로우 통계 조회
+	/**
+	 * 특정 핸들을 기반으로 사용자의 프로필 상세 정보(팔로우/팔로워 수 및 팔로우 상태 포함)를 조회합니다.
+	 * 
+	 * @param handle 조회 대상의 고유 핸들
+	 * @param currentUserId 현재 요청을 보낸 사용자의 ID (팔로우 상태 조회를 위해 사용)
+	 * @return 대상 사용자의 프로필 응답 객체
+	 */
 	UserDto.UserProfileResponse getUserProfileWithStats(@org.apache.ibatis.annotations.Param("handle") String handle, @org.apache.ibatis.annotations.Param("currentUserId") String currentUserId);
 }

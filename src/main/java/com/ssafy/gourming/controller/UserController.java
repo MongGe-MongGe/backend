@@ -44,6 +44,16 @@ public class UserController {
 		return ResponseEntity.ok(exists);
 	}
 
+	/**
+	 * 유저 검색 API (페이지네이션 지원)
+	 * 닉네임이나 핸들에 검색어가 포함된 사용자 목록을 반환합니다.
+	 * 인증된 사용자인 경우, 검색된 각 사용자와의 팔로우 여부(isFollowing) 및 맞팔로우 여부(isFollower)를 함께 반환합니다.
+	 * 
+	 * @param keyword 검색할 키워드 (기본값: 빈 문자열)
+	 * @param limit   반환할 최대 항목 수 (기본값: 20)
+	 * @param offset  결과 시작 위치 (기본값: 0)
+	 * @return 검색된 사용자 프로필 응답 목록
+	 */
 	@GetMapping
 	public ResponseEntity<?> searchUsers(
 			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "") String keyword,
@@ -56,6 +66,14 @@ public class UserController {
 		return ResponseEntity.ok(users);
 	}
 
+	/**
+	 * 특정 사용자의 프로필 상세 정보 조회 API
+	 * 핸들을 통해 대상 사용자의 기본 정보 및 팔로우 통계(팔로워, 팔로잉 수)를 조회합니다.
+	 * 인증된 사용자인 경우, 나와 대상 사용자의 팔로우 상태를 포함하여 반환합니다.
+	 * 
+	 * @param handle 조회할 대상 사용자의 고유 핸들
+	 * @return 대상 사용자의 프로필 응답 객체
+	 */
 	@GetMapping("/{handle}")
 	public ResponseEntity<?> getUserProfile(@PathVariable String handle) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -65,6 +83,13 @@ public class UserController {
 		return ResponseEntity.ok(profile);
 	}
 
+	/**
+	 * 타 사용자 팔로우 API (인증 필수)
+	 * 현재 로그인한 사용자가 대상 사용자를 팔로우합니다.
+	 * 
+	 * @param userId 팔로우할 대상 사용자의 식별자(UUID)
+	 * @return HTTP 200 (성공) 또는 401 (비인증 상태)
+	 */
 	@PostMapping("/follow/{userId}")
 	public ResponseEntity<?> followUser(@PathVariable String userId) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -77,6 +102,13 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
+	/**
+	 * 타 사용자 팔로우 취소(언팔로우) API (인증 필수)
+	 * 현재 로그인한 사용자가 대상 사용자에 대한 팔로우를 취소합니다.
+	 * 
+	 * @param userId 언팔로우할 대상 사용자의 식별자(UUID)
+	 * @return HTTP 200 (성공) 또는 401 (비인증 상태)
+	 */
 	@org.springframework.web.bind.annotation.DeleteMapping("/follow/{userId}")
 	public ResponseEntity<?> unfollowUser(@PathVariable String userId) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -89,6 +121,13 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
+	/**
+	 * 특정 사용자를 팔로우하는 팔로워 목록 조회 API
+	 * 비인증 사용자도 조회 가능하며, 인증된 사용자일 경우 목록 내 유저들과의 상호 팔로우 상태가 추가 도출됩니다.
+	 * 
+	 * @param userId 조회 대상 사용자의 식별자(UUID)
+	 * @return 팔로워 사용자들의 프로필 응답 목록
+	 */
 	@GetMapping("/{userId}/followers")
 	public ResponseEntity<?> getFollowers(@PathVariable String userId) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -102,6 +141,13 @@ public class UserController {
 		return ResponseEntity.ok(followers);
 	}
 
+	/**
+	 * 특정 사용자가 팔로우하는 팔로잉 목록 조회 API
+	 * 비인증 사용자도 조회 가능하며, 인증된 사용자일 경우 목록 내 유저들과의 상호 팔로우 상태가 추가 도출됩니다.
+	 * 
+	 * @param userId 조회 대상 사용자의 식별자(UUID)
+	 * @return 팔로잉 사용자들의 프로필 응답 목록
+	 */
 	@GetMapping("/{userId}/followings")
 	public ResponseEntity<?> getFollowings(@PathVariable String userId) {
 		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();

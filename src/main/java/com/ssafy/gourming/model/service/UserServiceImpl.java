@@ -92,6 +92,7 @@ public class UserServiceImpl implements UserService{
 	@Override
 	public UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId) {
 		String currentUserId = null;
+		// SecurityContext에서 얻어온 주체가 익명 사용자(anonymousUser)가 아닐 경우 식별자를 매핑합니다.
 		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
 			currentUserId = authenticatedUserId;
 		}
@@ -106,6 +107,7 @@ public class UserServiceImpl implements UserService{
 	@Override
 	public java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedUserId, int limit, int offset) {
 		String currentUserId = null;
+		// 검색을 요청한 현재 인증 사용자가 있을 경우, 목록 데이터와 함께 팔로우 상태를 도출할 수 있도록 식별자를 준비합니다.
 		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
 			currentUserId = authenticatedUserId;
 		}

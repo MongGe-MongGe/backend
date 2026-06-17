@@ -17,6 +17,12 @@
         WHERE user_id = #{userId} AND target_user_id = #{targetUserId}
     </select>
 
+    <!--
+      팔로잉 목록 조회
+      1. 대상 사용자(userId)가 팔로우하는 레코드(f)를 조회합니다.
+      2. users 테이블(u)과 조인하여 팔로우 대상의 프로필 정보를 가져옵니다.
+      3. f2(내가 팔로우 중인지), f3(나를 팔로우 중인지)를 LEFT JOIN으로 엮어 상태 값을 반환합니다.
+    -->
     <select id="getFollowings" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
         SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
@@ -30,6 +36,10 @@
         WHERE f.user_id = #{userId}
     </select>
 
+    <!--
+      팔로워 목록 조회
+      getFollowings와 유사하나, 조건이 f.target_user_id = #{userId}로 변경되어 나를 팔로우하는 사람들을 찾습니다.
+    -->
     <select id="getFollowers" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
         SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,

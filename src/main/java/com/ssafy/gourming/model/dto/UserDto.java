@@ -90,9 +90,16 @@ public class UserDto {
 		private int followerCount;
 		private int followingCount;
 		
+		/**
+		 * 현재 인증된 사용자가 이 사용자를 팔로우하고 있는지 여부
+		 */
 		@com.fasterxml.jackson.annotation.JsonProperty("isFollowing")
 		private boolean isFollowing;
 
+		/**
+		 * 이 사용자가 현재 인증된 사용자를 팔로우하고 있는지 여부
+		 * 프론트엔드에서 '맞팔로우' 상태를 표기하기 위해 활용됩니다.
+		 */
 		@com.fasterxml.jackson.annotation.JsonProperty("isFollower")
 		private boolean isFollower;
 	}

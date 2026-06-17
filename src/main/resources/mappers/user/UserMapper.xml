@@ -57,6 +57,13 @@
         WHERE id = #{id}
     </update>
 
+    <!-- 
+      유저 검색 쿼리
+      1. 키워드가 포함된 사용자를 찾습니다.
+      2. 메인 쿼리에서 스칼라 서브쿼리로 팔로워 수 및 팔로잉 수를 가져옵니다.
+      3. LEFT JOIN(f)을 통해 현재 로그인한 사용자(currentUserId)가 이 유저를 팔로우하는지(isFollowing) 여부를 확인합니다.
+      4. LEFT JOIN(f_me)을 통해 이 유저가 현재 로그인한 사용자(currentUserId)를 팔로우하는지(isFollower - 맞팔로우) 여부를 확인합니다.
+    -->
     <select id="searchUsers" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
         SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
@@ -71,6 +78,10 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <!--
+      특정 핸들을 기반으로 유저 프로필 조회
+      searchUsers 쿼리와 동일하게 팔로우 상태 및 통계 데이터를 함께 조회합니다.
+    -->
     <select id="getUserProfileWithStats" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
         SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,

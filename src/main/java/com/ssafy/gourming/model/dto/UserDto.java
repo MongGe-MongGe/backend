@@ -76,6 +76,8 @@ public class UserDto {
 	 * 민감한 정보(비밀번호, 연락처, 이메일)를 제외하고 안전한 정보만 포함합니다.
 	 */
 	@Getter
+	@Setter
+	@NoArgsConstructor
 	@AllArgsConstructor
 	public static class UserProfileResponse {
 		private String id;
@@ -83,6 +85,13 @@ public class UserDto {
 		private String handle;
 		private String profileImage;
 		private String bio;
+		
+		// 확장 필드
+		private int followerCount;
+		private int followingCount;
+		
+		@com.fasterxml.jackson.annotation.JsonProperty("isFollowing")
+		private boolean isFollowing;
 	}
 
 	/**

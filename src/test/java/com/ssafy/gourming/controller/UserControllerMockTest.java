@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.SecurityConfig;
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.service.FollowService;
 import com.ssafy.gourming.model.service.UserService;
 import com.ssafy.gourming.util.JwtUtil;
 
@@ -39,6 +40,12 @@ class UserControllerMockTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private FollowService followService;
+
+    @MockitoBean
+    private com.ssafy.gourming.model.mapper.UserMapper userMapper;
 
     @MockitoBean
     private JwtUtil jwtUtil;

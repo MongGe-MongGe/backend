@@ -57,4 +57,26 @@
         WHERE id = #{id}
     </update>
 
+    <select id="searchUsers" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
+        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
+               (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
+               (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
+               CASE WHEN f.id IS NOT NULL THEN true ELSE false END as isFollowing
+        FROM users u
+        LEFT JOIN follows f ON f.target_user_id = u.id AND f.user_id = #{currentUserId}
+        WHERE u.nickname LIKE CONCAT('%', #{keyword}, '%')
+           OR u.handle LIKE CONCAT('%', #{keyword}, '%')
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="getUserProfileWithStats" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
+        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
+               (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
+               (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
+               CASE WHEN f.id IS NOT NULL THEN true ELSE false END as isFollowing
+        FROM users u
+        LEFT JOIN follows f ON f.target_user_id = u.id AND f.user_id = #{currentUserId}
+        WHERE u.handle = #{handle}
+    </select>
+
 </mapper>

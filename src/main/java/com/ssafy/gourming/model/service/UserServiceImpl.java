@@ -90,23 +90,32 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public UserDto.UserProfileResponse getUserProfile(String handle) {
-		// 1. handle로 사용자 조회 (내부 전용 UserEntity로 받음)
-		UserDto.UserEntity user = userMapper.findByHandle(handle);
-		
-		// 2. 존재하지 않는 handle이면 예외처리
-		if(user == null) {
-			throw new NoSuchElementException("User not found: " + handle);
+	public UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedEmail) {
+		String currentUserId = null;
+		if (authenticatedEmail != null && !authenticatedEmail.equals("anonymousUser")) {
+			UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
+			if (authUser != null) {
+				currentUserId = authUser.getId();
+			}
 		}
 		
-		// 3. 민감 필드(password, phone, email)를 제외하고 안전 필드만 UserProfileResponse로 변환
-		return new UserDto.UserProfileResponse(
-				user.getId(), 
-				user.getNickname(), 
-				user.getHandle(), 
-				user.getProfileImage(), 
-				user.getBio()
-			);
+		UserDto.UserProfileResponse profile = userMapper.getUserProfileWithStats(handle, currentUserId);
+		if(profile == null) {
+			throw new NoSuchElementException("User not found: " + handle);
+		}
+		return profile;
+	}
+
+	@Override
+	public java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedEmail, int limit, int offset) {
+		String currentUserId = null;
+		if (authenticatedEmail != null && !authenticatedEmail.equals("anonymousUser")) {
+			UserDto.UserEntity authUser = userMapper.findByEmail(authenticatedEmail);
+			if (authUser != null) {
+				currentUserId = authUser.getId();
+			}
+		}
+		return userMapper.searchUsers(keyword, currentUserId, limit, offset);
 	}
 
 	/**

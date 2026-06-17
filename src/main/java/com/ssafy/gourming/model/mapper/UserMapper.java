@@ -25,4 +25,10 @@ public interface UserMapper {
 	
 	// 프로필 업데이트
 	void updateProfile(@org.apache.ibatis.annotations.Param("id") String id, @org.apache.ibatis.annotations.Param("request") UserDto.UpdateProfileRequest request);
+
+	// 유저 검색 (keyword 포함 닉네임/핸들) 및 팔로우 여부 등 통계 반환 (Pagination 포함)
+	java.util.List<UserDto.UserProfileResponse> searchUsers(@org.apache.ibatis.annotations.Param("keyword") String keyword, @org.apache.ibatis.annotations.Param("currentUserId") String currentUserId, @org.apache.ibatis.annotations.Param("limit") int limit, @org.apache.ibatis.annotations.Param("offset") int offset);
+
+	// 특정 핸들의 프로필 정보 및 팔로우 통계 조회
+	UserDto.UserProfileResponse getUserProfileWithStats(@org.apache.ibatis.annotations.Param("handle") String handle, @org.apache.ibatis.annotations.Param("currentUserId") String currentUserId);
 }

@@ -65,7 +65,7 @@
       4. LEFT JOIN(f_me)을 통해 이 유저가 현재 로그인한 사용자(currentUserId)를 팔로우하는지(isFollower - 맞팔로우) 여부를 확인합니다.
     -->
     <select id="searchUsers" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
-        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
+        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio, u.role,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
                (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
                CASE WHEN f.id IS NOT NULL THEN true ELSE false END as isFollowing,
@@ -83,7 +83,7 @@
       searchUsers 쿼리와 동일하게 팔로우 상태 및 통계 데이터를 함께 조회합니다.
     -->
     <select id="getUserProfileWithStats" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
-        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
+        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio, u.role,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
                (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
                CASE WHEN f.id IS NOT NULL THEN true ELSE false END as isFollowing,

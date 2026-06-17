@@ -24,7 +24,7 @@
       3. f2(내가 팔로우 중인지), f3(나를 팔로우 중인지)를 LEFT JOIN으로 엮어 상태 값을 반환합니다.
     -->
     <select id="getFollowings" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
-        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
+        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio, u.role,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
                (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
                CASE WHEN f2.id IS NOT NULL THEN true ELSE false END as isFollowing,
@@ -41,7 +41,7 @@
       getFollowings와 유사하나, 조건이 f.target_user_id = #{userId}로 변경되어 나를 팔로우하는 사람들을 찾습니다.
     -->
     <select id="getFollowers" resultType="com.ssafy.gourming.model.dto.UserDto$UserProfileResponse">
-        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio,
+        SELECT u.id, u.nickname, u.handle, u.profile_image as profileImage, u.bio, u.role,
                (SELECT COUNT(*) FROM follows WHERE target_user_id = u.id) as followerCount,
                (SELECT COUNT(*) FROM follows WHERE user_id = u.id) as followingCount,
                CASE WHEN f2.id IS NOT NULL THEN true ELSE false END as isFollowing,

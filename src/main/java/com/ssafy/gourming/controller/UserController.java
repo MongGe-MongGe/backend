@@ -58,11 +58,9 @@ public class UserController {
 	public ResponseEntity<?> searchUsers(
 			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "") String keyword,
 			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "20") int limit,
-			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "0") int offset) {
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
-		
-		java.util.List<UserDto.UserProfileResponse> users = userService.searchUsers(keyword, authenticatedUserId, limit, offset);
+			@org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "0") int offset,
+			@AuthenticationPrincipal String currentUserId) {
+		java.util.List<UserDto.UserProfileResponse> users = userService.searchUsers(keyword, currentUserId, limit, offset);
 		return ResponseEntity.ok(users);
 	}
 
@@ -75,11 +73,8 @@ public class UserController {
 	 * @return 대상 사용자의 프로필 응답 객체
 	 */
 	@GetMapping("/{handle}")
-	public ResponseEntity<?> getUserProfile(@PathVariable String handle) {
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
-		
-		UserDto.UserProfileResponse profile = userService.getUserProfile(handle, authenticatedUserId);
+	public ResponseEntity<?> getUserProfile(@PathVariable String handle, @AuthenticationPrincipal String currentUserId) {
+		UserDto.UserProfileResponse profile = userService.getUserProfile(handle, currentUserId);
 		return ResponseEntity.ok(profile);
 	}
 
@@ -91,14 +86,12 @@ public class UserController {
 	 * @return HTTP 200 (성공) 또는 401 (비인증 상태)
 	 */
 	@PostMapping("/follow/{userId}")
-	public ResponseEntity<?> followUser(@PathVariable String userId) {
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		if (auth == null || !(auth.getPrincipal() instanceof String) || auth.getPrincipal().equals("anonymousUser")) {
+	public ResponseEntity<?> followUser(@PathVariable String userId, @AuthenticationPrincipal String currentUserId) {
+		if (currentUserId == null || currentUserId.equals("anonymousUser")) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-		String authenticatedUserId = (String) auth.getPrincipal();
 
-		followService.followUser(authenticatedUserId, userId);
+		followService.followUser(currentUserId, userId);
 		return ResponseEntity.ok().build();
 	}
 
@@ -110,14 +103,12 @@ public class UserController {
 	 * @return HTTP 200 (성공) 또는 401 (비인증 상태)
 	 */
 	@org.springframework.web.bind.annotation.DeleteMapping("/follow/{userId}")
-	public ResponseEntity<?> unfollowUser(@PathVariable String userId) {
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		if (auth == null || !(auth.getPrincipal() instanceof String) || auth.getPrincipal().equals("anonymousUser")) {
+	public ResponseEntity<?> unfollowUser(@PathVariable String userId, @AuthenticationPrincipal String currentUserId) {
+		if (currentUserId == null || currentUserId.equals("anonymousUser")) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-		String authenticatedUserId = (String) auth.getPrincipal();
 
-		followService.unfollowUser(authenticatedUserId, userId);
+		followService.unfollowUser(currentUserId, userId);
 		return ResponseEntity.ok().build();
 	}
 
@@ -129,14 +120,7 @@ public class UserController {
 	 * @return 팔로워 사용자들의 프로필 응답 목록
 	 */
 	@GetMapping("/{userId}/followers")
-	public ResponseEntity<?> getFollowers(@PathVariable String userId) {
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
-		String currentUserId = null;
-		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
-			currentUserId = authenticatedUserId;
-		}
-
+	public ResponseEntity<?> getFollowers(@PathVariable String userId, @AuthenticationPrincipal String currentUserId) {
 		java.util.List<UserDto.UserProfileResponse> followers = followService.getFollowers(userId, currentUserId);
 		return ResponseEntity.ok(followers);
 	}
@@ -149,14 +133,7 @@ public class UserController {
 	 * @return 팔로잉 사용자들의 프로필 응답 목록
 	 */
 	@GetMapping("/{userId}/followings")
-	public ResponseEntity<?> getFollowings(@PathVariable String userId) {
-		org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-		String authenticatedUserId = (auth != null && auth.getPrincipal() instanceof String) ? (String) auth.getPrincipal() : null;
-		String currentUserId = null;
-		if (authenticatedUserId != null && !authenticatedUserId.equals("anonymousUser")) {
-			currentUserId = authenticatedUserId;
-		}
-
+	public ResponseEntity<?> getFollowings(@PathVariable String userId, @AuthenticationPrincipal String currentUserId) {
 		java.util.List<UserDto.UserProfileResponse> followings = followService.getFollowings(userId, currentUserId);
 		return ResponseEntity.ok(followings);
 	}

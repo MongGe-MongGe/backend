@@ -33,7 +33,7 @@ import com.ssafy.gourming.model.dto.ReviewDto.ReviewUpdateRequest;
 import com.ssafy.gourming.model.mapper.ReviewMapper;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Review Service mock test")
+@DisplayName("리뷰 서비스 Mock 단위 테스트")
 class ReviewServiceMockTest {
 
 	private static final String USER_ID = "user-1";
@@ -54,7 +54,7 @@ class ReviewServiceMockTest {
 	private ReviewServiceImpl reviewService;
 
 	@Test
-	@DisplayName("creates review, confirms images, and returns created review")
+	@DisplayName("리뷰를 생성하고 이미지를 확정한 뒤 생성 결과를 반환한다")
 	void createReview() {
 		ReviewCreateRequest request = createRequest();
 		ReviewResponse createdResponse = createResponse("created-review-id");
@@ -78,7 +78,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("does not create review when place cannot be verified")
+	@DisplayName("장소를 검증할 수 없으면 리뷰를 생성하지 않는다")
 	void createReviewWithMissingPlaceFails() {
 		ReviewCreateRequest request = createRequest();
 		when(placeService.findOrCreatePlace(request.getPlace())).thenReturn(null);
@@ -92,7 +92,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("normalizes null images to empty list when creating review")
+	@DisplayName("리뷰 생성 시 이미지가 null이면 빈 목록으로 저장한다")
 	void createReviewWithNullImages() {
 		ReviewCreateRequest request = createRequest();
 		request.setImages(null);
@@ -108,7 +108,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("returns review detail")
+	@DisplayName("리뷰 상세를 조회한다")
 	void getReview() {
 		ReviewResponse response = createResponse(REVIEW_ID);
 		when(reviewMapper.selectReviewById(REVIEW_ID)).thenReturn(response);
@@ -119,7 +119,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("fails when review detail does not exist")
+	@DisplayName("존재하지 않는 리뷰 상세는 조회할 수 없다")
 	void getMissingReviewFails() {
 		when(reviewMapper.selectReviewById(REVIEW_ID)).thenReturn(null);
 
@@ -129,7 +129,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("updates owned review and syncs images")
+	@DisplayName("소유한 리뷰를 수정하고 이미지를 동기화한다")
 	void updateReview() {
 		ReviewUpdateRequest request = createUpdateRequest();
 		ReviewEntity existingReview = createReviewEntity(USER_ID);
@@ -156,7 +156,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("does not update another user's review")
+	@DisplayName("다른 사용자의 리뷰는 수정할 수 없다")
 	void updateOtherUsersReviewFails() {
 		when(reviewMapper.selectReviewEntityById(REVIEW_ID))
 			.thenReturn(createReviewEntity(OTHER_USER_ID));
@@ -171,7 +171,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("deletes owned review and deletes images")
+	@DisplayName("소유한 리뷰를 삭제하고 이미지를 삭제한다")
 	void deleteReview() {
 		when(reviewMapper.selectReviewEntityById(REVIEW_ID)).thenReturn(createReviewEntity(USER_ID));
 		when(reviewMapper.deleteReview(REVIEW_ID, USER_ID)).thenReturn(1);
@@ -183,7 +183,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("does not delete another user's review")
+	@DisplayName("다른 사용자의 리뷰는 삭제할 수 없다")
 	void deleteOtherUsersReviewFails() {
 		when(reviewMapper.selectReviewEntityById(REVIEW_ID))
 			.thenReturn(createReviewEntity(OTHER_USER_ID));
@@ -197,7 +197,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("returns reviews by place as page response")
+	@DisplayName("장소별 리뷰 목록을 페이지 응답으로 반환한다")
 	void getReviewsByPlace() {
 		List<ReviewResponse> responses = List.of(createResponse("review-1"));
 		when(reviewMapper.countReviewsByPlace(PLACE_ID)).thenReturn(21L);
@@ -216,7 +216,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("returns reviews by user as page response")
+	@DisplayName("사용자별 리뷰 목록을 페이지 응답으로 반환한다")
 	void getReviewsByUser() {
 		List<ReviewResponse> responses = List.of(createResponse("review-1"));
 		when(reviewMapper.countReviewsByUser(USER_ID)).thenReturn(1L);
@@ -230,7 +230,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("my feeds use my review list for MVP")
+	@DisplayName("MVP 피드는 내가 작성한 리뷰 목록을 사용한다")
 	void getMyFeeds() {
 		List<ReviewResponse> responses = List.of(createResponse("review-1"));
 		when(reviewMapper.countReviewsByUser(USER_ID)).thenReturn(1L);
@@ -244,7 +244,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("page must be zero or greater")
+	@DisplayName("페이지 번호는 0 이상이어야 한다")
 	void getReviewsWithNegativePageFails() {
 		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, -1, 20))
 			.isInstanceOf(IllegalArgumentException.class)
@@ -254,7 +254,7 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("size must be between 1 and 100")
+	@DisplayName("페이지 크기는 1 이상 100 이하여야 한다")
 	void getReviewsWithInvalidSizeFails() {
 		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, 0, 101))
 			.isInstanceOf(IllegalArgumentException.class)

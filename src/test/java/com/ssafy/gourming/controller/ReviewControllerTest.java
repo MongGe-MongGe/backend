@@ -42,7 +42,7 @@ import com.ssafy.gourming.util.JwtUtil;
 
 @WebMvcTest(ReviewController.class)
 @Import(SecurityConfig.class)
-@DisplayName("Review Controller test")
+@DisplayName("리뷰 컨트롤러 테스트")
 class ReviewControllerTest {
 
 	private static final String USER_ID = "user-1";
@@ -63,7 +63,7 @@ class ReviewControllerTest {
 	private JwtUtil jwtUtil;
 
 	@Test
-	@DisplayName("creates review with authentication")
+	@DisplayName("인증된 사용자가 리뷰를 생성한다")
 	void createReview() throws Exception {
 		ReviewCreateRequest request = createCreateRequest();
 		when(reviewService.createReview(any(), any())).thenReturn(createResponse());
@@ -89,7 +89,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("does not create review without authentication")
+	@DisplayName("인증 없이 리뷰를 생성할 수 없다")
 	void createReviewWithoutAuthenticationFails() throws Exception {
 		mockMvc.perform(post("/api/reviews")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +100,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("does not create review without place")
+	@DisplayName("장소 정보 없이 리뷰를 생성할 수 없다")
 	void createReviewWithoutPlaceFails() throws Exception {
 		ReviewCreateRequest request = createCreateRequest();
 		request.setPlace(null);
@@ -115,7 +115,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("gets review without authentication")
+	@DisplayName("인증 없이 리뷰 상세를 조회한다")
 	void getReview() throws Exception {
 		when(reviewService.getReview(REVIEW_ID)).thenReturn(createResponse());
 
@@ -129,7 +129,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("updates review with authentication")
+	@DisplayName("인증된 사용자가 리뷰를 수정한다")
 	void updateReview() throws Exception {
 		ReviewUpdateRequest request = createUpdateRequest();
 		when(reviewService.updateReview(any(), any(), any())).thenReturn(createResponse());
@@ -151,7 +151,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("does not update review without authentication")
+	@DisplayName("인증 없이 리뷰를 수정할 수 없다")
 	void updateReviewWithoutAuthenticationFails() throws Exception {
 		mockMvc.perform(put("/api/reviews/{reviewId}", REVIEW_ID)
 				.contentType(MediaType.APPLICATION_JSON)
@@ -162,7 +162,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("deletes review with authentication")
+	@DisplayName("인증된 사용자가 리뷰를 삭제한다")
 	void deleteReview() throws Exception {
 		mockMvc.perform(delete("/api/reviews/{reviewId}", REVIEW_ID)
 				.with(authentication(loginAuthentication())))
@@ -172,7 +172,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("does not delete review without authentication")
+	@DisplayName("인증 없이 리뷰를 삭제할 수 없다")
 	void deleteReviewWithoutAuthenticationFails() throws Exception {
 		mockMvc.perform(delete("/api/reviews/{reviewId}", REVIEW_ID))
 			.andExpect(status().isUnauthorized());
@@ -181,7 +181,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("gets reviews by place without authentication")
+	@DisplayName("인증 없이 장소별 리뷰 목록을 조회한다")
 	void getReviewsByPlace() throws Exception {
 		when(reviewService.getReviewsByPlace(PLACE_ID, 0, 20))
 			.thenReturn(createPageResponse());
@@ -197,7 +197,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("gets reviews by user without authentication")
+	@DisplayName("인증 없이 사용자별 리뷰 목록을 조회한다")
 	void getReviewsByUser() throws Exception {
 		when(reviewService.getReviewsByUser(OTHER_USER_ID, 1, 10))
 			.thenReturn(createPageResponse());
@@ -211,7 +211,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("gets my feeds with authentication")
+	@DisplayName("인증된 사용자가 내 피드를 조회한다")
 	void getMyFeeds() throws Exception {
 		when(reviewService.getMyFeeds(USER_ID, 0, 20))
 			.thenReturn(createPageResponse());
@@ -225,7 +225,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("does not get my feeds without authentication")
+	@DisplayName("인증 없이 내 피드를 조회할 수 없다")
 	void getMyFeedsWithoutAuthenticationFails() throws Exception {
 		mockMvc.perform(get("/api/users/me/feeds"))
 			.andExpect(status().isUnauthorized());
@@ -234,7 +234,7 @@ class ReviewControllerTest {
 	}
 
 	@Test
-	@DisplayName("rejects invalid page request")
+	@DisplayName("잘못된 페이지 요청을 거부한다")
 	void getReviewsWithInvalidPageFails() throws Exception {
 		mockMvc.perform(get("/api/places/{placeId}/reviews", PLACE_ID)
 				.param("page", "-1")

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+// 리뷰 이미지 URL 목록을 DB의 JSON 문자열 컬럼과 Java List<String> 사이에서 변환한다.
 public class StringListJsonTypeHandler extends BaseTypeHandler<List<String>> {
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

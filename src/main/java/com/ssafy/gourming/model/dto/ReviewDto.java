@@ -17,6 +17,7 @@ import lombok.Setter;
 
 public class ReviewDto {
 
+	// reviews 테이블과 매핑되는 내부 엔티티
 	@Getter
 	@Setter
 	@NoArgsConstructor
@@ -33,6 +34,7 @@ public class ReviewDto {
 		private LocalDateTime updatedAt;
 	}
 
+	// 리뷰 생성 요청
 	@Getter
 	@Setter
 	@NoArgsConstructor
@@ -54,6 +56,7 @@ public class ReviewDto {
 		private LocalDate visitedAt;
 	}
 
+	// 리뷰 수정 요청
 	@Getter
 	@Setter
 	@NoArgsConstructor
@@ -71,6 +74,7 @@ public class ReviewDto {
 		private LocalDate visitedAt;
 	}
 
+	// 리뷰 단건 및 목록 조회 응답
 	@Getter
 	@Setter
 	@NoArgsConstructor
@@ -89,6 +93,7 @@ public class ReviewDto {
 		private LocalDateTime updatedAt;
 	}
 
+	// 페이지네이션이 적용된 리뷰 목록 응답
 	@Getter
 	@Setter
 	@NoArgsConstructor
@@ -103,6 +108,7 @@ public class ReviewDto {
 		private boolean last;
 	}
 
+	// 리뷰 응답에 포함되는 장소 요약 정보
 	@Getter
 	@Setter
 	@NoArgsConstructor
@@ -116,6 +122,7 @@ public class ReviewDto {
 		private String y;
 	}
 
+	// 리뷰 응답에 포함되는 작성자 요약 정보
 	@Getter
 	@Setter
 	@NoArgsConstructor

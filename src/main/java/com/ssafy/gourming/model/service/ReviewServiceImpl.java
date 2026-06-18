@@ -29,6 +29,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Override
 	@Transactional
 	public ReviewResponse createReview(String userId, ReviewCreateRequest request) {
+		// 프론트에서 전달한 장소가 실제 카카오 장소인지 검증하고 없으면 저장한다.
 		PlaceEntity place = placeService.findOrCreatePlace(request.getPlace());
 		if (place == null) {
 			throw new NoSuchElementException("Place not found: " + request.getPlace().getId());
@@ -48,6 +49,7 @@ public class ReviewServiceImpl implements ReviewService {
 			throw new IllegalStateException("Failed to create review");
 		}
 
+		// 리뷰 저장이 성공한 뒤에만 임시 이미지를 확정 상태로 변경한다.
 		confirmImages(review.getImages());
 
 		ReviewResponse response = reviewMapper.selectReviewById(review.getId());
@@ -76,6 +78,7 @@ public class ReviewServiceImpl implements ReviewService {
 		ReviewEntity existingReview = getReviewEntity(reviewId);
 		validateOwner(existingReview, userId);
 
+		// 이미지 생명주기 처리를 위해 수정 전후 이미지 목록을 비교한다.
 		List<String> oldImages = normalizeImages(existingReview.getImages());
 		List<String> newImages = normalizeImages(request.getImages());
 
@@ -139,6 +142,7 @@ public class ReviewServiceImpl implements ReviewService {
 
 	@Override
 	public ReviewPageResponse getMyFeeds(String userId, int page, int size) {
+		// 좋아요/댓글 기반 피드가 구현되기 전까지는 내가 작성한 리뷰 목록을 피드로 사용한다.
 		return getReviewsByUser(userId, page, size);
 	}
 

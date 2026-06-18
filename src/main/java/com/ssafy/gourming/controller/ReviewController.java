@@ -31,6 +31,7 @@ public class ReviewController {
 
 	private final ReviewService reviewService;
 
+	// 인증된 사용자가 선택한 장소에 리뷰를 작성한다.
 	@PostMapping("/reviews")
 	public ResponseEntity<ReviewResponse> createReview(
 		@AuthenticationPrincipal String userId,
@@ -40,6 +41,7 @@ public class ReviewController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+	// 리뷰 상세 조회는 공개 API로 제공한다.
 	@GetMapping("/reviews/{reviewId}")
 	public ResponseEntity<ReviewResponse> getReview(
 		@PathVariable String reviewId
@@ -47,6 +49,7 @@ public class ReviewController {
 		return ResponseEntity.ok(reviewService.getReview(reviewId));
 	}
 
+	// 인증된 작성자 본인의 리뷰만 수정할 수 있다.
 	@PutMapping("/reviews/{reviewId}")
 	public ResponseEntity<ReviewResponse> updateReview(
 		@AuthenticationPrincipal String userId,
@@ -56,6 +59,7 @@ public class ReviewController {
 		return ResponseEntity.ok(reviewService.updateReview(userId, reviewId, request));
 	}
 
+	// 인증된 작성자 본인의 리뷰만 삭제할 수 있다.
 	@DeleteMapping("/reviews/{reviewId}")
 	public ResponseEntity<Void> deleteReview(
 		@AuthenticationPrincipal String userId,
@@ -65,6 +69,7 @@ public class ReviewController {
 		return ResponseEntity.noContent().build();
 	}
 
+	// 장소 상세 화면에서 사용할 리뷰 목록을 공개 조회한다.
 	@GetMapping("/places/{placeId}/reviews")
 	public ResponseEntity<ReviewPageResponse> getReviewsByPlace(
 		@PathVariable String placeId,
@@ -74,6 +79,7 @@ public class ReviewController {
 		return ResponseEntity.ok(reviewService.getReviewsByPlace(placeId, page, size));
 	}
 
+	// 사용자 프로필 화면에서 사용할 작성 리뷰 목록을 공개 조회한다.
 	@GetMapping("/users/{userId}/reviews")
 	public ResponseEntity<ReviewPageResponse> getReviewsByUser(
 		@PathVariable String userId,
@@ -83,6 +89,7 @@ public class ReviewController {
 		return ResponseEntity.ok(reviewService.getReviewsByUser(userId, page, size));
 	}
 
+	// MVP 피드는 인증된 사용자가 작성한 리뷰 목록으로 제공한다.
 	@GetMapping("/users/me/feeds")
 	public ResponseEntity<ReviewPageResponse> getMyFeeds(
 		@AuthenticationPrincipal String userId,

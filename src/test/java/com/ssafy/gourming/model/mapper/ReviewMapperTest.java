@@ -23,7 +23,7 @@ import com.ssafy.gourming.model.dto.ReviewDto.ReviewResponse;
 @TestPropertySource(properties = {
 	"spring.config.import=optional:classpath:application-local.properties"
 })
-@DisplayName("Review Mapper test")
+@DisplayName("리뷰 Mapper 테스트")
 class ReviewMapperTest {
 
 	private static final String USER_ID = "91000000-0000-0000-0000-000000000001";
@@ -54,7 +54,7 @@ class ReviewMapperTest {
 	}
 
 	@Test
-	@DisplayName("review is inserted and selected as entity with image list")
+	@DisplayName("리뷰를 저장하고 이미지 목록을 포함한 엔티티로 조회한다")
 	void insertReviewAndSelectReviewEntityById() {
 		ReviewEntity review = createReview(REVIEW_ID, USER_ID, PLACE_ID);
 
@@ -75,7 +75,7 @@ class ReviewMapperTest {
 	}
 
 	@Test
-	@DisplayName("review detail includes place, author, like count, and comment count")
+	@DisplayName("리뷰 상세에 장소, 작성자, 좋아요 수, 댓글 수를 포함해 조회한다")
 	void selectReviewById() {
 		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
 		insertLike("93000000-0000-0000-0000-000000000001", OTHER_USER_ID, REVIEW_ID);
@@ -97,7 +97,7 @@ class ReviewMapperTest {
 	}
 
 	@Test
-	@DisplayName("reviews are selected by place with pagination")
+	@DisplayName("장소별 리뷰 목록을 페이지네이션으로 조회한다")
 	void selectReviewsByPlace() {
 		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
 		reviewMapper.insertReview(createReview(OTHER_REVIEW_ID, OTHER_USER_ID, PLACE_ID));
@@ -113,7 +113,7 @@ class ReviewMapperTest {
 	}
 
 	@Test
-	@DisplayName("reviews are selected by user with pagination")
+	@DisplayName("사용자별 리뷰 목록을 페이지네이션으로 조회한다")
 	void selectReviewsByUser() {
 		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
 		reviewMapper.insertReview(createReview(OTHER_REVIEW_ID, USER_ID, OTHER_PLACE_ID));
@@ -129,7 +129,7 @@ class ReviewMapperTest {
 	}
 
 	@Test
-	@DisplayName("review is updated and deleted only by owner")
+	@DisplayName("작성자 본인만 리뷰를 수정하고 삭제할 수 있다")
 	void updateAndDeleteReviewChecksOwner() {
 		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
 

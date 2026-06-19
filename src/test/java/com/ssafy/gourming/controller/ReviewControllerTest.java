@@ -117,15 +117,16 @@ class ReviewControllerTest {
 	@Test
 	@DisplayName("인증 없이 리뷰 상세를 조회한다")
 	void getReview() throws Exception {
-		when(reviewService.getReview(REVIEW_ID)).thenReturn(createResponse());
+		when(reviewService.getReview(REVIEW_ID, null)).thenReturn(createResponse());
 
 		mockMvc.perform(get("/api/reviews/{reviewId}", REVIEW_ID))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(REVIEW_ID))
 			.andExpect(jsonPath("$.likeCount").value(2))
-			.andExpect(jsonPath("$.commentCount").value(3));
+			.andExpect(jsonPath("$.commentCount").value(3))
+			.andExpect(jsonPath("$.likedByMe").value(false));
 
-		verify(reviewService).getReview(REVIEW_ID);
+		verify(reviewService).getReview(REVIEW_ID, null);
 	}
 
 	@Test
@@ -183,7 +184,7 @@ class ReviewControllerTest {
 	@Test
 	@DisplayName("인증 없이 장소별 리뷰 목록을 조회한다")
 	void getReviewsByPlace() throws Exception {
-		when(reviewService.getReviewsByPlace(PLACE_ID, 0, 20))
+		when(reviewService.getReviewsByPlace(PLACE_ID, null, 0, 20))
 			.thenReturn(createPageResponse());
 
 		mockMvc.perform(get("/api/places/{placeId}/reviews", PLACE_ID))
@@ -193,13 +194,13 @@ class ReviewControllerTest {
 			.andExpect(jsonPath("$.size").value(20))
 			.andExpect(jsonPath("$.totalElements").value(1));
 
-		verify(reviewService).getReviewsByPlace(PLACE_ID, 0, 20);
+		verify(reviewService).getReviewsByPlace(PLACE_ID, null, 0, 20);
 	}
 
 	@Test
 	@DisplayName("인증 없이 사용자별 리뷰 목록을 조회한다")
 	void getReviewsByUser() throws Exception {
-		when(reviewService.getReviewsByUser(OTHER_USER_ID, 1, 10))
+		when(reviewService.getReviewsByUser(OTHER_USER_ID, null, 1, 10))
 			.thenReturn(createPageResponse());
 
 		mockMvc.perform(get("/api/users/{userId}/reviews", OTHER_USER_ID)
@@ -207,7 +208,7 @@ class ReviewControllerTest {
 				.param("size", "10"))
 			.andExpect(status().isOk());
 
-		verify(reviewService).getReviewsByUser(OTHER_USER_ID, 1, 10);
+		verify(reviewService).getReviewsByUser(OTHER_USER_ID, null, 1, 10);
 	}
 
 	@Test
@@ -241,7 +242,7 @@ class ReviewControllerTest {
 				.param("size", "101"))
 			.andExpect(status().isBadRequest());
 
-		verify(reviewService, never()).getReviewsByPlace(any(), anyInt(), anyInt());
+		verify(reviewService, never()).getReviewsByPlace(any(), any(), anyInt(), anyInt());
 	}
 
 	private Authentication loginAuthentication() {

@@ -61,7 +61,7 @@ class ReviewServiceMockTest {
 
 		when(placeService.findOrCreatePlace(request.getPlace())).thenReturn(createPlace());
 		when(reviewMapper.insertReview(any())).thenReturn(1);
-		when(reviewMapper.selectReviewById(any())).thenReturn(createdResponse);
+		when(reviewMapper.selectReviewById(any(), any())).thenReturn(createdResponse);
 
 		ReviewResponse result = reviewService.createReview(USER_ID, request);
 
@@ -99,7 +99,7 @@ class ReviewServiceMockTest {
 
 		when(placeService.findOrCreatePlace(request.getPlace())).thenReturn(createPlace());
 		when(reviewMapper.insertReview(any())).thenReturn(1);
-		when(reviewMapper.selectReviewById(any())).thenReturn(createResponse(REVIEW_ID));
+		when(reviewMapper.selectReviewById(any(), any())).thenReturn(createResponse(REVIEW_ID));
 
 		reviewService.createReview(USER_ID, request);
 
@@ -111,9 +111,9 @@ class ReviewServiceMockTest {
 	@DisplayName("리뷰 상세를 조회한다")
 	void getReview() {
 		ReviewResponse response = createResponse(REVIEW_ID);
-		when(reviewMapper.selectReviewById(REVIEW_ID)).thenReturn(response);
+		when(reviewMapper.selectReviewById(REVIEW_ID, OTHER_USER_ID)).thenReturn(response);
 
-		ReviewResponse result = reviewService.getReview(REVIEW_ID);
+		ReviewResponse result = reviewService.getReview(REVIEW_ID, OTHER_USER_ID);
 
 		assertThat(result).isSameAs(response);
 	}
@@ -121,9 +121,9 @@ class ReviewServiceMockTest {
 	@Test
 	@DisplayName("존재하지 않는 리뷰 상세는 조회할 수 없다")
 	void getMissingReviewFails() {
-		when(reviewMapper.selectReviewById(REVIEW_ID)).thenReturn(null);
+		when(reviewMapper.selectReviewById(REVIEW_ID, OTHER_USER_ID)).thenReturn(null);
 
-		assertThatThrownBy(() -> reviewService.getReview(REVIEW_ID))
+		assertThatThrownBy(() -> reviewService.getReview(REVIEW_ID, OTHER_USER_ID))
 			.isInstanceOf(NoSuchElementException.class)
 			.hasMessage("Review not found: " + REVIEW_ID);
 	}
@@ -137,7 +137,7 @@ class ReviewServiceMockTest {
 
 		when(reviewMapper.selectReviewEntityById(REVIEW_ID)).thenReturn(existingReview);
 		when(reviewMapper.updateReview(any())).thenReturn(1);
-		when(reviewMapper.selectReviewById(REVIEW_ID)).thenReturn(updatedResponse);
+		when(reviewMapper.selectReviewById(REVIEW_ID, USER_ID)).thenReturn(updatedResponse);
 
 		ReviewResponse result = reviewService.updateReview(USER_ID, REVIEW_ID, request);
 
@@ -201,9 +201,9 @@ class ReviewServiceMockTest {
 	void getReviewsByPlace() {
 		List<ReviewResponse> responses = List.of(createResponse("review-1"));
 		when(reviewMapper.countReviewsByPlace(PLACE_ID)).thenReturn(21L);
-		when(reviewMapper.selectReviewsByPlace(PLACE_ID, 20, 10)).thenReturn(responses);
+		when(reviewMapper.selectReviewsByPlace(PLACE_ID, OTHER_USER_ID, 20, 10)).thenReturn(responses);
 
-		ReviewPageResponse result = reviewService.getReviewsByPlace(PLACE_ID, 2, 10);
+		ReviewPageResponse result = reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, 2, 10);
 
 		assertThat(result.getContent()).isSameAs(responses);
 		assertThat(result.getPage()).isEqualTo(2);
@@ -212,7 +212,7 @@ class ReviewServiceMockTest {
 		assertThat(result.getTotalPages()).isEqualTo(3);
 		assertThat(result.isFirst()).isFalse();
 		assertThat(result.isLast()).isTrue();
-		verify(reviewMapper).selectReviewsByPlace(PLACE_ID, 20, 10);
+		verify(reviewMapper).selectReviewsByPlace(PLACE_ID, OTHER_USER_ID, 20, 10);
 	}
 
 	@Test
@@ -220,9 +220,9 @@ class ReviewServiceMockTest {
 	void getReviewsByUser() {
 		List<ReviewResponse> responses = List.of(createResponse("review-1"));
 		when(reviewMapper.countReviewsByUser(USER_ID)).thenReturn(1L);
-		when(reviewMapper.selectReviewsByUser(USER_ID, 0, 20)).thenReturn(responses);
+		when(reviewMapper.selectReviewsByUser(USER_ID, OTHER_USER_ID, 0, 20)).thenReturn(responses);
 
-		ReviewPageResponse result = reviewService.getReviewsByUser(USER_ID, 0, 20);
+		ReviewPageResponse result = reviewService.getReviewsByUser(USER_ID, OTHER_USER_ID, 0, 20);
 
 		assertThat(result.getContent()).isSameAs(responses);
 		assertThat(result.isFirst()).isTrue();
@@ -234,33 +234,33 @@ class ReviewServiceMockTest {
 	void getMyFeeds() {
 		List<ReviewResponse> responses = List.of(createResponse("review-1"));
 		when(reviewMapper.countReviewsByUser(USER_ID)).thenReturn(1L);
-		when(reviewMapper.selectReviewsByUser(USER_ID, 0, 20)).thenReturn(responses);
+		when(reviewMapper.selectReviewsByUser(USER_ID, USER_ID, 0, 20)).thenReturn(responses);
 
 		ReviewPageResponse result = reviewService.getMyFeeds(USER_ID, 0, 20);
 
 		assertThat(result.getContent()).isSameAs(responses);
 		verify(reviewMapper).countReviewsByUser(USER_ID);
-		verify(reviewMapper).selectReviewsByUser(USER_ID, 0, 20);
+		verify(reviewMapper).selectReviewsByUser(USER_ID, USER_ID, 0, 20);
 	}
 
 	@Test
 	@DisplayName("페이지 번호는 0 이상이어야 한다")
 	void getReviewsWithNegativePageFails() {
-		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, -1, 20))
+		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, -1, 20))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("Page must be zero or greater");
 
-		verify(reviewMapper, never()).selectReviewsByPlace(any(), anyLong(), anyInt());
+		verify(reviewMapper, never()).selectReviewsByPlace(any(), any(), anyLong(), anyInt());
 	}
 
 	@Test
 	@DisplayName("페이지 크기는 1 이상 100 이하여야 한다")
 	void getReviewsWithInvalidSizeFails() {
-		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, 0, 101))
+		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, 0, 101))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("Size must be between 1 and 100");
 
-		verify(reviewMapper, never()).selectReviewsByPlace(any(), anyLong(), anyInt());
+		verify(reviewMapper, never()).selectReviewsByPlace(any(), any(), anyLong(), anyInt());
 	}
 
 	private ReviewCreateRequest createRequest() {

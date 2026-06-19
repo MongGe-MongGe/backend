@@ -89,6 +89,7 @@ public class ReviewDto {
 		private AuthorSummary author;
 		private long likeCount;
 		private long commentCount;
+		private boolean likedByMe;
 		private LocalDateTime createdAt;
 		private LocalDateTime updatedAt;
 	}

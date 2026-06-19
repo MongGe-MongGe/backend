@@ -11,7 +11,7 @@ public interface ReviewService {
 	ReviewResponse createReview(String userId, ReviewCreateRequest request);
 
 	// 리뷰 ID로 단건 상세 정보를 조회한다.
-	ReviewResponse getReview(String reviewId);
+	ReviewResponse getReview(String reviewId, String viewerId);
 
 	// 작성자 본인만 리뷰 내용을 수정할 수 있다.
 	ReviewResponse updateReview(
@@ -24,10 +24,10 @@ public interface ReviewService {
 	void deleteReview(String userId, String reviewId);
 
 	// 특정 장소에 작성된 리뷰 목록을 조회한다.
-	ReviewPageResponse getReviewsByPlace(String placeId, int page, int size);
+	ReviewPageResponse getReviewsByPlace(String placeId, String viewerId, int page, int size);
 
 	// 특정 사용자가 작성한 리뷰 목록을 조회한다.
-	ReviewPageResponse getReviewsByUser(String userId, int page, int size);
+	ReviewPageResponse getReviewsByUser(String userId, String viewerId, int page, int size);
 
 	// MVP에서는 내 피드를 내가 작성한 리뷰 목록으로 제공한다.
 	ReviewPageResponse getMyFeeds(String userId, int page, int size);

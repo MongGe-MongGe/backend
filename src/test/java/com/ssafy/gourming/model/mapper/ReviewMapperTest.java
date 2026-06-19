@@ -81,7 +81,7 @@ class ReviewMapperTest {
 		insertLike("93000000-0000-0000-0000-000000000001", OTHER_USER_ID, REVIEW_ID);
 		insertComment("94000000-0000-0000-0000-000000000001", OTHER_USER_ID, REVIEW_ID);
 
-		ReviewResponse response = reviewMapper.selectReviewById(REVIEW_ID);
+		ReviewResponse response = reviewMapper.selectReviewById(REVIEW_ID, OTHER_USER_ID);
 
 		assertThat(response).isNotNull();
 		assertThat(response.getId()).isEqualTo(REVIEW_ID);
@@ -94,6 +94,7 @@ class ReviewMapperTest {
 		assertThat(response.getAuthor().getHandle()).isEqualTo("@review_user_1");
 		assertThat(response.getLikeCount()).isEqualTo(1);
 		assertThat(response.getCommentCount()).isEqualTo(1);
+		assertThat(response.isLikedByMe()).isTrue();
 	}
 
 	@Test
@@ -101,8 +102,9 @@ class ReviewMapperTest {
 	void selectReviewsByPlace() {
 		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
 		reviewMapper.insertReview(createReview(OTHER_REVIEW_ID, OTHER_USER_ID, PLACE_ID));
+		insertLike("93000000-0000-0000-0000-000000000001", OTHER_USER_ID, REVIEW_ID);
 
-		List<ReviewResponse> reviews = reviewMapper.selectReviewsByPlace(PLACE_ID, 0, 10);
+		List<ReviewResponse> reviews = reviewMapper.selectReviewsByPlace(PLACE_ID, OTHER_USER_ID, 0, 10);
 		long count = reviewMapper.countReviewsByPlace(PLACE_ID);
 
 		assertThat(count).isEqualTo(2);
@@ -110,6 +112,8 @@ class ReviewMapperTest {
 		assertThat(reviews)
 			.extracting(ReviewResponse::getId)
 			.containsExactly(OTHER_REVIEW_ID, REVIEW_ID);
+		assertThat(reviews.get(0).isLikedByMe()).isFalse();
+		assertThat(reviews.get(1).isLikedByMe()).isTrue();
 	}
 
 	@Test
@@ -118,7 +122,7 @@ class ReviewMapperTest {
 		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
 		reviewMapper.insertReview(createReview(OTHER_REVIEW_ID, USER_ID, OTHER_PLACE_ID));
 
-		List<ReviewResponse> reviews = reviewMapper.selectReviewsByUser(USER_ID, 0, 10);
+		List<ReviewResponse> reviews = reviewMapper.selectReviewsByUser(USER_ID, null, 0, 10);
 		long count = reviewMapper.countReviewsByUser(USER_ID);
 
 		assertThat(count).isEqualTo(2);
@@ -126,6 +130,9 @@ class ReviewMapperTest {
 		assertThat(reviews)
 			.extracting(ReviewResponse::getId)
 			.containsExactly(OTHER_REVIEW_ID, REVIEW_ID);
+		assertThat(reviews)
+			.extracting(ReviewResponse::isLikedByMe)
+			.containsExactly(false, false);
 	}
 
 	@Test

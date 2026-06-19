@@ -52,7 +52,7 @@ public class ReviewServiceImpl implements ReviewService {
 		// 리뷰 저장이 성공한 뒤에만 임시 이미지를 확정 상태로 변경한다.
 		confirmImages(review.getImages());
 
-		ReviewResponse response = reviewMapper.selectReviewById(review.getId());
+		ReviewResponse response = reviewMapper.selectReviewById(review.getId(), userId);
 		if (response == null) {
 			throw new IllegalStateException("Failed to find created review");
 		}
@@ -60,8 +60,8 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	public ReviewResponse getReview(String reviewId) {
-		ReviewResponse response = reviewMapper.selectReviewById(reviewId);
+	public ReviewResponse getReview(String reviewId, String viewerId) {
+		ReviewResponse response = reviewMapper.selectReviewById(reviewId, viewerId);
 		if (response == null) {
 			throw new NoSuchElementException("Review not found: " + reviewId);
 		}
@@ -97,7 +97,7 @@ public class ReviewServiceImpl implements ReviewService {
 
 		imageService.syncImages(toImageArray(oldImages), toImageArray(newImages));
 
-		ReviewResponse response = reviewMapper.selectReviewById(reviewId);
+		ReviewResponse response = reviewMapper.selectReviewById(reviewId, userId);
 		if (response == null) {
 			throw new NoSuchElementException("Review not found: " + reviewId);
 		}
@@ -119,23 +119,23 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	public ReviewPageResponse getReviewsByPlace(String placeId, int page, int size) {
+	public ReviewPageResponse getReviewsByPlace(String placeId, String viewerId, int page, int size) {
 		validatePageRequest(page, size);
 		long totalElements = reviewMapper.countReviewsByPlace(placeId);
 		long offset = (long)page * size;
 		List<ReviewResponse> content =
-			reviewMapper.selectReviewsByPlace(placeId, offset, size);
+			reviewMapper.selectReviewsByPlace(placeId, viewerId, offset, size);
 
 		return createPageResponse(content, page, size, totalElements);
 	}
 
 	@Override
-	public ReviewPageResponse getReviewsByUser(String userId, int page, int size) {
+	public ReviewPageResponse getReviewsByUser(String userId, String viewerId, int page, int size) {
 		validatePageRequest(page, size);
 		long totalElements = reviewMapper.countReviewsByUser(userId);
 		long offset = (long)page * size;
 		List<ReviewResponse> content =
-			reviewMapper.selectReviewsByUser(userId, offset, size);
+			reviewMapper.selectReviewsByUser(userId, viewerId, offset, size);
 
 		return createPageResponse(content, page, size, totalElements);
 	}
@@ -143,7 +143,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Override
 	public ReviewPageResponse getMyFeeds(String userId, int page, int size) {
 		// 좋아요/댓글 기반 피드가 구현되기 전까지는 내가 작성한 리뷰 목록을 피드로 사용한다.
-		return getReviewsByUser(userId, page, size);
+		return getReviewsByUser(userId, userId, page, size);
 	}
 
 	private ReviewEntity getReviewEntity(String reviewId) {

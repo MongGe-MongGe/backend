@@ -44,9 +44,10 @@ public class ReviewController {
 	// 리뷰 상세 조회는 공개 API로 제공한다.
 	@GetMapping("/reviews/{reviewId}")
 	public ResponseEntity<ReviewResponse> getReview(
+		@AuthenticationPrincipal String viewerId,
 		@PathVariable String reviewId
 	) {
-		return ResponseEntity.ok(reviewService.getReview(reviewId));
+		return ResponseEntity.ok(reviewService.getReview(reviewId, normalizeViewerId(viewerId)));
 	}
 
 	// 인증된 작성자 본인의 리뷰만 수정할 수 있다.
@@ -72,21 +73,27 @@ public class ReviewController {
 	// 장소 상세 화면에서 사용할 리뷰 목록을 공개 조회한다.
 	@GetMapping("/places/{placeId}/reviews")
 	public ResponseEntity<ReviewPageResponse> getReviewsByPlace(
+		@AuthenticationPrincipal String viewerId,
 		@PathVariable String placeId,
 		@RequestParam(defaultValue = "0") @Min(0) int page,
 		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
 	) {
-		return ResponseEntity.ok(reviewService.getReviewsByPlace(placeId, page, size));
+		return ResponseEntity.ok(
+			reviewService.getReviewsByPlace(placeId, normalizeViewerId(viewerId), page, size)
+		);
 	}
 
 	// 사용자 프로필 화면에서 사용할 작성 리뷰 목록을 공개 조회한다.
 	@GetMapping("/users/{userId}/reviews")
 	public ResponseEntity<ReviewPageResponse> getReviewsByUser(
+		@AuthenticationPrincipal String viewerId,
 		@PathVariable String userId,
 		@RequestParam(defaultValue = "0") @Min(0) int page,
 		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
 	) {
-		return ResponseEntity.ok(reviewService.getReviewsByUser(userId, page, size));
+		return ResponseEntity.ok(
+			reviewService.getReviewsByUser(userId, normalizeViewerId(viewerId), page, size)
+		);
 	}
 
 	// MVP 피드는 인증된 사용자가 작성한 리뷰 목록으로 제공한다.
@@ -97,5 +104,12 @@ public class ReviewController {
 		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
 	) {
 		return ResponseEntity.ok(reviewService.getMyFeeds(userId, page, size));
+	}
+
+	private String normalizeViewerId(String viewerId) {
+		if (viewerId == null || "anonymousUser".equals(viewerId)) {
+			return null;
+		}
+		return viewerId;
 	}
 }

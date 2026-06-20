@@ -42,6 +42,19 @@ public class PostDto {
 		private String userId;
 		private String authorNickname;
 	}
+
+	@Getter
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class PostListResponse {
+		private String id;
+		private String title;
+		private String category;
+		private LocalDateTime createdAt;
+		private LocalDateTime updatedAt;
+		private String userId;
+		private String authorNickname;
+	}
 	
 	@Getter
 	@NoArgsConstructor

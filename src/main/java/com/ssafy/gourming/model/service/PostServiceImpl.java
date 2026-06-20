@@ -44,7 +44,7 @@ public class PostServiceImpl implements PostService {
 	public Map<String, Object> getPosts(int page, int size) {
 		int offset = (page - 1) * size;
 		int totalPosts = postMapper.countPosts();
-		List<PostDto.PostResponse> posts = postMapper.findAllWithPaging(offset, size);
+		List<PostDto.PostListResponse> posts = postMapper.findAllWithPaging(offset, size);
 		
 		int totalPages = (int) Math.ceil((double) totalPosts / size);
 		

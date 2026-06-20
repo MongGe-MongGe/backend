@@ -17,7 +17,7 @@ public interface PostMapper {
 	int countPosts();
 	
 	// 페이지네이션을 적용하여 게시글 목록 조회
-	List<PostDto.PostResponse> findAllWithPaging(@Param("offset") int offset, @Param("limit") int limit);
+	List<PostDto.PostListResponse> findAllWithPaging(@Param("offset") int offset, @Param("limit") int limit);
 	
 	// 단일 게시글 상세 조회
 	PostDto.PostResponse findById(String id);

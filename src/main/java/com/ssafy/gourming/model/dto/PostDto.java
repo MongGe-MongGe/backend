@@ -18,8 +18,15 @@ public class PostDto {
 		@NotBlank(message = "내용은 필수 입력값입니다")
 		private String content;
 
-		@NotBlank(message = "카테고리(Notice, Event)는 필수 입력값입니다")
-		private String category;
+		@jakarta.validation.constraints.NotNull(message = "카테고리(Notice, Event)는 필수 입력값입니다")
+		private PostCategory category;
+	}
+
+	@Getter
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class CreateResponse {
+		private String id;
 	}
 
 	@Getter

@@ -7,7 +7,7 @@ import com.ssafy.gourming.model.dto.PostDto;
 public interface PostService {
 	
 	// 게시글 작성
-	void createPost(String userId, PostDto.CreateRequest request);
+	String createPost(String userId, PostDto.CreateRequest request);
 	
 	// 게시글 목록 페이징 조회
 	Map<String, Object> getPosts(int page, int size);

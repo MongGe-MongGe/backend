@@ -24,33 +24,20 @@ public class PostServiceImpl implements PostService {
 	private final UserMapper userMapper;
 
 	@Override
-	public void createPost(String userId, PostDto.CreateRequest request) {
-		// 권한 검사
-		UserDto.UserEntity user = userMapper.findById(userId);
-		if (user == null) {
-			throw new NoSuchElementException("User not found: " + userId);
-		}
-		if (!"ADMIN".equals(user.getRole())) {
-			throw new SecurityException("관리자만 게시글을 작성할 수 있습니다.");
-		}
-
-		// 카테고리 검증
-		if (!"Notice".equals(request.getCategory()) && !"Event".equals(request.getCategory())) {
-			throw new IllegalArgumentException("카테고리는 'Notice' 또는 'Event' 여야 합니다.");
-		}
-
+	public String createPost(String userId, PostDto.CreateRequest request) {
 		String id = UUID.randomUUID().toString();
 		PostDto.PostEntity postEntity = new PostDto.PostEntity(
 				id,
 				userId,
 				request.getTitle(),
 				request.getContent(),
-				request.getCategory(),
+				request.getCategory().name(),
 				LocalDateTime.now(),
 				LocalDateTime.now()
 		);
 		
 		postMapper.insertPost(postEntity);
+		return id;
 	}
 
 	@Override

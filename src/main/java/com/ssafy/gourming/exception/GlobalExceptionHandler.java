@@ -2,6 +2,8 @@ package com.ssafy.gourming.exception;
 
 import java.util.NoSuchElementException;
 
+import jakarta.validation.ConstraintViolationException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -72,5 +74,13 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> handleGeneralException(Exception ex) {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 내부 오류가 발생했습니다.");
+	}
+
+	/**
+	 * 400 Bad Request: Path Variable, Request Param 등의 검증 실패 (@Validated)
+	 */
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException ex) {
+		return ResponseEntity.badRequest().body("요청 파라미터가 유효하지 않습니다.");
 	}
 }

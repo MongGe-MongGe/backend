@@ -90,7 +90,7 @@ class UserServiceTest {
         UserDto.UserEntity entity = makeEntity("user@email.com", "$2a$hashed");
         when(userMapper.findByEmail("user@email.com")).thenReturn(entity);
         when(passwordEncoder.matches("plainPw", "$2a$hashed")).thenReturn(true);
-        when(jwtUtil.generateToken("user@email.com", "uuid-001")).thenReturn("mock.jwt.token");
+        when(jwtUtil.generateToken("user@email.com", "uuid-001", "USER")).thenReturn("mock.jwt.token");
         log.info("Mock: findByEmail → entity, matches → true, generateToken → mock");
 
         UserDto.LoginResponse res = userService.login(req);
@@ -98,7 +98,7 @@ class UserServiceTest {
 
         assertNotNull(res.getToken());
         assertFalse(res.getToken().isEmpty());
-        verify(jwtUtil).generateToken("user@email.com", "uuid-001");
+        verify(jwtUtil).generateToken("user@email.com", "uuid-001", "USER");
         log.info("✔ JWT 토큰 정상 발급");
     }
 
@@ -239,6 +239,7 @@ class UserServiceTest {
         ReflectionTestUtils.setField(e, "password", encodedPw);
         ReflectionTestUtils.setField(e, "nickname", "테스터");
         ReflectionTestUtils.setField(e, "handle",   "@tester");
+        ReflectionTestUtils.setField(e, "role",     "USER");
         return e;
     }
 }

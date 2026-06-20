@@ -22,11 +22,12 @@ class JwtUtilTest {
     }
 
     @Test
-    void generateTokenStoresEmailAndUserId() {
-        String token = jwtUtil.generateToken("user@email.com", "user-1");
+    void generateTokenStoresEmailAndUserIdAndRole() {
+        String token = jwtUtil.generateToken("user@email.com", "user-1", "USER");
 
         assertEquals("user@email.com", jwtUtil.getEmailFromToken(token));
         assertEquals("user-1", jwtUtil.getUserIdFromToken(token));
+        assertEquals("USER", jwtUtil.getRoleFromToken(token));
         assertTrue(jwtUtil.validateToken(token));
     }
 }

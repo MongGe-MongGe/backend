@@ -33,4 +33,18 @@
         WHERE p.id = #{id}
     </select>
 
+    <update id="updatePost" parameterType="com.ssafy.gourming.model.dto.PostDto$PostEntity">
+        UPDATE posts
+        SET title = #{title},
+            content = #{content},
+            category = #{category},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deletePost" parameterType="String">
+        DELETE FROM posts
+        WHERE id = #{id}
+    </delete>
+
 </mapper>

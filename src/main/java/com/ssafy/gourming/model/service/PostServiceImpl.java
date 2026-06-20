@@ -66,4 +66,32 @@ public class PostServiceImpl implements PostService {
 		return post;
 	}
 
+	@Override
+	public void updatePost(String id, PostDto.UpdateRequest request) {
+		PostDto.PostResponse post = postMapper.findById(id);
+		if (post == null) {
+			throw new NoSuchElementException("게시글을 찾을 수 없습니다.");
+		}
+		
+		PostDto.PostEntity entity = new PostDto.PostEntity(
+			id,
+			post.getUserId(),
+			request.getTitle(),
+			request.getContent(),
+			request.getCategory().name(),
+			post.getCreatedAt(),
+			LocalDateTime.now()
+		);
+		postMapper.updatePost(entity);
+	}
+
+	@Override
+	public void deletePost(String id) {
+		PostDto.PostResponse post = postMapper.findById(id);
+		if (post == null) {
+			throw new NoSuchElementException("게시글을 찾을 수 없습니다.");
+		}
+		postMapper.deletePost(id);
+	}
+
 }

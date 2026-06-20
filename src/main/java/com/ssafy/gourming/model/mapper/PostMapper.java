@@ -21,4 +21,10 @@ public interface PostMapper {
 	
 	// 단일 게시글 상세 조회
 	PostDto.PostResponse findById(String id);
+	
+	// 게시글 수정
+	void updatePost(PostDto.PostEntity post);
+	
+	// 게시글 삭제
+	void deletePost(String id);
 }

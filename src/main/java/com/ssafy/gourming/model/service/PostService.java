@@ -14,4 +14,10 @@ public interface PostService {
 	
 	// 단일 게시글 조회
 	PostDto.PostResponse getPostById(String id);
+	
+	// 게시글 수정
+	void updatePost(String id, PostDto.UpdateRequest request);
+	
+	// 게시글 삭제
+	void deletePost(String id);
 }

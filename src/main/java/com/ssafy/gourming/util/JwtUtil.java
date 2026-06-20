@@ -20,6 +20,7 @@ import io.jsonwebtoken.security.Keys;
 public class JwtUtil {
 
     private static final String USER_ID_CLAIM = "userId";
+    private static final String ROLE_CLAIM = "role";
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -36,16 +37,18 @@ public class JwtUtil {
     }
 
     /**
-     * 이메일을 Subject로 유지하고 사용자 ID를 별도 Claim에 저장한 JWT를 생성합니다.
+     * 이메일을 Subject로 유지하고 사용자 ID와 Role을 별도 Claim에 저장한 JWT를 생성합니다.
      *
      * @param email 토큰의 Subject로 들어갈 사용자의 이메일
      * @param userId 인증 Principal로 사용할 사용자의 ID
+     * @param role 사용자의 권한
      * @return 서명된 JWT 문자열
      */
-    public String generateToken(String email, String userId) {
+    public String generateToken(String email, String userId, String role) {
         return Jwts.builder()
                 .subject(email)
                 .claim(USER_ID_CLAIM, userId)
+                .claim(ROLE_CLAIM, role)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey())
@@ -70,6 +73,16 @@ public class JwtUtil {
      */
     public String getUserIdFromToken(String token) {
         return parseClaims(token).get(USER_ID_CLAIM, String.class);
+    }
+
+    /**
+     * 토큰의 서명을 검증하고 사용자 Role Claim을 추출합니다.
+     *
+     * @param token 파싱할 JWT 문자열
+     * @return 토큰에 저장된 사용자 권한
+     */
+    public String getRoleFromToken(String token) {
+        return parseClaims(token).get(ROLE_CLAIM, String.class);
     }
 
     /**

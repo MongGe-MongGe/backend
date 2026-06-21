@@ -67,14 +67,15 @@ public class UserServiceImpl implements UserService{
 		}
 		
 		// 3. JWT 생성 후 응답 반환 (프로필 정보 전체를 Body에 포함)
-		String token = jwtUtil.generateToken(user.getEmail(), user.getId());
+		String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole());
 		return new UserDto.LoginResponse(
 				token, 
 				user.getId(), 
 				user.getNickname(),
 				user.getEmail(),
 				user.getHandle(), 
-				user.getProfileImage()
+				user.getProfileImage(),
+				user.getRole()
 			);
 	}
 

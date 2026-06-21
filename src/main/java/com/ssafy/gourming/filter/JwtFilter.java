@@ -44,10 +44,17 @@ public class JwtFilter extends OncePerRequestFilter {
             if (jwt != null && jwtUtil.validateToken(jwt)) {
                 // 토큰이 정상일 경우 사용자 ID를 인증 주체(Principal)로 설정합니다.
                 String userId = jwtUtil.getUserIdFromToken(jwt);
+                String role = jwtUtil.getRoleFromToken(jwt);
 
-                // Authentication 객체 생성 (비밀번호는 null, 권한은 빈 리스트)
+                java.util.List<org.springframework.security.core.GrantedAuthority> authorities = new ArrayList<>();
+                if (org.springframework.util.StringUtils.hasText(role)) {
+                    // Spring Security hasRole() expects ROLE_ prefix
+                    authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role));
+                }
+
+                // Authentication 객체 생성 (비밀번호는 null, 권한 설정)
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userId, null, new ArrayList<>());
+                        userId, null, authorities);
                 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

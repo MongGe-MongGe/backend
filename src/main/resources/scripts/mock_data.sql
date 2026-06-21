@@ -10,7 +10,7 @@ USE gourming;
 -- ============================================================
 -- Users
 -- ============================================================
-INSERT IGNORE INTO users (id, email, password, handle, nickname, bio, profile_image)
+INSERT IGNORE INTO users (id, email, password, handle, nickname, bio, profile_image, role)
 VALUES
     (
         '10000000-0000-0000-0000-000000000001',
@@ -19,7 +19,8 @@ VALUES
         '@minji',
         '민지',
         '주말마다 새로운 맛집을 찾아다닙니다.',
-        'https://example.com/images/users/minji.png'
+        'https://example.com/images/users/minji.png',
+        'USER'
     ),
     (
         '10000000-0000-0000-0000-000000000002',
@@ -28,7 +29,8 @@ VALUES
         '@junho',
         '준호',
         '국밥과 면 요리를 좋아합니다.',
-        'https://example.com/images/users/junho.png'
+        'https://example.com/images/users/junho.png',
+        'USER'
     ),
     (
         '10000000-0000-0000-0000-000000000003',
@@ -37,7 +39,8 @@ VALUES
         '@seoyeon',
         '서연',
         '카페와 디저트 기록을 남깁니다.',
-        'https://example.com/images/users/seoyeon.png'
+        'https://example.com/images/users/seoyeon.png',
+        'USER'
     ),
     (
         '10000000-0000-0000-0000-000000000004',
@@ -46,7 +49,8 @@ VALUES
         '@admin',
         '운영자',
         'Gourming 공지와 이벤트를 관리합니다.',
-        'https://example.com/images/users/admin.png'
+        'https://example.com/images/users/admin.png',
+        'ADMIN'
     );
 
 -- ============================================================

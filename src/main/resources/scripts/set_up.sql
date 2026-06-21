@@ -17,6 +17,7 @@ CREATE TABLE users (
     phone         VARCHAR(20),                                -- 전화번호 추가
     bio           TEXT,
     profile_image VARCHAR(500),
+    role          VARCHAR(20)   NOT NULL DEFAULT 'USER',      -- 사용자 권한 (USER, ADMIN)
     created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     PRIMARY KEY (id)

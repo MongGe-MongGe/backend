@@ -42,8 +42,8 @@ public class PostController {
 
 	@GetMapping
 	public ResponseEntity<Map<String, Object>> getPosts(
-			@RequestParam(defaultValue = "1") @jakarta.validation.constraints.Min(1) int page,
-			@RequestParam(defaultValue = "10") int size
+			@RequestParam(defaultValue = "0") @jakarta.validation.constraints.Min(0) int page,
+			@RequestParam(defaultValue = "10") @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(100) int size
 	) {
 		return ResponseEntity.ok(postService.getPosts(page, size));
 	}

@@ -6,10 +6,12 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 public class PostDto {
 
 	@Getter
+	@Setter
 	@NoArgsConstructor
 	public static class CreateRequest {
 		@NotBlank(message = "제목은 필수 입력값입니다")
@@ -23,6 +25,7 @@ public class PostDto {
 	}
 
 	@Getter
+	@Setter
 	@NoArgsConstructor
 	public static class UpdateRequest {
 		@NotBlank(message = "제목은 필수 입력값입니다")

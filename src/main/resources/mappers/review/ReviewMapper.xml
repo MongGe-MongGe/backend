@@ -37,6 +37,7 @@
 			<id property="id" column="place_id" />
 			<result property="name" column="place_name" />
 			<result property="categoryName" column="category_name" />
+			<result property="categoryGroupCode" column="category_group_code" />
 			<result property="roadAddressName" column="road_address_name" />
 			<result property="x" column="x" />
 			<result property="y" column="y" />
@@ -61,6 +62,7 @@
 		p.id AS place_id,
 		p.name AS place_name,
 		p.category_name,
+		p.category_group_code,
 		p.road_address_name,
 		p.x,
 		p.y,

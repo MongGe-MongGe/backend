@@ -89,6 +89,8 @@ class ReviewMapperTest {
 		assertThat(response.getPlace()).isNotNull();
 		assertThat(response.getPlace().getId()).isEqualTo(PLACE_ID);
 		assertThat(response.getPlace().getName()).isEqualTo("Review Test Place");
+		assertThat(response.getPlace().getCategoryName()).isEqualTo("음식점 > 한식");
+		assertThat(response.getPlace().getCategoryGroupCode()).isEqualTo("FD6");
 		assertThat(response.getAuthor()).isNotNull();
 		assertThat(response.getAuthor().getId()).isEqualTo(USER_ID);
 		assertThat(response.getAuthor().getHandle()).isEqualTo("@review_user_1");
@@ -193,11 +195,14 @@ class ReviewMapperTest {
 	private void insertTestPlace(String id, String name) {
 		jdbcTemplate.update(
 			"""
-			INSERT INTO places (id, name, category_name, road_address_name, x, y)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO places (
+				id, name, category_name, category_group_code, road_address_name, x, y
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 			""",
 			id,
 			name,
+			"음식점 > 한식",
 			"FD6",
 			"Seoul Review Test Road 1",
 			"127.000000",

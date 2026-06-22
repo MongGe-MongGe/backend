@@ -9,6 +9,7 @@
 		<id property="id" column="id" />
 		<result property="name" column="name" />
 		<result property="categoryName" column="category_name" />
+		<result property="categoryGroupCode" column="category_group_code" />
 		<result property="roadAddressName" column="road_address_name" />
 		<result property="x" column="x" />
 		<result property="y" column="y" />
@@ -21,6 +22,7 @@
 			id,
 			name,
 			category_name,
+			category_group_code,
 			road_address_name,
 			x,
 			y,
@@ -35,6 +37,7 @@
 			id,
 			name,
 			category_name,
+			category_group_code,
 			road_address_name,
 			x,
 			y
@@ -43,6 +46,7 @@
 			#{id},
 			#{name},
 			#{categoryName},
+			#{categoryGroupCode},
 			#{roadAddressName},
 			#{x},
 			#{y}

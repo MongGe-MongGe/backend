@@ -29,7 +29,8 @@ CREATE TABLE users (
 CREATE TABLE places (
     id                  VARCHAR(50)   NOT NULL,               -- 카카오 장소 ID
     name                VARCHAR(255)  NOT NULL,
-    category_name       VARCHAR(10)   NOT NULL,               -- FD6 | CE7
+    category_name       VARCHAR(255)  NOT NULL,               -- 전체 카테고리 경로
+    category_group_code VARCHAR(10)   NOT NULL,               -- FD6 | CE7
     road_address_name   VARCHAR(500)  NOT NULL,
     x                   VARCHAR(50)   NOT NULL,               -- 경도 (longitude)
     y                   VARCHAR(50)   NOT NULL,               -- 위도 (latitude)

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.CommentMapper">
+
+	<resultMap id="commentEntityResultMap"
+		type="com.ssafy.gourming.model.dto.CommentDto$CommentEntity">
+		<id property="id" column="id" />
+		<result property="userId" column="user_id" />
+		<result property="reviewId" column="review_id" />
+		<result property="content" column="content" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<resultMap id="commentResponseResultMap"
+		type="com.ssafy.gourming.model.dto.CommentDto$CommentResponse">
+		<id property="id" column="comment_id" />
+		<result property="reviewId" column="review_id" />
+		<result property="content" column="content" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+		<association property="author"
+			javaType="com.ssafy.gourming.model.dto.CommentDto$AuthorSummary">
+			<id property="id" column="author_id" />
+			<result property="nickname" column="author_nickname" />
+			<result property="handle" column="author_handle" />
+			<result property="profileImage" column="author_profile_image" />
+		</association>
+	</resultMap>
+
+	<sql id="commentResponseColumns">
+		c.id AS comment_id,
+		c.review_id,
+		c.content,
+		c.created_at,
+		c.updated_at,
+		u.id AS author_id,
+		u.nickname AS author_nickname,
+		u.handle AS author_handle,
+		u.profile_image AS author_profile_image
+	</sql>
+
+	<insert id="insertComment"
+		parameterType="com.ssafy.gourming.model.dto.CommentDto$CommentEntity">
+		INSERT INTO comments (
+			id,
+			user_id,
+			review_id,
+			content
+		)
+		VALUES (
+			#{id},
+			#{userId},
+			#{reviewId},
+			#{content}
+		)
+	</insert>
+
+	<select id="selectCommentEntityById" resultMap="commentEntityResultMap">
+		SELECT
+			id,
+			user_id,
+			review_id,
+			content,
+			created_at,
+			updated_at
+		FROM comments
+		WHERE id = #{commentId}
+	</select>
+
+	<select id="selectCommentById" resultMap="commentResponseResultMap">
+		SELECT
+			<include refid="commentResponseColumns" />
+		FROM comments c
+		JOIN users u ON u.id = c.user_id
+		WHERE c.id = #{commentId}
+	</select>
+
+	<select id="selectCommentsByReview" resultMap="commentResponseResultMap">
+		SELECT
+			<include refid="commentResponseColumns" />
+		FROM comments c
+		JOIN users u ON u.id = c.user_id
+		WHERE c.review_id = #{reviewId}
+		ORDER BY c.created_at ASC, c.id ASC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countCommentsByReview" resultType="long">
+		SELECT COUNT(*)
+		FROM comments
+		WHERE review_id = #{reviewId}
+	</select>
+
+	<update id="updateComment"
+		parameterType="com.ssafy.gourming.model.dto.CommentDto$CommentEntity">
+		UPDATE comments
+		SET content = #{content}
+		WHERE id = #{id}
+		  AND user_id = #{userId}
+	</update>
+
+	<delete id="deleteComment">
+		DELETE FROM comments
+		WHERE id = #{commentId}
+		  AND user_id = #{userId}
+	</delete>
+
+</mapper>

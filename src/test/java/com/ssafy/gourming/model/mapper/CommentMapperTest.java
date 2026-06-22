@@ -155,11 +155,14 @@ class CommentMapperTest {
 	private void insertTestPlace() {
 		jdbcTemplate.update(
 			"""
-			INSERT INTO places (id, name, category_name, road_address_name, x, y)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO places (
+				id, name, category_name, category_group_code, road_address_name, x, y
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 			""",
 			PLACE_ID,
 			"댓글 테스트 맛집",
+			"음식점 > 한식",
 			"FD6",
 			"서울시 댓글 테스트로 1",
 			"127.000000",

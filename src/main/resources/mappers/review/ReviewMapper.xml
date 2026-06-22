@@ -47,6 +47,7 @@
 			<result property="nickname" column="author_nickname" />
 			<result property="handle" column="author_handle" />
 			<result property="profileImage" column="author_profile_image" />
+			<result property="isFollowing" column="author_is_following" />
 		</association>
 	</resultMap>
 
@@ -68,6 +69,12 @@
 		u.nickname AS author_nickname,
 		u.handle AS author_handle,
 		u.profile_image AS author_profile_image,
+		EXISTS (
+			SELECT 1
+			FROM follows f
+			WHERE f.target_user_id = u.id
+			  AND f.user_id = #{viewerId, jdbcType=VARCHAR}
+		) AS author_is_following,
 		(
 			SELECT COUNT(*)
 			FROM likes l
@@ -82,7 +89,7 @@
 			SELECT 1
 			FROM likes ml
 			WHERE ml.review_id = r.id
-			  AND ml.user_id = #{viewerId}
+			  AND ml.user_id = #{viewerId, jdbcType=VARCHAR}
 		) AS liked_by_me
 	</sql>
 
@@ -182,6 +189,40 @@
 		SELECT COUNT(*)
 		FROM reviews
 		WHERE user_id = #{userId}
+	</select>
+
+	<select id="selectFeedsForUser" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE r.user_id = #{userId}
+		   OR r.user_id IN (SELECT target_user_id FROM follows WHERE user_id = #{userId})
+		ORDER BY r.created_at DESC, r.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countFeedsForUser" resultType="long">
+		SELECT COUNT(*)
+		FROM reviews r
+		WHERE r.user_id = #{userId}
+		   OR r.user_id IN (SELECT target_user_id FROM follows WHERE user_id = #{userId})
+	</select>
+
+	<select id="selectAllReviews" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		ORDER BY r.created_at DESC, r.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countAllReviews" resultType="long">
+		SELECT COUNT(*)
+		FROM reviews
 	</select>
 
 </mapper>

@@ -31,4 +31,7 @@ public interface ReviewService {
 
 	// MVP에서는 내 피드를 내가 작성한 리뷰 목록으로 제공한다.
 	ReviewPageResponse getMyFeeds(String userId, int page, int size);
+
+	// 모든 리뷰 목록을 조회한다.
+	ReviewPageResponse getAllReviews(String viewerId, int page, int size);
 }

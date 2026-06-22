@@ -106,6 +106,16 @@ public class ReviewController {
 		return ResponseEntity.ok(reviewService.getMyFeeds(userId, page, size));
 	}
 
+	// 모든 리뷰 목록을 조회한다.
+	@GetMapping("/reviews")
+	public ResponseEntity<ReviewPageResponse> getAllReviews(
+		@AuthenticationPrincipal String viewerId,
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+	) {
+		return ResponseEntity.ok(reviewService.getAllReviews(normalizeViewerId(viewerId), page, size));
+	}
+
 	private String normalizeViewerId(String viewerId) {
 		if (viewerId == null || "anonymousUser".equals(viewerId)) {
 			return null;

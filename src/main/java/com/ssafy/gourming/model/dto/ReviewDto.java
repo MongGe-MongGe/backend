@@ -133,5 +133,8 @@ public class ReviewDto {
 		private String nickname;
 		private String handle;
 		private String profileImage;
+		
+		@com.fasterxml.jackson.annotation.JsonProperty("isFollowing")
+		private boolean isFollowing;
 	}
 }

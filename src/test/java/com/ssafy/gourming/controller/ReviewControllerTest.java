@@ -77,6 +77,8 @@ class ReviewControllerTest {
 			.andExpect(jsonPath("$.content").value("review content"))
 			.andExpect(jsonPath("$.images[0]").value("/images/review-1.png"))
 			.andExpect(jsonPath("$.place.id").value(PLACE_ID))
+			.andExpect(jsonPath("$.place.categoryName").value("음식점 > 한식"))
+			.andExpect(jsonPath("$.place.categoryGroupCode").value("FD6"))
 			.andExpect(jsonPath("$.author.id").value(USER_ID));
 
 		verify(reviewService).createReview(
@@ -122,6 +124,8 @@ class ReviewControllerTest {
 		mockMvc.perform(get("/api/reviews/{reviewId}", REVIEW_ID))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(REVIEW_ID))
+			.andExpect(jsonPath("$.place.categoryName").value("음식점 > 한식"))
+			.andExpect(jsonPath("$.place.categoryGroupCode").value("FD6"))
 			.andExpect(jsonPath("$.likeCount").value(2))
 			.andExpect(jsonPath("$.commentCount").value(3))
 			.andExpect(jsonPath("$.likedByMe").value(false));
@@ -278,7 +282,8 @@ class ReviewControllerTest {
 		PlaceSummary place = new PlaceSummary();
 		place.setId(PLACE_ID);
 		place.setName("test place");
-		place.setCategoryName("FD6");
+		place.setCategoryName("음식점 > 한식");
+		place.setCategoryGroupCode("FD6");
 		place.setRoadAddressName("test road");
 		place.setX("127.0");
 		place.setY("37.0");

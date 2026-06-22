@@ -74,6 +74,9 @@ class GoodPlaceControllerTest {
 			.andExpect(jsonPath("$.content[0].id").value("good-place-1"))
 			.andExpect(jsonPath("$.content[0].groupId").value(GROUP_ID))
 			.andExpect(jsonPath("$.content[0].place.id").value(PLACE_ID))
+			.andExpect(jsonPath("$.content[0].place.categoryName")
+				.value("음식점 > 한식"))
+			.andExpect(jsonPath("$.content[0].place.categoryGroupCode").value("FD6"))
 			.andExpect(jsonPath("$.page").value(0))
 			.andExpect(jsonPath("$.size").value(20))
 			.andExpect(jsonPath("$.totalElements").value(1))
@@ -221,7 +224,8 @@ class GoodPlaceControllerTest {
 		PlaceSummary place = new PlaceSummary();
 		place.setId(PLACE_ID);
 		place.setName("테스트 맛집");
-		place.setCategoryName("음식점");
+		place.setCategoryName("음식점 > 한식");
+		place.setCategoryGroupCode("FD6");
 		place.setRoadAddressName("서울시 테스트로 1");
 		place.setX("127.0");
 		place.setY("37.0");

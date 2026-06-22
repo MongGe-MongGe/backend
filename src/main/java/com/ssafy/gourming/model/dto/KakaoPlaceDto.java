@@ -20,8 +20,11 @@ public class KakaoPlaceDto {
 	@JsonProperty("place_name")
 	private String name;
 
-	@JsonProperty("category_group_code")
+	@JsonProperty("category_name")
 	private String categoryName;
+
+	@JsonProperty("category_group_code")
+	private String categoryGroupCode;
 
 	@JsonProperty("road_address_name")
 	private String roadAddressName;

@@ -134,7 +134,8 @@ class GoodPlaceMapperTest {
 		assertThat(response.getGroupId()).isEqualTo(groupId);
 		assertThat(response.getCreatedAt()).isNotNull();
 		assertThat(response.getPlace().getName()).isEqualTo("테스트 맛집");
-		assertThat(response.getPlace().getCategoryName()).isEqualTo("음식점");
+		assertThat(response.getPlace().getCategoryName()).isEqualTo("음식점 > 한식");
+		assertThat(response.getPlace().getCategoryGroupCode()).isEqualTo("FD6");
 		assertThat(response.getPlace().getRoadAddressName()).isEqualTo("서울시 테스트로 1");
 		assertThat(response.getPlace().getX()).isEqualTo("127.000000");
 		assertThat(response.getPlace().getY()).isEqualTo("37.000000");
@@ -198,15 +199,17 @@ class GoodPlaceMapperTest {
 				id,
 				name,
 				category_name,
+				category_group_code,
 				road_address_name,
 				x,
 				y
 			)
-			VALUES (?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 			""",
 			id,
 			name,
-			"음식점",
+			"음식점 > 한식",
+			"FD6",
 			"서울시 테스트로 1",
 			"127.000000",
 			"37.000000"

@@ -38,7 +38,8 @@ class PlaceMapperTest {
 		PlaceEntity place = new PlaceEntity();
 		place.setId(TEST_PLACE_ID);
 		place.setName("테스트 식당");
-		place.setCategoryName("FD6");
+		place.setCategoryName("음식점 > 한식");
+		place.setCategoryGroupCode("FD6");
 		place.setRoadAddressName("서울시 테스트구 테스트로 1");
 		place.setX("127.000000");
 		place.setY("37.000000");
@@ -50,7 +51,8 @@ class PlaceMapperTest {
 		assertThat(selectedPlace).isNotNull();
 		assertThat(selectedPlace.getId()).isEqualTo(TEST_PLACE_ID);
 		assertThat(selectedPlace.getName()).isEqualTo("테스트 식당");
-		assertThat(selectedPlace.getCategoryName()).isEqualTo("FD6");
+		assertThat(selectedPlace.getCategoryName()).isEqualTo("음식점 > 한식");
+		assertThat(selectedPlace.getCategoryGroupCode()).isEqualTo("FD6");
 		assertThat(selectedPlace.getRoadAddressName()).isEqualTo("서울시 테스트구 테스트로 1");
 		assertThat(selectedPlace.getX()).isEqualTo("127.000000");
 		assertThat(selectedPlace.getY()).isEqualTo("37.000000");

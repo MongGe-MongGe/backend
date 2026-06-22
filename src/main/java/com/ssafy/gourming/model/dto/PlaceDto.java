@@ -40,6 +40,7 @@ public class PlaceDto {
 		private String id;
 		private String name;
 		private String categoryName;
+		private String categoryGroupCode;
 		private String roadAddressName;
 		private String x;
 		private String y;

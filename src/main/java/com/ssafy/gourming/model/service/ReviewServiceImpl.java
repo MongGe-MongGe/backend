@@ -146,6 +146,27 @@ public class ReviewServiceImpl implements ReviewService {
 		return getReviewsByUser(userId, userId, page, size);
 	}
 
+	@Override
+	public ReviewPageResponse getAllReviews(String viewerId, int page, int size) {
+		validatePageRequest(page, size);
+		long offset = (long)page * size;
+		
+		long totalElements;
+		List<ReviewResponse> content;
+
+		if (viewerId != null) {
+			// 로그인한 유저: 내 리뷰와 내가 팔로잉한 유저의 피드만 조회
+			totalElements = reviewMapper.countFeedsForUser(viewerId);
+			content = reviewMapper.selectFeedsForUser(viewerId, viewerId, offset, size);
+		} else {
+			// 비로그인 유저: 전체 리뷰 조회
+			totalElements = reviewMapper.countAllReviews();
+			content = reviewMapper.selectAllReviews(viewerId, offset, size);
+		}
+
+		return createPageResponse(content, page, size, totalElements);
+	}
+
 	private ReviewEntity getReviewEntity(String reviewId) {
 		ReviewEntity review = reviewMapper.selectReviewEntityById(reviewId);
 		if (review == null) {

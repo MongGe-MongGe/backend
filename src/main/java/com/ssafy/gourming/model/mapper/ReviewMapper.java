@@ -51,4 +51,23 @@ public interface ReviewMapper {
 	);
 
 	long countReviewsByUser(String userId);
+
+	// 나와 내 팔로잉의 리뷰 목록을 최신순으로 조회한다.
+	List<ReviewResponse> selectFeedsForUser(
+		@Param("userId") String userId,
+		@Param("viewerId") String viewerId,
+		@Param("offset") long offset,
+		@Param("size") int size
+	);
+
+	long countFeedsForUser(String userId);
+
+	// 전체 리뷰 목록을 최신순으로 조회한다.
+	List<ReviewResponse> selectAllReviews(
+		@Param("viewerId") String viewerId,
+		@Param("offset") long offset,
+		@Param("size") int size
+	);
+
+	long countAllReviews();
 }

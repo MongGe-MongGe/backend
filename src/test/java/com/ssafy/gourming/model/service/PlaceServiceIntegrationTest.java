@@ -52,10 +52,11 @@ class PlaceServiceIntegrationTest {
 		assertThat(result).isNotNull();
 
 		System.out.printf(
-			"Saved place: id=%s, name=%s, category=%s, roadAddress=%s, x=%s, y=%s%n",
+			"Saved place: id=%s, name=%s, category=%s, categoryGroupCode=%s, roadAddress=%s, x=%s, y=%s%n",
 			result.getId(),
 			result.getName(),
 			result.getCategoryName(),
+			result.getCategoryGroupCode(),
 			result.getRoadAddressName(),
 			result.getX(),
 			result.getY()
@@ -64,10 +65,13 @@ class PlaceServiceIntegrationTest {
 		
 		assertThat(result.getId()).isEqualTo(TEST_PLACE_ID);
 		assertThat(result.getName()).isNotBlank();
-		assertThat(result.getCategoryName()).isIn("FD6", "CE7");
+		assertThat(result.getCategoryName()).isNotBlank();
+		assertThat(result.getCategoryGroupCode()).isIn("FD6", "CE7");
 		assertThat(result.getX()).isNotBlank();
 		assertThat(result.getY()).isNotBlank();
 		assertThat(selectedPlace).isNotNull();
 		assertThat(selectedPlace.getId()).isEqualTo(TEST_PLACE_ID);
+		assertThat(selectedPlace.getCategoryName()).isEqualTo(result.getCategoryName());
+		assertThat(selectedPlace.getCategoryGroupCode()).isEqualTo(result.getCategoryGroupCode());
 	}
 }

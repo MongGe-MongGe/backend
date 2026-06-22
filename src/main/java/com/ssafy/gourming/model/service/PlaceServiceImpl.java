@@ -24,6 +24,7 @@ public class PlaceServiceImpl implements PlaceService{
 	    place.setId(kakaoPlace.getId());
 	    place.setName(kakaoPlace.getName());
 	    place.setCategoryName(kakaoPlace.getCategoryName());
+	    place.setCategoryGroupCode(kakaoPlace.getCategoryGroupCode());
 	    // 도로명 주소가 없으면 지번 주소를 대신 저장한다.
 	    place.setRoadAddressName(
 	        kakaoPlace.getRoadAddressName() != null && !kakaoPlace.getRoadAddressName().isBlank()

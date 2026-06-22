@@ -31,8 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
             absolutePath += java.io.File.separator;
         }
 
-        // `/images/**` 로 오는 요청을 실제 물리적 경로로 연결
+        // `/images/**` 로 오는 요청을 실제 물리적 경로로 연결 및 mock 이미지 제공을 위한 클래스패스 경로 추가
 		registry.addResourceHandler("/images/**")
-			.addResourceLocations("file:///" + absolutePath);
+			.addResourceLocations("file:///" + absolutePath)
+			.addResourceLocations("classpath:/images/");
 	}
 }

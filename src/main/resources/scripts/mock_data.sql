@@ -19,7 +19,7 @@ VALUES
         '@minji',
         '민지',
         '주말마다 새로운 맛집을 찾아다닙니다.',
-        'https://example.com/images/users/minji.png',
+        'http://localhost:8080/images/mock_profile_f.png',
         'USER'
     ),
     (
@@ -29,7 +29,7 @@ VALUES
         '@junho',
         '준호',
         '국밥과 면 요리를 좋아합니다.',
-        'https://example.com/images/users/junho.png',
+        'http://localhost:8080/images/mock_profile_m.png',
         'USER'
     ),
     (
@@ -39,7 +39,7 @@ VALUES
         '@seoyeon',
         '서연',
         '카페와 디저트 기록을 남깁니다.',
-        'https://example.com/images/users/seoyeon.png',
+        'http://localhost:8080/images/mock_profile_f.png',
         'USER'
     ),
     (
@@ -49,7 +49,7 @@ VALUES
         '@admin',
         '운영자',
         'Gourming 공지와 이벤트를 관리합니다.',
-        'https://example.com/images/users/admin.png',
+        'http://localhost:8080/images/mock_profile_m.png',
         'ADMIN'
     );
 
@@ -119,7 +119,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000001',
         '면 식감이 좋고 국물이 깔끔했습니다. 점심 시간에는 웨이팅이 조금 있습니다.',
-        JSON_ARRAY('https://example.com/images/reviews/ramen-1.jpg'),
+        JSON_ARRAY('http://localhost:8080/images/mock_steak.png', 'http://localhost:8080/images/mock_salad.png', 'http://localhost:8080/images/mock_pasta.png'),
         5,
         '2026-05-20',
         'kakao-place-002',
@@ -128,7 +128,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000002',
         '크림 파스타가 진하고 양도 넉넉했습니다. 재방문 의사 있습니다.',
-        JSON_ARRAY('https://example.com/images/reviews/pasta-1.jpg', 'https://example.com/images/reviews/pasta-2.jpg'),
+        JSON_ARRAY('http://localhost:8080/images/mock_steak.png', 'http://localhost:8080/images/mock_salad.png', 'http://localhost:8080/images/mock_pasta.png'),
         4,
         '2026-05-22',
         'kakao-place-001',
@@ -137,7 +137,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000003',
         '커피 향이 좋고 좌석 간격이 넓어서 작업하기 좋았습니다.',
-        JSON_ARRAY('https://example.com/images/reviews/cafe-1.jpg'),
+        JSON_ARRAY('http://localhost:8080/images/mock_coffee.png', 'http://localhost:8080/images/mock_cake.png'),
         5,
         '2026-05-24',
         'kakao-place-003',
@@ -146,7 +146,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000004',
         '떡볶이가 매콤하고 튀김이 바삭했습니다. 가성비가 좋아요.',
-        JSON_ARRAY('https://example.com/images/reviews/snack-1.jpg'),
+        JSON_ARRAY('http://localhost:8080/images/mock_steak.png', 'http://localhost:8080/images/mock_salad.png', 'http://localhost:8080/images/mock_pasta.png'),
         4,
         '2026-05-25',
         'kakao-place-004',
@@ -155,7 +155,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000005',
         '디저트 플레이팅이 예쁘고 선물용으로도 괜찮았습니다.',
-        JSON_ARRAY('https://example.com/images/reviews/dessert-1.jpg'),
+        JSON_ARRAY('http://localhost:8080/images/mock_coffee.png', 'http://localhost:8080/images/mock_cake.png'),
         4,
         '2026-05-26',
         'kakao-place-005',

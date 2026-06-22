@@ -15,7 +15,7 @@ VALUES
     (
         '10000000-0000-0000-0000-000000000001',
         'minji@gourming.test',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2b$12$w5rOJaj1fZFYvnuMh7NqDOlpNyUopzGEKz3yeBiNwN2DEH2JZlmsu',
         '@minji',
         '민지',
         '주말마다 새로운 맛집을 찾아다닙니다.',
@@ -25,7 +25,7 @@ VALUES
     (
         '10000000-0000-0000-0000-000000000002',
         'junho@gourming.test',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2b$12$w5rOJaj1fZFYvnuMh7NqDOlpNyUopzGEKz3yeBiNwN2DEH2JZlmsu',
         '@junho',
         '준호',
         '국밥과 면 요리를 좋아합니다.',
@@ -35,7 +35,7 @@ VALUES
     (
         '10000000-0000-0000-0000-000000000003',
         'seoyeon@gourming.test',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2b$12$w5rOJaj1fZFYvnuMh7NqDOlpNyUopzGEKz3yeBiNwN2DEH2JZlmsu',
         '@seoyeon',
         '서연',
         '카페와 디저트 기록을 남깁니다.',
@@ -45,7 +45,7 @@ VALUES
     (
         '10000000-0000-0000-0000-000000000004',
         'admin@gourming.test',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2b$12$w5rOJaj1fZFYvnuMh7NqDOlpNyUopzGEKz3yeBiNwN2DEH2JZlmsu',
         '@admin',
         '운영자',
         'Gourming 공지와 이벤트를 관리합니다.',

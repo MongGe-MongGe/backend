@@ -32,6 +32,7 @@ class ReviewMapperTest {
 	private static final String OTHER_PLACE_ID = "test-review-place-002";
 	private static final String REVIEW_ID = "92000000-0000-0000-0000-000000000001";
 	private static final String OTHER_REVIEW_ID = "92000000-0000-0000-0000-000000000002";
+	private static final int POPULAR_WINDOW_DAYS = 97;
 
 	@Autowired
 	private ReviewMapper reviewMapper;
@@ -41,6 +42,7 @@ class ReviewMapperTest {
 
 	@BeforeEach
 	void setUp() {
+		createPopularReviewScoresTableIfNeeded();
 		deleteTestData();
 		insertTestUser(USER_ID, "review-user-1@test.com", "@review_user_1");
 		insertTestUser(OTHER_USER_ID, "review-user-2@test.com", "@review_user_2");
@@ -135,6 +137,31 @@ class ReviewMapperTest {
 		assertThat(reviews)
 			.extracting(ReviewResponse::isLikedByMe)
 			.containsExactly(false, false);
+	}
+
+	@Test
+	@DisplayName("인기피드 목록을 집계 순위순으로 조회한다")
+	void selectPopularReviews() {
+		reviewMapper.insertReview(createReview(REVIEW_ID, USER_ID, PLACE_ID));
+		reviewMapper.insertReview(createReview(OTHER_REVIEW_ID, OTHER_USER_ID, OTHER_PLACE_ID));
+		insertLike("93000000-0000-0000-0000-000000000001", OTHER_USER_ID, REVIEW_ID);
+		insertComment("94000000-0000-0000-0000-000000000001", OTHER_USER_ID, REVIEW_ID);
+		insertPopularReviewScore(REVIEW_ID, 20.0, 2);
+		insertPopularReviewScore(OTHER_REVIEW_ID, 30.0, 1);
+
+		List<ReviewResponse> reviews =
+			reviewMapper.selectPopularReviews(OTHER_USER_ID, POPULAR_WINDOW_DAYS, 0, 10);
+		long count = reviewMapper.countPopularReviews(POPULAR_WINDOW_DAYS);
+
+		assertThat(count).isEqualTo(2);
+		assertThat(reviews).hasSize(2);
+		assertThat(reviews)
+			.extracting(ReviewResponse::getId)
+			.containsExactly(OTHER_REVIEW_ID, REVIEW_ID);
+		assertThat(reviews.get(0).isLikedByMe()).isFalse();
+		assertThat(reviews.get(1).isLikedByMe()).isTrue();
+		assertThat(reviews.get(1).getLikeCount()).isEqualTo(1);
+		assertThat(reviews.get(1).getCommentCount()).isEqualTo(1);
 	}
 
 	@Test
@@ -235,7 +262,57 @@ class ReviewMapperTest {
 		);
 	}
 
+	private void insertPopularReviewScore(String reviewId, double score, int rankNo) {
+		jdbcTemplate.update(
+			"""
+			INSERT INTO popular_review_scores (
+				review_id,
+				score,
+				like_count,
+				comment_count,
+				rank_no,
+				window_days,
+				calculated_at
+			)
+			VALUES (?, ?, ?, ?, ?, ?, NOW())
+			""",
+			reviewId,
+			score,
+			0,
+			0,
+			rankNo,
+			POPULAR_WINDOW_DAYS
+		);
+	}
+
+	private void createPopularReviewScoresTableIfNeeded() {
+		jdbcTemplate.execute(
+			"""
+			CREATE TABLE IF NOT EXISTS popular_review_scores (
+				review_id      CHAR(36)       NOT NULL,
+				score          DECIMAL(10, 4) NOT NULL,
+				like_count     BIGINT         NOT NULL DEFAULT 0,
+				comment_count  BIGINT         NOT NULL DEFAULT 0,
+				rank_no        INT            NOT NULL,
+				window_days    INT            NOT NULL,
+				calculated_at  DATETIME       NOT NULL,
+
+				PRIMARY KEY (window_days, review_id),
+				UNIQUE KEY uq_popular_review_rank (window_days, rank_no),
+				KEY idx_popular_review_score (window_days, score DESC),
+				CONSTRAINT fk_popular_review_scores_review
+					FOREIGN KEY (review_id) REFERENCES reviews (id) ON DELETE CASCADE
+			)
+			"""
+		);
+	}
+
 	private void deleteTestData() {
+		jdbcTemplate.update(
+			"DELETE FROM popular_review_scores WHERE review_id IN (?, ?)",
+			REVIEW_ID,
+			OTHER_REVIEW_ID
+		);
 		jdbcTemplate.update(
 			"DELETE FROM likes WHERE review_id IN (?, ?)",
 			REVIEW_ID,

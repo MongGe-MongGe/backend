@@ -62,6 +62,16 @@ public interface ReviewMapper {
 
 	long countFeedsForUser(String userId);
 
+	// 인기피드 집계 결과를 순위순으로 조회한다.
+	List<ReviewResponse> selectPopularReviews(
+		@Param("viewerId") String viewerId,
+		@Param("windowDays") int windowDays,
+		@Param("offset") long offset,
+		@Param("size") int size
+	);
+
+	long countPopularReviews(@Param("windowDays") int windowDays);
+
 	// 전체 리뷰 목록을 최신순으로 조회한다.
 	List<ReviewResponse> selectAllReviews(
 		@Param("viewerId") String viewerId,

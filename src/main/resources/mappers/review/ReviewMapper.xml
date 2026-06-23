@@ -212,6 +212,24 @@
 		   OR r.user_id IN (SELECT target_user_id FROM follows WHERE user_id = #{userId})
 	</select>
 
+	<select id="selectPopularReviews" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM popular_review_scores prs
+		JOIN reviews r ON r.id = prs.review_id
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE prs.window_days = #{windowDays}
+		ORDER BY prs.rank_no ASC, prs.score DESC, r.created_at DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countPopularReviews" resultType="long">
+		SELECT COUNT(*)
+		FROM popular_review_scores prs
+		WHERE prs.window_days = #{windowDays}
+	</select>
+
 	<select id="selectAllReviews" resultMap="reviewResponseResultMap">
 		SELECT
 			<include refid="reviewResponseColumns" />

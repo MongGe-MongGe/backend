@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.RecomputeTargetMapper">
+
+	<resultMap id="recomputeTargetResultMap"
+		type="com.ssafy.gourming.model.dto.RecomputeTargetDto$RecomputeTarget">
+		<id property="targetType" column="target_type" />
+		<id property="targetId" column="target_id" />
+		<result property="requestedAt" column="requested_at" />
+	</resultMap>
+
+	<!-- 실제 변경이 생긴 대상은 중복 등록 대신 요청 시각을 갱신한다. -->
+	<insert id="insertOrRefreshTarget">
+		INSERT INTO recompute_targets (
+			target_type,
+			target_id
+		)
+		VALUES (
+			#{targetType},
+			#{targetId}
+		)
+		ON DUPLICATE KEY UPDATE
+			requested_at = CURRENT_TIMESTAMP
+	</insert>
+
+	<!-- 반복 이벤트는 기존 요청 시각을 밀지 않도록 최초 1회만 등록한다. -->
+	<insert id="insertTargetIfAbsent">
+		INSERT IGNORE INTO recompute_targets (
+			target_type,
+			target_id
+		)
+		VALUES (
+			#{targetType},
+			#{targetId}
+		)
+	</insert>
+
+	<!-- cutoff 이전에 요청된 배치 대상을 제한 개수만큼 조회한다. -->
+	<select id="selectTargets" resultMap="recomputeTargetResultMap">
+		SELECT
+			target_type,
+			target_id,
+			requested_at
+		FROM recompute_targets
+		WHERE target_type = #{targetType}
+		  AND requested_at &lt;= #{cutoffAt}
+		ORDER BY requested_at ASC, target_id ASC
+		LIMIT #{limit}
+	</select>
+
+	<!-- 후속 phase 대상 backlog를 limit 없이 정확히 계산한다. -->
+	<select id="countTargets" resultType="long">
+		SELECT COUNT(*)
+		FROM recompute_targets
+		WHERE target_type = #{targetType}
+		  AND requested_at &lt;= #{cutoffAt}
+	</select>
+
+	<!-- 처리 중 새 변경이 들어온 대상은 다음 배치에 남기기 위해 조건부 삭제한다. -->
+	<delete id="deleteProcessedTarget">
+		DELETE FROM recompute_targets
+		WHERE target_type = #{targetType}
+		  AND target_id = #{targetId}
+		  AND requested_at &lt;= #{cutoffAt}
+	</delete>
+
+</mapper>

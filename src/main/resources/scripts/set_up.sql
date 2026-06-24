@@ -24,6 +24,28 @@ CREATE TABLE users (
 );
 
 -- ============================================================
+-- Password Reset Tokens
+-- ============================================================
+CREATE TABLE password_reset_tokens (
+    id          CHAR(36)      NOT NULL DEFAULT (UUID()),
+    user_id     CHAR(36)      NOT NULL,
+    token_hash  VARCHAR(255)  NOT NULL UNIQUE,
+    expires_at  DATETIME      NOT NULL,
+    used_at     DATETIME      NULL,
+    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    CONSTRAINT fk_password_reset_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_password_reset_tokens_user_id
+    ON password_reset_tokens (user_id);
+
+CREATE INDEX idx_password_reset_tokens_expires_at
+    ON password_reset_tokens (expires_at);
+
+-- ============================================================
 -- Places
 -- ============================================================
 CREATE TABLE places (

@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService {
 
 	private static final String STATUS_COMPLETED = "COMPLETED";
-	private static final String STATUS_PROCESSING = "PROCESSING";
 
 	private final PlaceMapper placeMapper;
 	private final PlaceReviewSummaryMapper placeReviewSummaryMapper;
@@ -34,33 +33,17 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 	private final PlaceSummaryAiProperties placeSummaryAiProperties;
 
 	@Override
-	public PlaceReviewSummaryResponse getOrCreateSummary(String placeId) {
-		validatePlaceExists(placeId);
-
-		// 장소 상세 조회에서는 이미 성공적으로 생성된 요약을 우선 사용한다.
-		// AI 호출은 느리고 실패할 수 있으므로 매번 재생성하지 않는다.
+	public PlaceReviewSummaryResponse getSummary(String placeId) {
 		PlaceReviewSummaryEntity existingSummary =
 			placeReviewSummaryMapper.selectByPlaceId(placeId);
-		if (existingSummary != null) {
-			if (STATUS_COMPLETED.equals(existingSummary.getStatus())) {
-				return toResponse(existingSummary);
-			}
 
-			// 다른 요청이 이미 같은 장소의 요약을 생성 중이면 중복 AI 호출을 만들지 않는다.
-			// 장소 상세 응답은 유지하고, 프론트에는 요약 없음 상태(null)를 내려준다.
-			if (STATUS_PROCESSING.equals(existingSummary.getStatus())) {
-				return null;
-			}
-		}
-
-		try {
-			// 저장된 성공 요약이 없으면 최초 조회 시점에 lazy 생성한다.
-			return refreshSummary(placeId);
-		} catch (RuntimeException exception) {
-			// 장소 상세 조회는 요약보다 중요하다.
-			// AI 실패가 장소 상세 조회 실패로 전파되지 않도록 null을 반환한다.
+		if (existingSummary == null) {
 			return null;
 		}
+		if (!STATUS_COMPLETED.equals(existingSummary.getStatus())) {
+			return null;
+		}
+		return toResponse(existingSummary);
 	}
 
 	@Override
@@ -68,20 +51,16 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 		validatePlaceExists(placeId);
 
 		String modelVersion = getModelVersion();
-		// 외부 AI 호출 전에 처리 중 상태를 먼저 남겨 중간 실패 상태를 추적할 수 있게 한다.
+		// 관리자 갱신 요청에서만 AI 요약 생성을 수행한다.
 		placeReviewSummaryMapper.markProcessing(placeId, modelVersion);
 
 		try {
-			// 리뷰 원본은 최신순으로 조회된다.
-			// max-review-count 제한은 summarizer 구현체에서 적용한다.
 			List<ReviewSummarySourceRow> reviews =
 				placeReviewSummaryMapper.selectReviewSourcesByPlaceId(placeId);
 
-			// 실제 AI 구현체 또는 Fake 구현체는 설정값에 따라 Spring이 하나만 주입한다.
 			PlaceReviewSummaryGenerateResult generatedSummary =
 				placeReviewSummarizer.summarize(placeId, reviews);
 
-			// TypeHandler가 List<String>을 JSON 컬럼으로 변환하므로 서비스에서 직접 직렬화하지 않는다.
 			PlaceReviewSummaryEntity entity =
 				toEntity(placeId, generatedSummary, modelVersion, STATUS_COMPLETED, null);
 
@@ -94,7 +73,6 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 			}
 			return toResponse(savedSummary);
 		} catch (RuntimeException exception) {
-			// 실패한 장소도 다음 재시도나 관리자 확인이 가능하도록 FAILED 상태와 오류 메시지를 저장한다.
 			placeReviewSummaryMapper.markFailed(
 				placeId,
 				modelVersion,
@@ -111,8 +89,6 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 		List<String> failedPlaceIds = new ArrayList<>();
 		int successCount = 0;
 
-		// 전체 갱신은 관리자용 작업이다.
-		// 한 장소가 실패해도 전체 작업을 중단하지 않고 나머지 장소를 계속 처리한다.
 		for (String placeId : placeIds) {
 			try {
 				refreshSummary(placeId);
@@ -185,7 +161,6 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 	}
 
 	private String getModelVersion() {
-		// Fake 요약기를 사용하는 환경에서는 실제 모델명이 없으므로 저장값을 fake로 남긴다.
 		if (!placeSummaryAiProperties.isEnabled()) {
 			return "fake";
 		}
@@ -197,7 +172,6 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 	}
 
 	private String truncateErrorMessage(String errorMessage) {
-		// DB 컬럼 길이(error_message VARCHAR(500))를 넘지 않도록 방어한다.
 		if (errorMessage == null || errorMessage.isBlank()) {
 			return "Unknown place review summary error";
 		}

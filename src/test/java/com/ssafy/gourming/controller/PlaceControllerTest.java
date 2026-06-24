@@ -5,7 +5,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -60,10 +59,10 @@ class PlaceControllerTest {
 	private JwtUtil jwtUtil;
 
 	@Test
-	@DisplayName("인증 없이 카카오 장소를 검증·저장하고 리뷰 요약을 포함해 반환한다")
-	void checkOrCreatePlace() throws Exception {
+	@DisplayName("인증 없이 카카오 장소를 검증/저장하고 저장된 리뷰 요약을 함께 반환한다")
+	void checkOrCreatePlaceWithSummary() throws Exception {
 		when(placeService.findOrCreatePlace(any())).thenReturn(createPlace());
-		when(placeReviewSummaryService.getOrCreateSummary(PLACE_ID))
+		when(placeReviewSummaryService.getSummary(PLACE_ID))
 			.thenReturn(createSummary());
 
 		mockMvc.perform(post("/api/places")
@@ -78,52 +77,39 @@ class PlaceControllerTest {
 			request.getId().equals(PLACE_ID)
 				&& request.getName().equals("테스트 장소")
 		));
-		verify(placeReviewSummaryService).getOrCreateSummary(PLACE_ID);
+		verify(placeReviewSummaryService).getSummary(PLACE_ID);
+		verify(placeReviewSummaryService, never()).refreshSummary(any());
 	}
 
 	@Test
-	@DisplayName("인증 없이 장소 상세와 리뷰 요약을 조회한다")
-	void getPlace() throws Exception {
-		when(placeService.getPlace(PLACE_ID)).thenReturn(createPlace());
-		when(placeReviewSummaryService.getOrCreateSummary(PLACE_ID))
-			.thenReturn(createSummary());
+	@DisplayName("저장된 요약이 없으면 장소 검증/저장 응답의 reviewSummary는 null이다")
+	void checkOrCreatePlaceWithoutSummary() throws Exception {
+		when(placeService.findOrCreatePlace(any())).thenReturn(createPlace());
+		when(placeReviewSummaryService.getSummary(PLACE_ID)).thenReturn(null);
 
-		mockMvc.perform(get("/api/places/{placeId}", PLACE_ID))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(PLACE_ID))
-			.andExpect(jsonPath("$.name").value("테스트 장소"))
-			.andExpect(jsonPath("$.categoryName").value("음식점 > 양식"))
-			.andExpect(jsonPath("$.categoryGroupCode").value("FD6"))
-			.andExpect(jsonPath("$.reviewSummary.placeId").value(PLACE_ID))
-			.andExpect(jsonPath("$.reviewSummary.summary").value("리뷰 요약입니다."))
-			.andExpect(jsonPath("$.reviewSummary.positivePoints[0]").value("맛이 좋아요"))
-			.andExpect(jsonPath("$.reviewSummary.keywords[0]").value("파스타"));
-
-		verify(placeService).getPlace(PLACE_ID);
-		verify(placeReviewSummaryService).getOrCreateSummary(PLACE_ID);
-	}
-
-	@Test
-	@DisplayName("요약 생성에 실패해도 장소 상세는 reviewSummary null로 조회된다")
-	void getPlaceWithNullSummary() throws Exception {
-		when(placeService.getPlace(PLACE_ID)).thenReturn(createPlace());
-		when(placeReviewSummaryService.getOrCreateSummary(PLACE_ID)).thenReturn(null);
-
-		mockMvc.perform(get("/api/places/{placeId}", PLACE_ID))
+		mockMvc.perform(post("/api/places")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(createPlaceRequest())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(PLACE_ID))
 			.andExpect(jsonPath("$.reviewSummary").doesNotExist());
+
+		verify(placeReviewSummaryService).getSummary(PLACE_ID);
+		verify(placeReviewSummaryService, never()).refreshSummary(any());
 	}
 
 	@Test
-	@DisplayName("존재하지 않는 장소는 404를 반환한다")
-	void getMissingPlaceFails() throws Exception {
-		when(placeService.getPlace(PLACE_ID)).thenReturn(null);
+	@DisplayName("장소 검증/저장 결과가 없으면 404를 반환한다")
+	void checkOrCreateMissingPlaceFails() throws Exception {
+		when(placeService.findOrCreatePlace(any())).thenReturn(null);
 
-		mockMvc.perform(get("/api/places/{placeId}", PLACE_ID))
+		mockMvc.perform(post("/api/places")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(createPlaceRequest())))
 			.andExpect(status().isNotFound());
 
-		verify(placeReviewSummaryService, never()).getOrCreateSummary(any());
+		verify(placeReviewSummaryService, never()).getSummary(any());
+		verify(placeReviewSummaryService, never()).refreshSummary(any());
 	}
 
 	@Test

@@ -56,18 +56,17 @@ class PlaceReviewSummaryServiceMockTest {
 
 	@Test
 	@DisplayName("COMPLETED 요약이 있으면 저장된 요약을 반환하고 AI를 호출하지 않는다")
-	void getOrCreateSummaryReturnsCompletedSummary() {
+	void getSummaryReturnsCompletedSummary() {
 		PlaceReviewSummaryEntity completedSummary = createSummaryEntity(
 			PLACE_ID,
 			"저장된 요약입니다.",
 			"COMPLETED"
 		);
 
-		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
 		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(completedSummary);
 
 		PlaceReviewSummaryResponse result =
-			placeReviewSummaryService.getOrCreateSummary(PLACE_ID);
+			placeReviewSummaryService.getSummary(PLACE_ID);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getPlaceId()).isEqualTo(PLACE_ID);
@@ -79,19 +78,12 @@ class PlaceReviewSummaryServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("PROCESSING 요약이 있으면 중복 AI 호출 없이 null을 반환한다")
-	void getOrCreateSummaryReturnsNullWhenProcessing() {
-		PlaceReviewSummaryEntity processingSummary = createSummaryEntity(
-			PLACE_ID,
-			null,
-			"PROCESSING"
-		);
-
-		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
-		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(processingSummary);
+	@DisplayName("저장된 요약이 없으면 AI를 호출하지 않고 null을 반환한다")
+	void getSummaryReturnsNullWhenSummaryDoesNotExist() {
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(null);
 
 		PlaceReviewSummaryResponse result =
-			placeReviewSummaryService.getOrCreateSummary(PLACE_ID);
+			placeReviewSummaryService.getSummary(PLACE_ID);
 
 		assertThat(result).isNull();
 		verify(placeReviewSummarizer, never()).summarize(any(), any());
@@ -99,58 +91,41 @@ class PlaceReviewSummaryServiceMockTest {
 	}
 
 	@Test
-	@DisplayName("저장된 요약이 없으면 리뷰 기준으로 요약을 생성하고 저장한다")
-	void getOrCreateSummaryCreatesSummary() {
-		PlaceReviewSummaryGenerateResult generatedSummary = createGeneratedSummary();
-		PlaceReviewSummaryEntity savedSummary = createSummaryEntity(
+	@DisplayName("PROCESSING 요약이 있으면 AI를 호출하지 않고 null을 반환한다")
+	void getSummaryReturnsNullWhenProcessing() {
+		PlaceReviewSummaryEntity processingSummary = createSummaryEntity(
 			PLACE_ID,
-			generatedSummary.getSummary(),
-			"COMPLETED"
+			null,
+			"PROCESSING"
 		);
 
-		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
-		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
-			.thenReturn(null, savedSummary);
-		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
-			.thenReturn(List.of(createReviewSource()));
-		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any()))
-			.thenReturn(generatedSummary);
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(processingSummary);
 
 		PlaceReviewSummaryResponse result =
-			placeReviewSummaryService.getOrCreateSummary(PLACE_ID);
+			placeReviewSummaryService.getSummary(PLACE_ID);
 
-		assertThat(result).isNotNull();
-		assertThat(result.getSummary()).isEqualTo(generatedSummary.getSummary());
-		assertThat(result.getReviewCount()).isEqualTo(1);
-		verify(placeReviewSummaryMapper).markProcessing(PLACE_ID, "fake");
-		verify(placeReviewSummaryMapper).upsert(argThat(summary ->
-			summary.getPlaceId().equals(PLACE_ID)
-				&& summary.getStatus().equals("COMPLETED")
-				&& summary.getModelVersion().equals("fake")
-				&& summary.getPositivePoints().contains("맛이 좋아요")
-		));
+		assertThat(result).isNull();
+		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
 	}
 
 	@Test
-	@DisplayName("getOrCreateSummary에서 요약 생성이 실패하면 FAILED 저장 후 null을 반환한다")
-	void getOrCreateSummaryReturnsNullWhenSummaryCreationFails() {
-		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
-		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(null);
-		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
-			.thenReturn(List.of(createReviewSource()));
-		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any()))
-			.thenThrow(new IllegalStateException("AI failed"));
+	@DisplayName("FAILED 요약이 있으면 공개 조회에서는 재시도하지 않고 null을 반환한다")
+	void getSummaryReturnsNullWhenFailed() {
+		PlaceReviewSummaryEntity failedSummary = createSummaryEntity(
+			PLACE_ID,
+			null,
+			"FAILED"
+		);
+
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(failedSummary);
 
 		PlaceReviewSummaryResponse result =
-			placeReviewSummaryService.getOrCreateSummary(PLACE_ID);
+			placeReviewSummaryService.getSummary(PLACE_ID);
 
 		assertThat(result).isNull();
-		verify(placeReviewSummaryMapper).markProcessing(PLACE_ID, "fake");
-		verify(placeReviewSummaryMapper).markFailed(
-			PLACE_ID,
-			"fake",
-			"AI failed"
-		);
+		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
 	}
 
 	@Test
@@ -228,6 +203,39 @@ class PlaceReviewSummaryServiceMockTest {
 		);
 	}
 
+	@Test
+	@DisplayName("refreshSummary는 생성된 요약을 COMPLETED 상태로 저장한다")
+	void refreshSummarySavesCompletedSummary() {
+		PlaceReviewSummaryGenerateResult generatedSummary = createGeneratedSummary();
+		PlaceReviewSummaryEntity savedSummary = createSummaryEntity(
+			PLACE_ID,
+			generatedSummary.getSummary(),
+			"COMPLETED"
+		);
+
+		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
+		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
+			.thenReturn(List.of(createReviewSource()));
+		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any()))
+			.thenReturn(generatedSummary);
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
+			.thenReturn(savedSummary);
+
+		PlaceReviewSummaryResponse result =
+			placeReviewSummaryService.refreshSummary(PLACE_ID);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getSummary()).isEqualTo(generatedSummary.getSummary());
+		assertThat(result.getReviewCount()).isEqualTo(1);
+		verify(placeReviewSummaryMapper).markProcessing(PLACE_ID, "fake");
+		verify(placeReviewSummaryMapper).upsert(argThat(summary ->
+			summary.getPlaceId().equals(PLACE_ID)
+				&& summary.getStatus().equals("COMPLETED")
+				&& summary.getModelVersion().equals("fake")
+				&& summary.getPositivePoints().contains("맛이 좋아요")
+		));
+	}
+
 	private PlaceEntity createPlace(String placeId) {
 		PlaceEntity place = new PlaceEntity();
 		place.setId(placeId);
@@ -275,7 +283,7 @@ class PlaceReviewSummaryServiceMockTest {
 	private ReviewSummarySourceRow createReviewSource() {
 		ReviewSummarySourceRow review = new ReviewSummarySourceRow();
 		review.setReviewId("review-1");
-		review.setContent("맛있고 분위기가 좋아요.");
+		review.setContent("맛있고 분위기가 좋아요");
 		review.setRatingScore(5);
 		review.setVisitedAt(LocalDate.of(2026, 6, 24));
 		review.setCreatedAt(LocalDateTime.of(2026, 6, 24, 11, 0));

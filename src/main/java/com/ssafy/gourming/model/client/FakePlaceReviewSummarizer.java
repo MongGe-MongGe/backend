@@ -24,6 +24,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 		String placeId,
 		List<ReviewSummarySourceRow> reviews
 	) {
+		// 테스트나 로컬 fallback 환경에서도 실제 AI 생성기와 같은 입력 계약을 사용한다.
 		List<ReviewSummarySourceRow> safeReviews =
 			reviews == null ? Collections.emptyList() : reviews;
 
@@ -31,6 +32,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 		result.setReviewCount(safeReviews.size());
 		result.setLastReviewUpdatedAt(findLastReviewUpdatedAt(safeReviews));
 
+		// 리뷰가 없으면 AI 생성기와 동일하게 정상적인 빈 요약 결과를 반환한다.
 		if (safeReviews.isEmpty()) {
 			result.setSummary("아직 작성된 리뷰가 없습니다.");
 			result.setPositivePoints(List.of());
@@ -40,6 +42,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 			return result;
 		}
 
+		// Fake 생성기는 외부 API를 호출하지 않고 테스트 가능한 고정 규칙으로 요약을 만든다.
 		result.setSummary("최근 리뷰를 기준으로 전반적인 만족도와 방문 경험을 요약했습니다.");
 		result.setPositivePoints(createPositivePoints(safeReviews));
 		result.setNegativePoints(createNegativePoints(safeReviews));
@@ -49,6 +52,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 	}
 
 	private List<String> createPositivePoints(List<ReviewSummarySourceRow> reviews) {
+		// 별점 4점 이상 리뷰가 하나라도 있으면 긍정 포인트를 포함한다.
 		boolean hasPositiveReview = reviews.stream()
 			.map(ReviewSummarySourceRow::getRatingScore)
 			.filter(Objects::nonNull)
@@ -61,6 +65,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 	}
 
 	private List<String> createNegativePoints(List<ReviewSummarySourceRow> reviews) {
+		// 별점 2점 이하 리뷰가 하나라도 있으면 부정 포인트를 포함한다.
 		boolean hasNegativeReview = reviews.stream()
 			.map(ReviewSummarySourceRow::getRatingScore)
 			.filter(Objects::nonNull)
@@ -73,6 +78,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 	}
 
 	private LocalDateTime findLastReviewUpdatedAt(List<ReviewSummarySourceRow> reviews) {
+		// 실제 생성기와 동일하게 최신 리뷰 수정 시각을 결과에 담는다.
 		return reviews.stream()
 			.map(ReviewSummarySourceRow::getUpdatedAt)
 			.filter(Objects::nonNull)

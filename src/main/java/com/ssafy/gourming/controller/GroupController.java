@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ssafy.gourming.model.dto.GroupDto.GroupCreateRequest;
 import com.ssafy.gourming.model.dto.GroupDto.GroupResponse;
+import com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupUpdateRequest;
 import com.ssafy.gourming.model.service.GroupService;
 
@@ -36,12 +37,25 @@ public class GroupController {
 	) {
 		return ResponseEntity.ok(groupService.getGroupsByUserId(userId));
 	}
-
 	@GetMapping("/{userId}/groups")
 	public ResponseEntity<List<GroupResponse>> getUserGroups(
 		@PathVariable String userId
 	) {
 		return ResponseEntity.ok(groupService.getGroupsByUserId(userId));
+	}
+
+	/**
+	 * 로그인한 유저 본인의 그룹과 팔로우하는 유저들의 그룹 목록을 조회합니다.
+	 * 맛집이 하나도 없는 그룹은 제외되며, 각 그룹의 소유자(유저) 정보도 함께 반환됩니다.
+	 * 
+	 * @param userId 로그인한 유저의 ID (SecurityContext 기반)
+	 * @return 그룹 및 유저 정보가 포함된 응답 객체의 리스트
+	 */
+	@GetMapping("/me/groups/following")
+	public ResponseEntity<List<GroupWithUserResponse>> getFollowingGroups(
+		@AuthenticationPrincipal String userId
+	) {
+		return ResponseEntity.ok(groupService.getFollowingGroups(userId));
 	}
 
 	@PostMapping("/me/groups")

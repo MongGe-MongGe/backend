@@ -61,6 +61,29 @@ CREATE TABLE reviews (
 );
 
 -- ============================================================
+-- Place Review Summaries (장소별 리뷰 AI 요약)
+-- ============================================================
+CREATE TABLE place_review_summaries (
+    place_id                VARCHAR(50)   NOT NULL,
+    summary                 TEXT          NULL,
+    positive_points         JSON          NULL,
+    negative_points         JSON          NULL,
+    recommended_for         JSON          NULL,
+    keywords                JSON          NULL,
+    review_count            INT           NOT NULL DEFAULT 0,
+    model_version           VARCHAR(50)   NOT NULL,
+    status                  VARCHAR(20)   NOT NULL,
+    last_review_updated_at  DATETIME      NULL,
+    error_message           VARCHAR(500)  NULL,
+    created_at              DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (place_id),
+    CONSTRAINT fk_place_review_summaries_place
+        FOREIGN KEY (place_id) REFERENCES places (id) ON DELETE CASCADE
+);
+
+-- ============================================================
 -- Likes (리뷰 좋아요)
 -- ============================================================
 CREATE TABLE likes (

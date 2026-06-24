@@ -58,4 +58,10 @@
 		WHERE id = #{id}
 	</delete>
 
+	<select id="selectAllPlaceIds" resultType="string">
+		SELECT id
+		FROM places
+		ORDER BY created_at ASC, id ASC
+	</select>
+
 </mapper>

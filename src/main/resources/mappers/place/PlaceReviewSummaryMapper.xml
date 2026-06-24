@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.PlaceReviewSummaryMapper">
+
+	<resultMap id="placeReviewSummaryResultMap"
+		type="com.ssafy.gourming.model.dto.PlaceReviewSummaryDto$PlaceReviewSummaryEntity">
+		<id property="placeId" column="place_id" />
+		<result property="summary" column="summary" />
+		<result property="positivePoints" column="positive_points"
+			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="negativePoints" column="negative_points"
+			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="recommendedFor" column="recommended_for"
+			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="keywords" column="keywords"
+			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="reviewCount" column="review_count" />
+		<result property="modelVersion" column="model_version" />
+		<result property="status" column="status" />
+		<result property="lastReviewUpdatedAt" column="last_review_updated_at" />
+		<result property="errorMessage" column="error_message" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<resultMap id="reviewSummarySourceRowResultMap"
+		type="com.ssafy.gourming.model.dto.PlaceReviewSummaryDto$ReviewSummarySourceRow">
+		<id property="reviewId" column="review_id" />
+		<result property="content" column="content" />
+		<result property="ratingScore" column="rating_score" />
+		<result property="visitedAt" column="visited_at" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<select id="selectByPlaceId" resultMap="placeReviewSummaryResultMap">
+		SELECT
+			place_id,
+			summary,
+			positive_points,
+			negative_points,
+			recommended_for,
+			keywords,
+			review_count,
+			model_version,
+			status,
+			last_review_updated_at,
+			error_message,
+			created_at,
+			updated_at
+		FROM place_review_summaries
+		WHERE place_id = #{placeId}
+	</select>
+
+	<insert id="upsert"
+		parameterType="com.ssafy.gourming.model.dto.PlaceReviewSummaryDto$PlaceReviewSummaryEntity">
+		INSERT INTO place_review_summaries (
+			place_id,
+			summary,
+			positive_points,
+			negative_points,
+			recommended_for,
+			keywords,
+			review_count,
+			model_version,
+			status,
+			last_review_updated_at,
+			error_message
+		)
+		VALUES (
+			#{placeId},
+			#{summary},
+			#{positivePoints, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{negativePoints, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{recommendedFor, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{keywords, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{reviewCount},
+			#{modelVersion},
+			#{status},
+			#{lastReviewUpdatedAt},
+			#{errorMessage}
+		)
+		ON DUPLICATE KEY UPDATE
+			summary = VALUES(summary),
+			positive_points = VALUES(positive_points),
+			negative_points = VALUES(negative_points),
+			recommended_for = VALUES(recommended_for),
+			keywords = VALUES(keywords),
+			review_count = VALUES(review_count),
+			model_version = VALUES(model_version),
+			status = VALUES(status),
+			last_review_updated_at = VALUES(last_review_updated_at),
+			error_message = VALUES(error_message)
+	</insert>
+
+	<insert id="markProcessing">
+		INSERT INTO place_review_summaries (
+			place_id,
+			summary,
+			positive_points,
+			negative_points,
+			recommended_for,
+			keywords,
+			review_count,
+			model_version,
+			status,
+			last_review_updated_at,
+			error_message
+		)
+		VALUES (
+			#{placeId},
+			NULL,
+			JSON_ARRAY(),
+			JSON_ARRAY(),
+			JSON_ARRAY(),
+			JSON_ARRAY(),
+			0,
+			#{modelVersion},
+			'PROCESSING',
+			NULL,
+			NULL
+		)
+		ON DUPLICATE KEY UPDATE
+			model_version = VALUES(model_version),
+			status = VALUES(status),
+			error_message = NULL
+	</insert>
+
+	<insert id="markFailed">
+		INSERT INTO place_review_summaries (
+			place_id,
+			summary,
+			positive_points,
+			negative_points,
+			recommended_for,
+			keywords,
+			review_count,
+			model_version,
+			status,
+			last_review_updated_at,
+			error_message
+		)
+		VALUES (
+			#{placeId},
+			NULL,
+			JSON_ARRAY(),
+			JSON_ARRAY(),
+			JSON_ARRAY(),
+			JSON_ARRAY(),
+			0,
+			#{modelVersion},
+			'FAILED',
+			NULL,
+			#{errorMessage}
+		)
+		ON DUPLICATE KEY UPDATE
+			model_version = VALUES(model_version),
+			status = VALUES(status),
+			error_message = VALUES(error_message)
+	</insert>
+
+	<select id="selectReviewSourcesByPlaceId" resultMap="reviewSummarySourceRowResultMap">
+		SELECT
+			id AS review_id,
+			content,
+			rating_score,
+			visited_at,
+			created_at,
+			updated_at
+		FROM reviews
+		WHERE place_id = #{placeId}
+		ORDER BY created_at DESC, id DESC
+	</select>
+
+</mapper>

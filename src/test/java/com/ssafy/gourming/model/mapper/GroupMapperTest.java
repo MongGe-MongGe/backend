@@ -119,6 +119,19 @@ class GroupMapperTest {
 	}
 
 	@Test
+	@DisplayName("팔로잉 유저 그룹 목록을 조회한다")
+	void selectFollowingGroups() {
+		// 맛집이 하나도 없는 그룹들은 조회되지 않아야 한다.
+		groupMapper.insertGroup(createGroup(TEST_USER_ID, "친구 추천", false));
+		groupMapper.insertGroup(createGroup(OTHER_USER_ID, "기타 그룹", false));
+		
+		List<com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse> list = groupMapper.selectFollowingGroups(TEST_USER_ID);
+		
+		// 맛집이 없으므로 비어있어야 정상
+		assertThat(list).isEmpty();
+	}
+
+	@Test
 	@DisplayName("소유자만 그룹 이름을 수정하고 그룹을 삭제할 수 있다")
 	void updateAndDeleteGroupChecksOwner() {
 		groupMapper.insertGroup(createGroup(TEST_USER_ID, "수정 전", false));

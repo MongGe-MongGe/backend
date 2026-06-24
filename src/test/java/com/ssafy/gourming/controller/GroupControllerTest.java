@@ -30,6 +30,7 @@ import com.ssafy.gourming.config.SecurityConfig;
 import com.ssafy.gourming.model.dto.GroupDto.GroupCreateRequest;
 import com.ssafy.gourming.model.dto.GroupDto.GroupResponse;
 import com.ssafy.gourming.model.dto.GroupDto.GroupUpdateRequest;
+import com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse;
 import com.ssafy.gourming.model.service.GroupService;
 import com.ssafy.gourming.util.JwtUtil;
 
@@ -88,6 +89,25 @@ class GroupControllerTest {
 			.andExpect(jsonPath("$[0].id").value(GROUP_ID));
 
 		verify(groupService).getGroupsByUserId(OTHER_USER_ID);
+	}
+
+	@Test
+	@DisplayName("팔로잉 유저 그룹 목록을 조회한다")
+	void getFollowingGroups() throws Exception {
+		GroupWithUserResponse response = new GroupWithUserResponse();
+		response.setId(GROUP_ID);
+		response.setName("팔로잉 그룹");
+		response.setGoodPlaceCount(1);
+		
+		when(groupService.getFollowingGroups(USER_ID)).thenReturn(List.of(response));
+
+		mockMvc.perform(get("/api/users/me/groups/following").with(authentication(loginAuthentication())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(GROUP_ID))
+			.andExpect(jsonPath("$[0].name").value("팔로잉 그룹"))
+			.andExpect(jsonPath("$[0].goodPlaceCount").value(1));
+
+		verify(groupService).getFollowingGroups(USER_ID);
 	}
 
 	@Test

@@ -156,6 +156,26 @@ CREATE TABLE comments (
 );
 
 -- ============================================================
+-- PopularReviewScores (인기피드 집계 결과)
+-- ============================================================
+CREATE TABLE popular_review_scores (
+    review_id      CHAR(36)       NOT NULL,
+    score          DECIMAL(10, 4) NOT NULL,
+    like_count     BIGINT         NOT NULL DEFAULT 0,
+    comment_count  BIGINT         NOT NULL DEFAULT 0,
+    rank_no        INT            NOT NULL,
+    window_days    INT            NOT NULL,
+    calculated_at  DATETIME       NOT NULL,
+
+    PRIMARY KEY (window_days, review_id),
+    UNIQUE KEY uq_popular_review_rank (window_days, rank_no),
+    KEY idx_popular_review_score (window_days, score DESC),
+    CONSTRAINT fk_popular_review_scores_review
+        FOREIGN KEY (review_id) REFERENCES reviews (id) ON DELETE CASCADE
+);
+
+
+-- ============================================================
 -- Images (이미지 업로드 및 생명주기 관리)
 -- ============================================================
 CREATE TABLE images (

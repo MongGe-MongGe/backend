@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
@@ -40,6 +41,7 @@ class ReviewServiceMockTest {
 	private static final String OTHER_USER_ID = "user-2";
 	private static final String REVIEW_ID = "review-1";
 	private static final String PLACE_ID = "place-1";
+	private static final int POPULAR_WINDOW_DAYS = 7;
 
 	@Mock
 	private ReviewMapper reviewMapper;
@@ -52,6 +54,11 @@ class ReviewServiceMockTest {
 
 	@InjectMocks
 	private ReviewServiceImpl reviewService;
+
+	@org.junit.jupiter.api.BeforeEach
+	void setUp() {
+		ReflectionTestUtils.setField(reviewService, "popularWindowDays", POPULAR_WINDOW_DAYS);
+	}
 
 	@Test
 	@DisplayName("리뷰를 생성하고 이미지를 확정한 뒤 생성 결과를 반환한다")
@@ -244,6 +251,27 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
+	@DisplayName("인기피드 목록을 페이지 응답으로 반환한다")
+	void getPopularReviews() {
+		List<ReviewResponse> responses = List.of(createResponse("popular-review-1"));
+		when(reviewMapper.countPopularReviews(POPULAR_WINDOW_DAYS)).thenReturn(21L);
+		when(reviewMapper.selectPopularReviews(OTHER_USER_ID, POPULAR_WINDOW_DAYS, 20, 10))
+			.thenReturn(responses);
+
+		ReviewPageResponse result = reviewService.getPopularReviews(OTHER_USER_ID, 2, 10);
+
+		assertThat(result.getContent()).isSameAs(responses);
+		assertThat(result.getPage()).isEqualTo(2);
+		assertThat(result.getSize()).isEqualTo(10);
+		assertThat(result.getTotalElements()).isEqualTo(21);
+		assertThat(result.getTotalPages()).isEqualTo(3);
+		assertThat(result.isFirst()).isFalse();
+		assertThat(result.isLast()).isTrue();
+		verify(reviewMapper).countPopularReviews(POPULAR_WINDOW_DAYS);
+		verify(reviewMapper).selectPopularReviews(OTHER_USER_ID, POPULAR_WINDOW_DAYS, 20, 10);
+	}
+
+	@Test
 	@DisplayName("페이지 번호는 0 이상이어야 한다")
 	void getReviewsWithNegativePageFails() {
 		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, -1, 20))
@@ -254,6 +282,17 @@ class ReviewServiceMockTest {
 	}
 
 	@Test
+	@DisplayName("인기피드 페이지 번호는 0 이상이어야 한다")
+	void getPopularReviewsWithNegativePageFails() {
+		assertThatThrownBy(() -> reviewService.getPopularReviews(OTHER_USER_ID, -1, 20))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("Page must be zero or greater");
+
+		verify(reviewMapper, never()).countPopularReviews(anyInt());
+		verify(reviewMapper, never()).selectPopularReviews(any(), anyInt(), anyLong(), anyInt());
+	}
+
+	@Test
 	@DisplayName("페이지 크기는 1 이상 100 이하여야 한다")
 	void getReviewsWithInvalidSizeFails() {
 		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, 0, 101))
@@ -261,6 +300,17 @@ class ReviewServiceMockTest {
 			.hasMessage("Size must be between 1 and 100");
 
 		verify(reviewMapper, never()).selectReviewsByPlace(any(), any(), anyLong(), anyInt());
+	}
+
+	@Test
+	@DisplayName("인기피드 페이지 크기는 1 이상 100 이하여야 한다")
+	void getPopularReviewsWithInvalidSizeFails() {
+		assertThatThrownBy(() -> reviewService.getPopularReviews(OTHER_USER_ID, 0, 101))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("Size must be between 1 and 100");
+
+		verify(reviewMapper, never()).countPopularReviews(anyInt());
+		verify(reviewMapper, never()).selectPopularReviews(any(), anyInt(), anyLong(), anyInt());
 	}
 
 	private ReviewCreateRequest createRequest() {

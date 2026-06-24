@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,9 @@ public class ReviewServiceImpl implements ReviewService {
 	private final ReviewMapper reviewMapper;
 	private final PlaceService placeService;
 	private final ImageService imageService;
+
+	@Value("${popular-feed.window-days:7}")
+	private int popularWindowDays;
 
 	@Override
 	@Transactional
@@ -142,8 +146,18 @@ public class ReviewServiceImpl implements ReviewService {
 
 	@Override
 	public ReviewPageResponse getMyFeeds(String userId, int page, int size) {
-		// 좋아요/댓글 기반 피드가 구현되기 전까지는 내가 작성한 리뷰 목록을 피드로 사용한다.
 		return getReviewsByUser(userId, userId, page, size);
+	}
+
+	@Override
+	public ReviewPageResponse getPopularReviews(String viewerId, int page, int size) {
+		validatePageRequest(page, size);
+		long offset = (long)page * size;
+		long totalElements = reviewMapper.countPopularReviews(popularWindowDays);
+		List<ReviewResponse> content =
+			reviewMapper.selectPopularReviews(viewerId, popularWindowDays, offset, size);
+
+		return createPageResponse(content, page, size, totalElements);
 	}
 
 	@Override

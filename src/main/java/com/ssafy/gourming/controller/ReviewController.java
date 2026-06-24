@@ -41,6 +41,18 @@ public class ReviewController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+	// 인기피드 목록을 공개 조회한다.
+	@GetMapping("/reviews/popular")
+	public ResponseEntity<ReviewPageResponse> getPopularReviews(
+		@AuthenticationPrincipal String viewerId,
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+	) {
+		return ResponseEntity.ok(
+			reviewService.getPopularReviews(normalizeViewerId(viewerId), page, size)
+		);
+	}
+
 	// 리뷰 상세 조회는 공개 API로 제공한다.
 	@GetMapping("/reviews/{reviewId}")
 	public ResponseEntity<ReviewResponse> getReview(

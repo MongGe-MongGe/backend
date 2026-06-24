@@ -134,6 +134,37 @@ class ReviewControllerTest {
 	}
 
 	@Test
+	@DisplayName("인증 없이 인기피드 목록을 조회한다")
+	void getPopularReviews() throws Exception {
+		when(reviewService.getPopularReviews(null, 0, 20))
+			.thenReturn(createPageResponse());
+
+		mockMvc.perform(get("/api/reviews/popular"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].id").value(REVIEW_ID))
+			.andExpect(jsonPath("$.page").value(0))
+			.andExpect(jsonPath("$.size").value(20))
+			.andExpect(jsonPath("$.totalElements").value(1));
+
+		verify(reviewService).getPopularReviews(null, 0, 20);
+	}
+
+	@Test
+	@DisplayName("인증된 사용자가 인기피드 목록을 조회하면 viewerId를 전달한다")
+	void getPopularReviewsWithAuthentication() throws Exception {
+		when(reviewService.getPopularReviews(USER_ID, 1, 10))
+			.thenReturn(createPageResponse());
+
+		mockMvc.perform(get("/api/reviews/popular")
+				.with(authentication(loginAuthentication()))
+				.param("page", "1")
+				.param("size", "10"))
+			.andExpect(status().isOk());
+
+		verify(reviewService).getPopularReviews(USER_ID, 1, 10);
+	}
+
+	@Test
 	@DisplayName("인증된 사용자가 리뷰를 수정한다")
 	void updateReview() throws Exception {
 		ReviewUpdateRequest request = createUpdateRequest();
@@ -247,6 +278,17 @@ class ReviewControllerTest {
 			.andExpect(status().isBadRequest());
 
 		verify(reviewService, never()).getReviewsByPlace(any(), any(), anyInt(), anyInt());
+	}
+
+	@Test
+	@DisplayName("인기피드의 잘못된 페이지 요청을 거부한다")
+	void getPopularReviewsWithInvalidPageFails() throws Exception {
+		mockMvc.perform(get("/api/reviews/popular")
+				.param("page", "-1")
+				.param("size", "101"))
+			.andExpect(status().isBadRequest());
+
+		verify(reviewService, never()).getPopularReviews(any(), anyInt(), anyInt());
 	}
 
 	private Authentication loginAuthentication() {

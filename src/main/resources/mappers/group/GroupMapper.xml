@@ -21,6 +21,21 @@
 		<result property="createdAt" column="created_at" />
 	</resultMap>
 
+	<!-- 그룹 정보와 유저 정보를 함께 매핑하는 ResultMap -->
+	<resultMap id="groupWithUserResponseResultMap" type="com.ssafy.gourming.model.dto.GroupDto$GroupWithUserResponse">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="defaultGroup" column="default_group" />
+		<result property="goodPlaceCount" column="good_place_count" />
+		<result property="createdAt" column="created_at" />
+		<association property="user" javaType="com.ssafy.gourming.model.dto.GroupDto$UserSimpleInfo">
+			<id property="id" column="user_id" />
+			<result property="nickname" column="nickname" />
+			<result property="handle" column="handle" />
+			<result property="profileImage" column="profile_image" />
+		</association>
+	</resultMap>
+
 	<insert id="insertGroup" parameterType="com.ssafy.gourming.model.dto.GroupDto$GroupEntity">
 		INSERT INTO `groups` (
 			user_id,
@@ -107,6 +122,42 @@
 		WHERE user_id = #{userId}
 		  AND name = #{name}
 		LIMIT 1
+	</select>
+
+	<!-- 본인과 팔로우 중인 유저들의 그룹 조회 (맛집 수 1개 이상만 포함, 기본 그룹 및 생성일 기준 정렬) -->
+	<select id="selectFollowingGroups" resultMap="groupWithUserResponseResultMap">
+		SELECT
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at,
+			u.id AS user_id,
+			u.nickname,
+			u.handle,
+			u.profile_image,
+			COUNT(gp.id) AS good_place_count
+		FROM `groups` g
+		JOIN `users` u ON g.user_id = u.id
+		LEFT JOIN good_places gp ON gp.group_id = g.id
+		WHERE (
+			g.user_id = #{userId}
+			OR g.user_id IN (
+				SELECT target_user_id FROM follows WHERE user_id = #{userId}
+			)
+		)
+		GROUP BY
+			g.id,
+			g.name,
+			g.default_group,
+			g.created_at,
+			u.id,
+			u.nickname,
+			u.handle,
+			u.profile_image
+		HAVING COUNT(gp.id) > 0
+		ORDER BY
+			g.default_group DESC,
+			g.created_at ASC
 	</select>
 
 	<update id="updateGroupName">

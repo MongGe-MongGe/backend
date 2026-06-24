@@ -89,6 +89,15 @@ public class GroupServiceImpl implements GroupService{
 		return groupMapper.selectGroupsByUserId(userId);
 	}
 
+	/**
+	 * 본인 및 팔로우하는 유저들의 그룹 목록을 조회하여 반환합니다.
+	 * 맛집이 없는 그룹은 제외됩니다.
+	 */
+	@Override
+	public List<com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse> getFollowingGroups(String userId) {
+		return groupMapper.selectFollowingGroups(userId);
+	}
+
 	@Override
 	@Transactional
 	public GroupResponse updateGroup(String userId, String groupId, GroupUpdateRequest request) {

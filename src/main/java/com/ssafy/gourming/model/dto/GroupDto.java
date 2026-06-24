@@ -57,4 +57,34 @@ public class GroupDto {
 		private int goodPlaceCount;
 		private LocalDateTime createdAt;
 	}
+
+	/**
+	 * 유저의 기본 프로필 정보 DTO
+	 * 그룹 소유자 등의 정보를 간략하게 전달할 때 사용됩니다.
+	 */
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	public static class UserSimpleInfo {
+		private String id;
+		private String nickname;
+		private String handle;
+		private String profileImage;
+	}
+
+	/**
+	 * 그룹 정보와 해당 그룹을 소유한 유저 정보를 함께 반환하는 응답 DTO
+	 * 팔로잉 유저들의 그룹 목록 등을 조회할 때 사용됩니다.
+	 */
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	public static class GroupWithUserResponse {
+		private String id;
+		private String name;
+		private boolean defaultGroup;
+		private int goodPlaceCount;
+		private LocalDateTime createdAt;
+		private UserSimpleInfo user;
+	}
 }

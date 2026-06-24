@@ -90,6 +90,21 @@ class GroupServiceMockTest {
 	}
 
 	@Test
+	@DisplayName("팔로잉 유저 그룹 목록을 조회한다")
+	void getFollowingGroups() {
+		com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse response = new com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse();
+		response.setId(GROUP_ID);
+		response.setName("팔로잉 그룹");
+		when(groupMapper.selectFollowingGroups(USER_ID)).thenReturn(List.of(response));
+
+		List<com.ssafy.gourming.model.dto.GroupDto.GroupWithUserResponse> result = groupService.getFollowingGroups(USER_ID);
+
+		assertThat(result).hasSize(1);
+		assertThat(result.get(0).getName()).isEqualTo("팔로잉 그룹");
+		verify(groupMapper).selectFollowingGroups(USER_ID);
+	}
+
+	@Test
 	@DisplayName("같은 이름의 일반 그룹이 있으면 생성할 수 없다")
 	void createDuplicateGroupFails() {
 		GroupCreateRequest request = new GroupCreateRequest();

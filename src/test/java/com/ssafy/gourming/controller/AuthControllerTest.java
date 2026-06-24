@@ -5,7 +5,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -168,5 +174,114 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isBadRequest())
             .andDo(print());
+    }
+
+    @Test
+    @DisplayName("[Auth] 비밀번호 재설정 확정 성공")
+    void passwordResetConfirm_200() throws Exception {
+        String email = "confirm_" + uid() + "@test.com";
+        String handle = "@cf_" + uid().substring(uid().length() - 8);
+        String rawToken = "raw-confirm-token-" + uid();
+        Map<String, String> signupBody = Map.of(
+            "email", email, "password", "password123!", "nickname", "확정유저", "handle", handle);
+
+        mockMvc.perform(post("/api/auth/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(signupBody)))
+            .andExpect(status().isCreated());
+
+        UserDto.UserEntity user = userMapper.findByEmail(email);
+        assertNotNull(user);
+        insertPasswordResetToken(user.getId(), rawToken, LocalDateTime.now().plusMinutes(30));
+
+        Map<String, String> confirmBody = Map.of(
+            "token", rawToken,
+            "newPassword", "newPassword123!"
+        );
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(confirmBody)))
+            .andExpect(status().isOk())
+            .andExpect(content().string("비밀번호가 변경되었습니다."))
+            .andDo(print());
+
+        Map<String, String> newLoginBody = Map.of("email", email, "password", "newPassword123!");
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(newLoginBody)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty());
+
+        Map<String, String> oldLoginBody = Map.of("email", email, "password", "password123!");
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(oldLoginBody)))
+            .andExpect(status().isUnauthorized());
+
+        Integer unusedTokenCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM password_reset_tokens WHERE user_id = ? AND used_at IS NULL",
+            Integer.class,
+            user.getId()
+        );
+        assertNotNull(unusedTokenCount);
+        org.junit.jupiter.api.Assertions.assertEquals(0, unusedTokenCount);
+    }
+
+    @Test
+    @DisplayName("[Auth] 비밀번호 재설정 확정 실패 - 잘못된 토큰")
+    void passwordResetConfirm_invalidToken_400() throws Exception {
+        Map<String, String> body = Map.of(
+            "token", "invalid-token",
+            "newPassword", "newPassword123!"
+        );
+
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isBadRequest())
+            .andDo(print());
+    }
+
+    @Test
+    @DisplayName("[Auth] 비밀번호 재설정 확정 실패 - 짧은 비밀번호")
+    void passwordResetConfirm_shortPassword_400() throws Exception {
+        Map<String, String> body = Map.of(
+            "token", "some-token",
+            "newPassword", "short"
+        );
+
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isBadRequest())
+            .andDo(print());
+    }
+
+    private void insertPasswordResetToken(String userId, String rawToken, LocalDateTime expiresAt) {
+        jdbcTemplate.update(
+            """
+            INSERT INTO password_reset_tokens (
+                id,
+                user_id,
+                token_hash,
+                expires_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            UUID.randomUUID().toString(),
+            userId,
+            hashToken(rawToken),
+            expiresAt
+        );
+    }
+
+    private String hashToken(String rawToken) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hashed);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Failed to hash test token", e);
+        }
     }
 }

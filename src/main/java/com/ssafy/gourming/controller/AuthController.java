@@ -41,4 +41,12 @@ public class AuthController {
 		userService.requestPasswordReset(request);
 		return ResponseEntity.ok("비밀번호 재설정 안내를 이메일로 발송했습니다.");
 	}
+
+	@PostMapping("/password-reset/confirm")
+	public ResponseEntity<String> confirmPasswordReset(
+			@RequestBody @Valid PasswordResetDto.PasswordResetConfirmRequest request
+	) {
+		userService.confirmPasswordReset(request);
+		return ResponseEntity.ok("비밀번호가 변경되었습니다.");
+	}
 }

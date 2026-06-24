@@ -186,6 +186,93 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("[Service] 비밀번호 재설정 확정 성공")
+    void confirmPasswordReset_success() {
+        PasswordResetDto.PasswordResetConfirmRequest req =
+            makePasswordResetConfirmRequest("raw-reset-token", "newPassword123!");
+        PasswordResetDto.PasswordResetTokenEntity token =
+            makePasswordResetToken("token-id-1", "uuid-001");
+
+        when(passwordResetTokenMapper.findValidTokenByHash(anyString(), any(LocalDateTime.class)))
+            .thenReturn(token);
+        when(passwordEncoder.encode("newPassword123!")).thenReturn("$2a$encodedNewPassword");
+        when(userMapper.updatePassword("uuid-001", "$2a$encodedNewPassword")).thenReturn(1);
+        when(passwordResetTokenMapper.markTokenUsed(eq("token-id-1"), any(LocalDateTime.class)))
+            .thenReturn(1);
+
+        assertDoesNotThrow(() -> userService.confirmPasswordReset(req));
+
+        verify(passwordResetTokenMapper).findValidTokenByHash(anyString(), any(LocalDateTime.class));
+        verify(passwordEncoder).encode("newPassword123!");
+        verify(userMapper).updatePassword("uuid-001", "$2a$encodedNewPassword");
+        verify(passwordResetTokenMapper).markTokenUsed(eq("token-id-1"), any(LocalDateTime.class));
+    }
+
+    @Test
+    @DisplayName("[Service] 비밀번호 재설정 확정 실패 - 유효하지 않은 토큰")
+    void confirmPasswordReset_invalidToken() {
+        PasswordResetDto.PasswordResetConfirmRequest req =
+            makePasswordResetConfirmRequest("invalid-token", "newPassword123!");
+        when(passwordResetTokenMapper.findValidTokenByHash(anyString(), any(LocalDateTime.class)))
+            .thenReturn(null);
+
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.confirmPasswordReset(req)
+        );
+
+        assertEquals("Invalid or expired password reset token", ex.getMessage());
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userMapper, never()).updatePassword(anyString(), anyString());
+        verify(passwordResetTokenMapper, never()).markTokenUsed(anyString(), any(LocalDateTime.class));
+    }
+
+    @Test
+    @DisplayName("[Service] 비밀번호 재설정 확정 실패 - 비밀번호 업데이트 실패")
+    void confirmPasswordReset_updatePasswordFailed() {
+        PasswordResetDto.PasswordResetConfirmRequest req =
+            makePasswordResetConfirmRequest("raw-reset-token", "newPassword123!");
+        PasswordResetDto.PasswordResetTokenEntity token =
+            makePasswordResetToken("token-id-1", "uuid-001");
+
+        when(passwordResetTokenMapper.findValidTokenByHash(anyString(), any(LocalDateTime.class)))
+            .thenReturn(token);
+        when(passwordEncoder.encode("newPassword123!")).thenReturn("$2a$encodedNewPassword");
+        when(userMapper.updatePassword("uuid-001", "$2a$encodedNewPassword")).thenReturn(0);
+
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> userService.confirmPasswordReset(req)
+        );
+
+        assertEquals("Failed to update password", ex.getMessage());
+        verify(passwordResetTokenMapper, never()).markTokenUsed(anyString(), any(LocalDateTime.class));
+    }
+
+    @Test
+    @DisplayName("[Service] 비밀번호 재설정 확정 실패 - 토큰 사용 처리 실패")
+    void confirmPasswordReset_markTokenUsedFailed() {
+        PasswordResetDto.PasswordResetConfirmRequest req =
+            makePasswordResetConfirmRequest("raw-reset-token", "newPassword123!");
+        PasswordResetDto.PasswordResetTokenEntity token =
+            makePasswordResetToken("token-id-1", "uuid-001");
+
+        when(passwordResetTokenMapper.findValidTokenByHash(anyString(), any(LocalDateTime.class)))
+            .thenReturn(token);
+        when(passwordEncoder.encode("newPassword123!")).thenReturn("$2a$encodedNewPassword");
+        when(userMapper.updatePassword("uuid-001", "$2a$encodedNewPassword")).thenReturn(1);
+        when(passwordResetTokenMapper.markTokenUsed(eq("token-id-1"), any(LocalDateTime.class)))
+            .thenReturn(0);
+
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> userService.confirmPasswordReset(req)
+        );
+
+        assertEquals("Failed to mark password reset token as used", ex.getMessage());
+    }
+
+    @Test
     @DisplayName("[Service] 본인 프로필 수정 성공")
     void updateProfile_success() {
         UserDto.UpdateProfileRequest request =
@@ -295,6 +382,27 @@ class UserServiceTest {
         PasswordResetDto.PasswordResetRequest r = new PasswordResetDto.PasswordResetRequest();
         ReflectionTestUtils.setField(r, "email", email);
         return r;
+    }
+
+    private PasswordResetDto.PasswordResetConfirmRequest makePasswordResetConfirmRequest(
+        String token,
+        String newPassword
+    ) {
+        PasswordResetDto.PasswordResetConfirmRequest r =
+            new PasswordResetDto.PasswordResetConfirmRequest();
+        ReflectionTestUtils.setField(r, "token", token);
+        ReflectionTestUtils.setField(r, "newPassword", newPassword);
+        return r;
+    }
+
+    private PasswordResetDto.PasswordResetTokenEntity makePasswordResetToken(String id, String userId) {
+        PasswordResetDto.PasswordResetTokenEntity token =
+            new PasswordResetDto.PasswordResetTokenEntity();
+        token.setId(id);
+        token.setUserId(userId);
+        token.setTokenHash("hashed-token");
+        token.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+        return token;
     }
 
     private UserDto.UserEntity makeEntity(String email, String encodedPw) {

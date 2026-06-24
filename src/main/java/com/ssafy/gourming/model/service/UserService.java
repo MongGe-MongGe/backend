@@ -7,6 +7,7 @@ public interface UserService {
 	void signup(UserDto.SignupRequest request);
 	UserDto.LoginResponse login(UserDto.LoginRequest request);
 	void requestPasswordReset(PasswordResetDto.PasswordResetRequest request);
+	void confirmPasswordReset(PasswordResetDto.PasswordResetConfirmRequest request);
 	boolean isHandleAvailable(String handle);
 	UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId);
 	java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedUserId, int limit, int offset);

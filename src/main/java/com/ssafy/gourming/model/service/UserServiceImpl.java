@@ -1,9 +1,16 @@
 package com.ssafy.gourming.model.service;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Date;
+import java.util.HexFormat;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -12,7 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ssafy.gourming.model.dto.PasswordResetDto;
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.mapper.PasswordResetTokenMapper;
 import com.ssafy.gourming.model.mapper.UserMapper;
 
 import com.ssafy.gourming.util.JwtUtil;
@@ -28,6 +37,12 @@ public class UserServiceImpl implements UserService{
 	private final JwtUtil jwtUtil;
 	private final GroupService groupService;
 	private final ImageService imageService;
+	private final PasswordResetTokenMapper passwordResetTokenMapper;
+	private final PasswordResetNotifier passwordResetNotifier;
+	private final SecureRandom secureRandom = new SecureRandom();
+
+	@Value("${password-reset.expiration-minutes:30}")
+	private long passwordResetExpirationMinutes;
 	
 	@Override
 	@Transactional
@@ -77,6 +92,43 @@ public class UserServiceImpl implements UserService{
 				user.getProfileImage(),
 				user.getRole()
 			);
+	}
+
+	@Override
+	@Transactional
+	public void requestPasswordReset(PasswordResetDto.PasswordResetRequest request) {
+		// 1. 요청 이메일로 사용자를 조회한다.
+		UserDto.UserEntity user = userMapper.findByEmail(request.getEmail());
+
+		// 가입 여부가 응답으로 드러나지 않도록 존재하지 않는 이메일도 조용히 성공 처리한다.
+		if (user == null) {
+			return;
+		}
+
+		// 2. 같은 사용자의 이전 미사용 토큰을 정리해 최신 링크만 유효하게 만든다.
+		passwordResetTokenMapper.deleteUnusedTokensByUserId(user.getId());
+
+		// 3. 이메일 링크에 넣을 원문 토큰과 DB 저장용 해시를 각각 만든다.
+		String rawToken = generateRawToken();
+		String tokenHash = hashToken(rawToken);
+		LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(passwordResetExpirationMinutes);
+
+		// DB에는 토큰 원문 대신 해시만 저장하고, 원문은 사용자에게 전달할 때만 사용한다.
+		PasswordResetDto.PasswordResetTokenEntity token =
+				new PasswordResetDto.PasswordResetTokenEntity(
+						UUID.randomUUID().toString(),
+						user.getId(),
+						tokenHash,
+						expiresAt,
+						null,
+						null
+				);
+
+		// 4. 재설정 토큰 해시와 만료 시각을 저장한다.
+		passwordResetTokenMapper.insertToken(token);
+
+		// 5. 현재 구현은 개발용 로그 Notifier로 재설정 링크를 전달한다.
+		passwordResetNotifier.notifyPasswordReset(user.getEmail(), rawToken, expiresAt);
 	}
 
 	/**
@@ -165,6 +217,22 @@ public class UserServiceImpl implements UserService{
 			userMapper.updateProfile(targetUserId, request);
 		} catch (org.springframework.dao.DuplicateKeyException e) {
 			throw new IllegalArgumentException("Already Exists Handle");
+		}
+	}
+
+	private String generateRawToken() {
+		byte[] bytes = new byte[32];
+		secureRandom.nextBytes(bytes);
+		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+	}
+
+	private String hashToken(String rawToken) {
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			byte[] hashed = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+			return HexFormat.of().formatHex(hashed);
+		} catch (NoSuchAlgorithmException e) {
+			throw new IllegalStateException("Failed to hash password reset token", e);
 		}
 	}
 }

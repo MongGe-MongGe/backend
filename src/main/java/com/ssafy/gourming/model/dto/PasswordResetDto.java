@@ -2,6 +2,8 @@ package com.ssafy.gourming.model.dto;
 
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,5 +23,13 @@ public class PasswordResetDto {
 		private LocalDateTime expiresAt;
 		private LocalDateTime usedAt;
 		private LocalDateTime createdAt;
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class PasswordResetRequest {
+		@NotBlank(message = "이메일은 필수 입력값입니다")
+		@Email(message = "올바른 이메일 형식이 아닙니다")
+		private String email;
 	}
 }

@@ -3,19 +3,23 @@ package com.ssafy.gourming.model.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ssafy.gourming.model.dto.PasswordResetDto;
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.mapper.PasswordResetTokenMapper;
 import com.ssafy.gourming.model.mapper.UserMapper;
 import com.ssafy.gourming.util.JwtUtil;
 
@@ -30,10 +34,13 @@ class UserServiceTest {
     @Mock JwtUtil jwtUtil;
     @Mock GroupService groupService;
     @Mock ImageService imageService;
+    @Mock PasswordResetTokenMapper passwordResetTokenMapper;
+    @Mock PasswordResetNotifier passwordResetNotifier;
     @InjectMocks UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
+        ReflectionTestUtils.setField(userService, "passwordResetExpirationMinutes", 30L);
         log.info(">>> Mock 설정 준비 완료");
     }
 
@@ -124,6 +131,58 @@ class UserServiceTest {
 
         assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> userService.login(req));
         log.info("✔ BadCredentialsException 발생");
+    }
+
+    @Test
+    @DisplayName("[Service] 비밀번호 재설정 요청 성공 - 토큰 저장 및 알림 호출")
+    void requestPasswordReset_success() {
+        PasswordResetDto.PasswordResetRequest req = makePasswordResetRequest("user@email.com");
+        UserDto.UserEntity entity = makeEntity("user@email.com", "$2a$hashed");
+        when(userMapper.findByEmail("user@email.com")).thenReturn(entity);
+
+        LocalDateTime before = LocalDateTime.now();
+
+        assertDoesNotThrow(() -> userService.requestPasswordReset(req));
+
+        ArgumentCaptor<PasswordResetDto.PasswordResetTokenEntity> tokenCaptor =
+            ArgumentCaptor.forClass(PasswordResetDto.PasswordResetTokenEntity.class);
+        ArgumentCaptor<String> rawTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<LocalDateTime> expiresAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+
+        verify(passwordResetTokenMapper).deleteUnusedTokensByUserId("uuid-001");
+        verify(passwordResetTokenMapper).insertToken(tokenCaptor.capture());
+        verify(passwordResetNotifier).notifyPasswordReset(
+            eq("user@email.com"),
+            rawTokenCaptor.capture(),
+            expiresAtCaptor.capture()
+        );
+
+        PasswordResetDto.PasswordResetTokenEntity savedToken = tokenCaptor.getValue();
+        String rawToken = rawTokenCaptor.getValue();
+
+        assertNotNull(savedToken.getId());
+        assertEquals("uuid-001", savedToken.getUserId());
+        assertNotNull(savedToken.getTokenHash());
+        assertFalse(savedToken.getTokenHash().isBlank());
+        assertNotEquals(rawToken, savedToken.getTokenHash());
+        assertNull(savedToken.getUsedAt());
+        assertNull(savedToken.getCreatedAt());
+        assertTrue(savedToken.getExpiresAt().isAfter(before));
+        assertEquals(savedToken.getExpiresAt(), expiresAtCaptor.getValue());
+        assertNotNull(rawToken);
+        assertFalse(rawToken.isBlank());
+    }
+
+    @Test
+    @DisplayName("[Service] 비밀번호 재설정 요청 - 없는 이메일도 조용히 성공 처리")
+    void requestPasswordReset_userNotFound() {
+        PasswordResetDto.PasswordResetRequest req = makePasswordResetRequest("ghost@email.com");
+        when(userMapper.findByEmail("ghost@email.com")).thenReturn(null);
+
+        assertDoesNotThrow(() -> userService.requestPasswordReset(req));
+
+        verify(userMapper).findByEmail("ghost@email.com");
+        verifyNoInteractions(passwordResetTokenMapper, passwordResetNotifier);
     }
 
     @Test
@@ -229,6 +288,12 @@ class UserServiceTest {
         UserDto.LoginRequest r = new UserDto.LoginRequest();
         ReflectionTestUtils.setField(r, "email",    email);
         ReflectionTestUtils.setField(r, "password", pw);
+        return r;
+    }
+
+    private PasswordResetDto.PasswordResetRequest makePasswordResetRequest(String email) {
+        PasswordResetDto.PasswordResetRequest r = new PasswordResetDto.PasswordResetRequest();
+        ReflectionTestUtils.setField(r, "email", email);
         return r;
     }
 

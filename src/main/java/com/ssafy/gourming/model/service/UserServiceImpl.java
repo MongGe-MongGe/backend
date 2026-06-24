@@ -131,6 +131,36 @@ public class UserServiceImpl implements UserService{
 		passwordResetNotifier.notifyPasswordReset(user.getEmail(), rawToken, expiresAt);
 	}
 
+	@Override
+	@Transactional
+	public void confirmPasswordReset(PasswordResetDto.PasswordResetConfirmRequest request) {
+		LocalDateTime now = LocalDateTime.now();
+
+		// 1. 사용자가 제출한 원문 토큰을 요청 API와 같은 방식으로 해시한다.
+		String tokenHash = hashToken(request.getToken());
+
+		// 2. 미사용 상태이고 만료되지 않은 토큰만 유효 토큰으로 인정한다.
+		PasswordResetDto.PasswordResetTokenEntity token =
+				passwordResetTokenMapper.findValidTokenByHash(tokenHash, now);
+		if (token == null) {
+			throw new IllegalArgumentException("Invalid or expired password reset token");
+		}
+
+		// 3. 새 비밀번호를 기존 로그인 정책과 동일하게 PasswordEncoder로 암호화한다.
+		String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+
+		// 4. 비밀번호 변경과 토큰 사용 처리는 같은 트랜잭션으로 묶는다.
+		int updatedCount = userMapper.updatePassword(token.getUserId(), encodedPassword);
+		if (updatedCount != 1) {
+			throw new IllegalStateException("Failed to update password");
+		}
+
+		int usedCount = passwordResetTokenMapper.markTokenUsed(token.getId(), now);
+		if (usedCount != 1) {
+			throw new IllegalStateException("Failed to mark password reset token as used");
+		}
+	}
+
 	/**
 	 * 주어진 핸들(닉네임 ID 역할)이 사용 가능한지 확인합니다.
 	 * 

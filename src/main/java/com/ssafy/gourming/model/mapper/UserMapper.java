@@ -26,6 +26,9 @@ public interface UserMapper {
 	// 프로필 업데이트
 	void updateProfile(@org.apache.ibatis.annotations.Param("id") String id, @org.apache.ibatis.annotations.Param("request") UserDto.UpdateProfileRequest request);
 
+	// 비밀번호 재설정 확정 시 암호화된 새 비밀번호로 변경
+	int updatePassword(@org.apache.ibatis.annotations.Param("id") String id, @org.apache.ibatis.annotations.Param("encodedPassword") String encodedPassword);
+
 	/**
 	 * 키워드가 포함된 닉네임이나 핸들을 가진 사용자를 검색합니다.
 	 * 

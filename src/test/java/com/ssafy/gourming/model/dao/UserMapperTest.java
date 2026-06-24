@@ -130,6 +130,40 @@ public class UserMapperTest {
 	}
 
 	@Test
+	@DisplayName("[Mapper] 사용자 ID로 비밀번호 변경 성공")
+	void updatePassword_success() {
+		String email = "pw_" + uid() + "@test.com";
+		String handle = "@pw_" + uid();
+
+		UserDto.SignupRequest req = new UserDto.SignupRequest();
+		ReflectionTestUtils.setField(req, "email", email);
+		ReflectionTestUtils.setField(req, "password", "$2a$12$oldHashedPw");
+		ReflectionTestUtils.setField(req, "nickname", "비밀번호변경유저");
+		ReflectionTestUtils.setField(req, "handle", handle);
+
+		userMapper.insertUser(req);
+		UserDto.UserEntity insertedUser = userMapper.findByEmail(email);
+		assertNotNull(insertedUser);
+
+		int updatedCount = userMapper.updatePassword(insertedUser.getId(), "$2a$12$newHashedPw");
+		UserDto.UserEntity updatedUser = userMapper.findById(insertedUser.getId());
+
+		assertEquals(1, updatedCount);
+		assertEquals("$2a$12$newHashedPw", updatedUser.getPassword());
+	}
+
+	@Test
+	@DisplayName("[Mapper] 존재하지 않는 사용자 비밀번호 변경은 0건")
+	void updatePassword_notFound() {
+		int updatedCount = userMapper.updatePassword(
+			"00000000-0000-0000-0000-000000000000",
+			"$2a$12$newHashedPw"
+		);
+
+		assertEquals(0, updatedCount);
+	}
+
+	@Test
 	@DisplayName("[Mapper] 없는 handle 조회 → null 반환")
 	void findByHandle_notFound() {
 		try {

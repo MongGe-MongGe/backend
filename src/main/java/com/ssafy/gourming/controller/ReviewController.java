@@ -128,6 +128,19 @@ public class ReviewController {
 		return ResponseEntity.ok(reviewService.getAllReviews(normalizeViewerId(viewerId), page, size));
 	}
 
+	// 리뷰를 검색한다.
+	@GetMapping("/reviews/search")
+	public ResponseEntity<ReviewPageResponse> searchReviews(
+		@AuthenticationPrincipal String viewerId,
+		@RequestParam String keyword,
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+	) {
+		return ResponseEntity.ok(
+			reviewService.searchReviews(keyword, normalizeViewerId(viewerId), page, size)
+		);
+	}
+
 	private String normalizeViewerId(String viewerId) {
 		if (viewerId == null || "anonymousUser".equals(viewerId)) {
 			return null;

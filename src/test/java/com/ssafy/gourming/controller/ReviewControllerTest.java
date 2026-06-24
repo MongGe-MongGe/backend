@@ -291,6 +291,51 @@ class ReviewControllerTest {
 		verify(reviewService, never()).getPopularReviews(any(), anyInt(), anyInt());
 	}
 
+	@Test
+	@DisplayName("인증 없이 리뷰를 검색한다")
+	void searchReviews() throws Exception {
+		when(reviewService.searchReviews("test", null, 0, 20))
+			.thenReturn(createPageResponse());
+
+		mockMvc.perform(get("/api/reviews/search")
+				.param("keyword", "test"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].id").value(REVIEW_ID))
+			.andExpect(jsonPath("$.page").value(0))
+			.andExpect(jsonPath("$.size").value(20))
+			.andExpect(jsonPath("$.totalElements").value(1));
+
+		verify(reviewService).searchReviews("test", null, 0, 20);
+	}
+
+	@Test
+	@DisplayName("인증된 사용자가 리뷰를 검색하면 viewerId를 전달한다")
+	void searchReviewsWithAuthentication() throws Exception {
+		when(reviewService.searchReviews("test", USER_ID, 1, 10))
+			.thenReturn(createPageResponse());
+
+		mockMvc.perform(get("/api/reviews/search")
+				.with(authentication(loginAuthentication()))
+				.param("keyword", "test")
+				.param("page", "1")
+				.param("size", "10"))
+			.andExpect(status().isOk());
+
+		verify(reviewService).searchReviews("test", USER_ID, 1, 10);
+	}
+
+	@Test
+	@DisplayName("잘못된 페이지 요청으로 리뷰 검색을 거부한다")
+	void searchReviewsWithInvalidPageFails() throws Exception {
+		mockMvc.perform(get("/api/reviews/search")
+				.param("keyword", "test")
+				.param("page", "-1")
+				.param("size", "101"))
+			.andExpect(status().isBadRequest());
+
+		verify(reviewService, never()).searchReviews(any(), any(), anyInt(), anyInt());
+	}
+
 	private Authentication loginAuthentication() {
 		return new UsernamePasswordAuthenticationToken(USER_ID, null, List.of());
 	}

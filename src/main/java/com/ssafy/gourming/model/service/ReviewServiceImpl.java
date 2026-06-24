@@ -150,6 +150,16 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	public ReviewPageResponse searchReviews(String keyword, String viewerId, int page, int size) {
+		validatePageRequest(page, size);
+		long offset = (long)page * size;
+		List<ReviewResponse> content = reviewMapper.searchReviews(keyword, viewerId, offset, size);
+		long totalElements = reviewMapper.countSearchReviews(keyword);
+		return createPageResponse(content, page, size, totalElements);
+	}
+
+	@Override
 	public ReviewPageResponse getPopularReviews(String viewerId, int page, int size) {
 		validatePageRequest(page, size);
 		long offset = (long)page * size;

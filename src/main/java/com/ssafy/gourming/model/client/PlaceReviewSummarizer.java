@@ -1,4 +1,4 @@
-package com.ssafy.gourming.model.service;
+package com.ssafy.gourming.model.client;
 
 import java.util.List;
 

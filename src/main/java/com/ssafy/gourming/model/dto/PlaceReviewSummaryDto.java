@@ -18,10 +18,10 @@ public class PlaceReviewSummaryDto {
 
 		private String placeId;
 		private String summary;
-		private String positivePointsJson;
-		private String negativePointsJson;
-		private String recommendedForJson;
-		private String keywordsJson;
+		private List<String> positivePoints;
+		private List<String> negativePoints;
+		private List<String> recommendedFor;
+		private List<String> keywords;
 		private int reviewCount;
 		private String modelVersion;
 		private String status;

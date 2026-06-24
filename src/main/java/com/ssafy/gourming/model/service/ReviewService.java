@@ -37,4 +37,7 @@ public interface ReviewService {
 
 	// 모든 리뷰 목록을 조회한다.
 	ReviewPageResponse getAllReviews(String viewerId, int page, int size);
+
+	// 리뷰를 검색한다.
+	ReviewPageResponse searchReviews(String keyword, String viewerId, int page, int size);
 }

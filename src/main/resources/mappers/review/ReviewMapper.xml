@@ -245,4 +245,31 @@
 		FROM reviews
 	</select>
 
+	<select id="searchReviews" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE p.category_name LIKE CONCAT('%', #{keyword}, '%')
+		   OR r.content LIKE CONCAT('%', #{keyword}, '%')
+		   OR p.name LIKE CONCAT('%', #{keyword}, '%')
+		   OR u.nickname LIKE CONCAT('%', #{keyword}, '%')
+		   OR u.handle LIKE CONCAT('%', #{keyword}, '%')
+		ORDER BY r.created_at DESC, r.id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<select id="countSearchReviews" resultType="long">
+		SELECT COUNT(*)
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		WHERE p.category_name LIKE CONCAT('%', #{keyword}, '%')
+		   OR r.content LIKE CONCAT('%', #{keyword}, '%')
+		   OR p.name LIKE CONCAT('%', #{keyword}, '%')
+		   OR u.nickname LIKE CONCAT('%', #{keyword}, '%')
+		   OR u.handle LIKE CONCAT('%', #{keyword}, '%')
+	</select>
+
 </mapper>

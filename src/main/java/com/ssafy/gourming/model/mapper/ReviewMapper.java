@@ -80,4 +80,14 @@ public interface ReviewMapper {
 	);
 
 	long countAllReviews();
+
+	// 리뷰를 검색한다.
+	List<ReviewResponse> searchReviews(
+		@Param("keyword") String keyword,
+		@Param("viewerId") String viewerId,
+		@Param("offset") long offset,
+		@Param("size") int size
+	);
+
+	long countSearchReviews(@Param("keyword") String keyword);
 }

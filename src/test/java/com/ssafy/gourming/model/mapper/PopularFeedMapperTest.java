@@ -25,7 +25,7 @@ import com.ssafy.gourming.model.dto.PopularFeedDto.PopularReviewScoreRow;
 @DisplayName("인기피드 Mapper 테스트")
 class PopularFeedMapperTest {
 
-	private static final int WINDOW_DAYS = 7;
+	private static final int WINDOW_DAYS = 99;
 	private static final String AUTHOR_ID = "9a000000-0000-0000-0000-000000000001";
 	private static final String LIKE_USER_ID = "9a000000-0000-0000-0000-000000000002";
 	private static final String COMMENT_USER_ID = "9a000000-0000-0000-0000-000000000003";
@@ -50,7 +50,7 @@ class PopularFeedMapperTest {
 		insertTestPlace();
 		insertTestReview(POPULAR_REVIEW_ID, "DATE_SUB(NOW(), INTERVAL 1 DAY)");
 		insertTestReview(RECENT_REVIEW_ID, "NOW()");
-		insertTestReview(OLD_REVIEW_ID, "DATE_SUB(NOW(), INTERVAL 8 DAY)");
+		insertTestReview(OLD_REVIEW_ID, "DATE_SUB(NOW(), INTERVAL 100 DAY)");
 	}
 
 	@AfterEach

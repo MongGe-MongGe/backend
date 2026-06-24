@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ssafy.gourming.model.dto.PasswordResetDto;
 import com.ssafy.gourming.model.dto.UserDto;
 import com.ssafy.gourming.model.service.UserService;
 
@@ -31,5 +32,13 @@ public class AuthController {
 	public ResponseEntity<?> login(@RequestBody @Valid UserDto.LoginRequest request) {
 		UserDto.LoginResponse response = userService.login(request);
 		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping("/password-reset/request")
+	public ResponseEntity<String> requestPasswordReset(
+			@RequestBody @Valid PasswordResetDto.PasswordResetRequest request
+	) {
+		userService.requestPasswordReset(request);
+		return ResponseEntity.ok("비밀번호 재설정 안내를 이메일로 발송했습니다.");
 	}
 }

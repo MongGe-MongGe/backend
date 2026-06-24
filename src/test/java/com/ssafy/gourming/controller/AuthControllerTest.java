@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ class AuthControllerTest {
     @Autowired ObjectMapper objectMapper;
     @Autowired UserMapper userMapper;
     @Autowired GroupMapper groupMapper;
+    @Autowired JdbcTemplate jdbcTemplate;
 
     private String uid() { return String.valueOf(System.currentTimeMillis()); }
 
@@ -109,6 +111,62 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isUnauthorized())
+            .andDo(print());
+    }
+
+    @Test
+    @DisplayName("[Auth] 비밀번호 재설정 요청 성공")
+    void passwordResetRequest_200() throws Exception {
+        String email = "reset_" + uid() + "@test.com";
+        String handle = "@reset_" + uid();
+        Map<String, String> signupBody = Map.of(
+            "email", email, "password", "password123!", "nickname", "재설정유저", "handle", handle);
+        mockMvc.perform(post("/api/auth/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(signupBody)))
+            .andExpect(status().isCreated());
+
+        Map<String, String> body = Map.of("email", email);
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isOk())
+            .andExpect(content().string("비밀번호 재설정 안내를 이메일로 발송했습니다."))
+            .andDo(print());
+
+        UserDto.UserEntity user = userMapper.findByEmail(email);
+        assertNotNull(user);
+        Integer tokenCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM password_reset_tokens WHERE user_id = ? AND used_at IS NULL",
+            Integer.class,
+            user.getId()
+        );
+        assertNotNull(tokenCount);
+        org.junit.jupiter.api.Assertions.assertTrue(tokenCount > 0);
+    }
+
+    @Test
+    @DisplayName("[Auth] 존재하지 않는 이메일도 비밀번호 재설정 요청은 200")
+    void passwordResetRequest_unknownEmail_200() throws Exception {
+        Map<String, String> body = Map.of("email", "ghost_" + uid() + "@test.com");
+
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isOk())
+            .andExpect(content().string("비밀번호 재설정 안내를 이메일로 발송했습니다."))
+            .andDo(print());
+    }
+
+    @Test
+    @DisplayName("[Auth] 비밀번호 재설정 요청 이메일 형식 오류")
+    void passwordResetRequest_invalidEmail_400() throws Exception {
+        Map<String, String> body = Map.of("email", "invalid-email");
+
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isBadRequest())
             .andDo(print());
     }
 }

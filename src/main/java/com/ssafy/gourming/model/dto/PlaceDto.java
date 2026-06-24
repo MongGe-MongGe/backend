@@ -2,6 +2,8 @@ package com.ssafy.gourming.model.dto;
 
 import java.time.LocalDateTime;
 
+import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryResponse;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,5 +48,21 @@ public class PlaceDto {
 		private String y;
 		private LocalDateTime createdAt;
 		private LocalDateTime updatedAt;
+	}
+
+	// 장소 상세 조회 응답
+	@Getter
+	@Setter
+	@NoArgsConstructor
+	public static class PlaceDetailResponse {
+
+		private String id;
+		private String name;
+		private String categoryName;
+		private String categoryGroupCode;
+		private String roadAddressName;
+		private String x;
+		private String y;
+		private PlaceReviewSummaryResponse reviewSummary;
 	}
 }

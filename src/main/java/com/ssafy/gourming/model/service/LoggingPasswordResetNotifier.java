@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class LoggingPasswordResetNotifier implements PasswordResetNotifier {
 
-	@Value("${password-reset.frontend-base-url:http://localhost:3000/reset-password}")
+	@Value("${password-reset.frontend-base-url:http://localhost:5173/reset-password}")
 	private String frontendBaseUrl;
 
 	@Override

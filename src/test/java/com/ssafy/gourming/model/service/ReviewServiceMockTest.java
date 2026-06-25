@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,15 +72,13 @@ class ReviewServiceMockTest {
 		ReviewResponse result = reviewService.createReview(USER_ID, request);
 
 		assertThat(result).isSameAs(createdResponse);
-		verify(reviewMapper).insertReview(argThat(review ->
-			review.getId() != null
+		verify(reviewMapper).insertReview(argThat(review -> review.getId() != null
 				&& !review.getId().isBlank()
 				&& review.getUserId().equals(USER_ID)
 				&& review.getPlaceId().equals(PLACE_ID)
 				&& review.getContent().equals("review content")
-				&& review.getImages().equals(List.of("/images/review-1.png"))
-		));
-		verify(imageService).confirmImages(new String[] {"/images/review-1.png"});
+				&& review.getImages().equals(List.of("/images/review-1.png"))));
+		verify(imageService).confirmImages(new String[] { "/images/review-1.png" });
 	}
 
 	@Test
@@ -91,8 +88,8 @@ class ReviewServiceMockTest {
 		when(placeService.findOrCreatePlace(request.getPlace())).thenReturn(null);
 
 		assertThatThrownBy(() -> reviewService.createReview(USER_ID, request))
-			.isInstanceOf(NoSuchElementException.class)
-			.hasMessage("Place not found: " + PLACE_ID);
+				.isInstanceOf(NoSuchElementException.class)
+				.hasMessage("Place not found: " + PLACE_ID);
 
 		verify(reviewMapper, never()).insertReview(any());
 		verify(imageService, never()).confirmImages(any());
@@ -131,8 +128,8 @@ class ReviewServiceMockTest {
 		when(reviewMapper.selectReviewById(REVIEW_ID, OTHER_USER_ID)).thenReturn(null);
 
 		assertThatThrownBy(() -> reviewService.getReview(REVIEW_ID, OTHER_USER_ID))
-			.isInstanceOf(NoSuchElementException.class)
-			.hasMessage("Review not found: " + REVIEW_ID);
+				.isInstanceOf(NoSuchElementException.class)
+				.hasMessage("Review not found: " + REVIEW_ID);
 	}
 
 	@Test
@@ -149,29 +146,25 @@ class ReviewServiceMockTest {
 		ReviewResponse result = reviewService.updateReview(USER_ID, REVIEW_ID, request);
 
 		assertThat(result).isSameAs(updatedResponse);
-		verify(reviewMapper).updateReview(argThat(review ->
-			review.getId().equals(REVIEW_ID)
+		verify(reviewMapper).updateReview(argThat(review -> review.getId().equals(REVIEW_ID)
 				&& review.getUserId().equals(USER_ID)
 				&& review.getContent().equals("updated content")
 				&& review.getImages().equals(List.of("/images/new.png"))
-				&& review.getRatingScore().equals(4)
-		));
+				&& review.getRatingScore().equals(4)));
 		verify(imageService).syncImages(
-			new String[] {"/images/old.png"},
-			new String[] {"/images/new.png"}
-		);
+				new String[] { "/images/old.png" },
+				new String[] { "/images/new.png" });
 	}
 
 	@Test
 	@DisplayName("다른 사용자의 리뷰는 수정할 수 없다")
 	void updateOtherUsersReviewFails() {
 		when(reviewMapper.selectReviewEntityById(REVIEW_ID))
-			.thenReturn(createReviewEntity(OTHER_USER_ID));
+				.thenReturn(createReviewEntity(OTHER_USER_ID));
 
-		assertThatThrownBy(() ->
-			reviewService.updateReview(USER_ID, REVIEW_ID, createUpdateRequest()))
-			.isInstanceOf(SecurityException.class)
-			.hasMessage("Review does not belong to user");
+		assertThatThrownBy(() -> reviewService.updateReview(USER_ID, REVIEW_ID, createUpdateRequest()))
+				.isInstanceOf(SecurityException.class)
+				.hasMessage("Review does not belong to user");
 
 		verify(reviewMapper, never()).updateReview(any());
 		verify(imageService, never()).syncImages(any(), any());
@@ -186,18 +179,18 @@ class ReviewServiceMockTest {
 		reviewService.deleteReview(USER_ID, REVIEW_ID);
 
 		verify(reviewMapper).deleteReview(REVIEW_ID, USER_ID);
-		verify(imageService).deleteImages(new String[] {"/images/old.png"});
+		verify(imageService).deleteImages(new String[] { "/images/old.png" });
 	}
 
 	@Test
 	@DisplayName("다른 사용자의 리뷰는 삭제할 수 없다")
 	void deleteOtherUsersReviewFails() {
 		when(reviewMapper.selectReviewEntityById(REVIEW_ID))
-			.thenReturn(createReviewEntity(OTHER_USER_ID));
+				.thenReturn(createReviewEntity(OTHER_USER_ID));
 
 		assertThatThrownBy(() -> reviewService.deleteReview(USER_ID, REVIEW_ID))
-			.isInstanceOf(SecurityException.class)
-			.hasMessage("Review does not belong to user");
+				.isInstanceOf(SecurityException.class)
+				.hasMessage("Review does not belong to user");
 
 		verify(reviewMapper, never()).deleteReview(any(), any());
 		verify(imageService, never()).deleteImages(any());
@@ -256,7 +249,7 @@ class ReviewServiceMockTest {
 		List<ReviewResponse> responses = List.of(createResponse("popular-review-1"));
 		when(reviewMapper.countPopularReviews(POPULAR_WINDOW_DAYS)).thenReturn(21L);
 		when(reviewMapper.selectPopularReviews(OTHER_USER_ID, POPULAR_WINDOW_DAYS, 20, 10))
-			.thenReturn(responses);
+				.thenReturn(responses);
 
 		ReviewPageResponse result = reviewService.getPopularReviews(OTHER_USER_ID, 2, 10);
 
@@ -275,8 +268,8 @@ class ReviewServiceMockTest {
 	@DisplayName("페이지 번호는 0 이상이어야 한다")
 	void getReviewsWithNegativePageFails() {
 		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, -1, 20))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Page must be zero or greater");
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessage("Page must be zero or greater");
 
 		verify(reviewMapper, never()).selectReviewsByPlace(any(), any(), anyLong(), anyInt());
 	}
@@ -285,8 +278,8 @@ class ReviewServiceMockTest {
 	@DisplayName("인기피드 페이지 번호는 0 이상이어야 한다")
 	void getPopularReviewsWithNegativePageFails() {
 		assertThatThrownBy(() -> reviewService.getPopularReviews(OTHER_USER_ID, -1, 20))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Page must be zero or greater");
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessage("Page must be zero or greater");
 
 		verify(reviewMapper, never()).countPopularReviews(anyInt());
 		verify(reviewMapper, never()).selectPopularReviews(any(), anyInt(), anyLong(), anyInt());
@@ -296,8 +289,8 @@ class ReviewServiceMockTest {
 	@DisplayName("페이지 크기는 1 이상 100 이하여야 한다")
 	void getReviewsWithInvalidSizeFails() {
 		assertThatThrownBy(() -> reviewService.getReviewsByPlace(PLACE_ID, OTHER_USER_ID, 0, 101))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Size must be between 1 and 100");
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessage("Size must be between 1 and 100");
 
 		verify(reviewMapper, never()).selectReviewsByPlace(any(), any(), anyLong(), anyInt());
 	}
@@ -306,8 +299,8 @@ class ReviewServiceMockTest {
 	@DisplayName("인기피드 페이지 크기는 1 이상 100 이하여야 한다")
 	void getPopularReviewsWithInvalidSizeFails() {
 		assertThatThrownBy(() -> reviewService.getPopularReviews(OTHER_USER_ID, 0, 101))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Size must be between 1 and 100");
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessage("Size must be between 1 and 100");
 
 		verify(reviewMapper, never()).countPopularReviews(anyInt());
 		verify(reviewMapper, never()).selectPopularReviews(any(), anyInt(), anyLong(), anyInt());

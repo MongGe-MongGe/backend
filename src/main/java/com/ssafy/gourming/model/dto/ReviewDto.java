@@ -122,6 +122,9 @@ public class ReviewDto {
 		private String roadAddressName;
 		private String x;
 		private String y;
+		
+		@com.fasterxml.jackson.annotation.JsonProperty("isSaved")
+		private boolean isSaved;
 	}
 
 	// 리뷰 응답에 포함되는 작성자 요약 정보

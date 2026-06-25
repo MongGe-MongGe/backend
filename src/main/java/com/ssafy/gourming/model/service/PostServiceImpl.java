@@ -10,9 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ssafy.gourming.model.dto.PostDto;
-import com.ssafy.gourming.model.dto.UserDto;
 import com.ssafy.gourming.model.mapper.PostMapper;
-import com.ssafy.gourming.model.mapper.UserMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 public class PostServiceImpl implements PostService {
 
 	private final PostMapper postMapper;
-	private final UserMapper userMapper;
 
 	@Override
 	public String createPost(String userId, PostDto.CreateRequest request) {
@@ -33,9 +30,8 @@ public class PostServiceImpl implements PostService {
 				request.getContent(),
 				request.getCategory().name(),
 				LocalDateTime.now(),
-				LocalDateTime.now()
-		);
-		
+				LocalDateTime.now());
+
 		postMapper.insertPost(postEntity);
 		return id;
 	}
@@ -45,15 +41,15 @@ public class PostServiceImpl implements PostService {
 		int offset = page * size;
 		int totalPosts = postMapper.countPosts();
 		List<PostDto.PostListResponse> posts = postMapper.findAllWithPaging(offset, size);
-		
+
 		int totalPages = (int) Math.ceil((double) totalPosts / size);
-		
+
 		Map<String, Object> response = new HashMap<>();
 		response.put("posts", posts);
 		response.put("currentPage", page);
 		response.put("totalItems", totalPosts);
 		response.put("totalPages", totalPages);
-		
+
 		return response;
 	}
 
@@ -72,16 +68,15 @@ public class PostServiceImpl implements PostService {
 		if (post == null) {
 			throw new NoSuchElementException("게시글을 찾을 수 없습니다.");
 		}
-		
+
 		PostDto.PostEntity entity = new PostDto.PostEntity(
-			id,
-			post.getUserId(),
-			request.getTitle(),
-			request.getContent(),
-			request.getCategory().name(),
-			post.getCreatedAt(),
-			LocalDateTime.now()
-		);
+				id,
+				post.getUserId(),
+				request.getTitle(),
+				request.getContent(),
+				request.getCategory().name(),
+				post.getCreatedAt(),
+				LocalDateTime.now());
 		postMapper.updatePost(entity);
 	}
 

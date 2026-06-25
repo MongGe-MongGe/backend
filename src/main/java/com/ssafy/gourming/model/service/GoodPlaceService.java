@@ -27,4 +27,8 @@ public interface GoodPlaceService {
 		String groupId,
 		String placeId
 	);
+
+	boolean isPlaceSavedByUser(String userId, String placeId);
+
+	java.util.List<String> getGroupIdsByPlace(String userId, String placeId);
 }

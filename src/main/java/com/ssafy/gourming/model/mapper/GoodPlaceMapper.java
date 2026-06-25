@@ -36,4 +36,14 @@ public interface GoodPlaceMapper {
 		@Param("groupId") String groupId,
 		@Param("placeId") String placeId
 	);
+	
+	boolean isPlaceSavedByUser(
+		@Param("userId") String userId,
+		@Param("placeId") String placeId
+	);
+
+	List<String> selectGroupIdsByPlace(
+		@Param("userId") String userId,
+		@Param("placeId") String placeId
+	);
 }

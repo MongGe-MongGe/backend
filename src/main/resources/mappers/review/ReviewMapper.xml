@@ -41,6 +41,7 @@
 			<result property="roadAddressName" column="road_address_name" />
 			<result property="x" column="x" />
 			<result property="y" column="y" />
+			<result property="isSaved" column="place_is_saved" />
 		</association>
 		<association property="author"
 			javaType="com.ssafy.gourming.model.dto.ReviewDto$AuthorSummary">
@@ -67,6 +68,12 @@
 		p.road_address_name,
 		p.x,
 		p.y,
+		EXISTS (
+			SELECT 1
+			FROM good_places gp
+			WHERE gp.place_id = p.id
+			  AND gp.user_id = #{viewerId, jdbcType=VARCHAR}
+		) AS place_is_saved,
 		u.id AS author_id,
 		u.nickname AS author_nickname,
 		u.handle AS author_handle,

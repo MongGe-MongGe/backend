@@ -18,6 +18,8 @@ import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryBulk
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryResponse;
 import com.ssafy.gourming.model.service.PlaceReviewSummaryService;
 import com.ssafy.gourming.model.service.PlaceService;
+import com.ssafy.gourming.model.service.GoodPlaceService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +31,12 @@ public class PlaceController {
 
 	private final PlaceService placeService;
 	private final PlaceReviewSummaryService placeReviewSummaryService;
+	private final GoodPlaceService goodPlaceService;
 
 	@PostMapping
 	public ResponseEntity<PlaceDetailResponse> checkOrCreatePlace(
-		@Valid @RequestBody PlaceRequest request
+		@Valid @RequestBody PlaceRequest request,
+		@AuthenticationPrincipal String userId
 	) {
 		PlaceEntity place = placeService.findOrCreatePlace(request);
 		if (place == null) {
@@ -44,7 +48,12 @@ public class PlaceController {
 		PlaceReviewSummaryResponse reviewSummary =
 			placeReviewSummaryService.getSummary(place.getId());
 
-		return ResponseEntity.ok(toPlaceDetailResponse(place, reviewSummary));
+		boolean isSaved = false;
+		if (userId != null && !userId.equals("anonymousUser")) {
+			isSaved = goodPlaceService.isPlaceSavedByUser(userId, place.getId());
+		}
+
+		return ResponseEntity.ok(toPlaceDetailResponse(place, reviewSummary, isSaved));
 	}
 
 	@PutMapping("/summary")
@@ -63,7 +72,8 @@ public class PlaceController {
 
 	private PlaceDetailResponse toPlaceDetailResponse(
 		PlaceEntity place,
-		PlaceReviewSummaryResponse reviewSummary
+		PlaceReviewSummaryResponse reviewSummary,
+		boolean isSaved
 	) {
 		PlaceDetailResponse response = new PlaceDetailResponse();
 		response.setId(place.getId());
@@ -74,6 +84,7 @@ public class PlaceController {
 		response.setX(place.getX());
 		response.setY(place.getY());
 		response.setReviewSummary(reviewSummary);
+		response.setSaved(isSaved);
 		return response;
 	}
 }

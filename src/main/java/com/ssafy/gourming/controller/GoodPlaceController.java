@@ -64,4 +64,12 @@ public class GoodPlaceController {
 		goodPlaceService.deleteGoodPlaceFromGroup(userId, groupId, placeId);
 		return ResponseEntity.noContent().build();
 	}
+
+	@GetMapping("/me/places/{placeId}/groups")
+	public ResponseEntity<java.util.List<String>> getGroupIdsByPlace(
+		@AuthenticationPrincipal String userId,
+		@PathVariable String placeId
+	) {
+		return ResponseEntity.ok(goodPlaceService.getGroupIdsByPlace(userId, placeId));
+	}
 }

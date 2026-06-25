@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,11 +58,12 @@ class PostServiceImplTest {
         // given
         int page = 0;
         int size = 10;
-        
+
         List<PostDto.PostListResponse> mockList = Arrays.asList(
-            new PostDto.PostListResponse("id1", "Title 1", "Notice", LocalDateTime.now(), LocalDateTime.now(), "user1", "author1"),
-            new PostDto.PostListResponse("id2", "Title 2", "Event", LocalDateTime.now(), LocalDateTime.now(), "user2", "author2")
-        );
+                new PostDto.PostListResponse("id1", "Title 1", "Notice", LocalDateTime.now(), LocalDateTime.now(),
+                        "user1", "author1"),
+                new PostDto.PostListResponse("id2", "Title 2", "Event", LocalDateTime.now(), LocalDateTime.now(),
+                        "user2", "author2"));
 
         when(postMapper.countPosts()).thenReturn(2);
         when(postMapper.findAllWithPaging(0, 10)).thenReturn(mockList);
@@ -84,7 +83,8 @@ class PostServiceImplTest {
     void testGetPostById_Success() {
         // given
         String postId = "id1";
-        PostDto.PostResponse mockPost = new PostDto.PostResponse(postId, "Title 1", "Content 1", "Notice", LocalDateTime.now(), LocalDateTime.now(), "user1", "author1");
+        PostDto.PostResponse mockPost = new PostDto.PostResponse(postId, "Title 1", "Content 1", "Notice",
+                LocalDateTime.now(), LocalDateTime.now(), "user1", "author1");
         when(postMapper.findById(postId)).thenReturn(mockPost);
 
         // when
@@ -116,7 +116,8 @@ class PostServiceImplTest {
         request.setContent("Updated Content");
         request.setCategory(PostCategory.Event);
 
-        PostDto.PostResponse mockPost = new PostDto.PostResponse(postId, "Title 1", "Content 1", "Notice", LocalDateTime.now(), LocalDateTime.now(), "user1", "author1");
+        PostDto.PostResponse mockPost = new PostDto.PostResponse(postId, "Title 1", "Content 1", "Notice",
+                LocalDateTime.now(), LocalDateTime.now(), "user1", "author1");
         when(postMapper.findById(postId)).thenReturn(mockPost);
 
         // when
@@ -143,7 +144,8 @@ class PostServiceImplTest {
     void testDeletePost_Success() {
         // given
         String postId = "id1";
-        PostDto.PostResponse mockPost = new PostDto.PostResponse(postId, "Title 1", "Content 1", "Notice", LocalDateTime.now(), LocalDateTime.now(), "user1", "author1");
+        PostDto.PostResponse mockPost = new PostDto.PostResponse(postId, "Title 1", "Content 1", "Notice",
+                LocalDateTime.now(), LocalDateTime.now(), "user1", "author1");
         when(postMapper.findById(postId)).thenReturn(mockPost);
 
         // when

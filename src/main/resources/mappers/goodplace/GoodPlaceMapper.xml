@@ -92,4 +92,17 @@
 		  AND place_id = #{placeId}
 	</delete>
 
+	<select id="isPlaceSavedByUser" resultType="boolean">
+		SELECT EXISTS (
+			SELECT 1 FROM good_places
+			WHERE user_id = #{userId} AND place_id = #{placeId}
+		)
+	</select>
+
+	<select id="selectGroupIdsByPlace" resultType="string">
+		SELECT group_id
+		FROM good_places
+		WHERE user_id = #{userId} AND place_id = #{placeId}
+	</select>
+
 </mapper>

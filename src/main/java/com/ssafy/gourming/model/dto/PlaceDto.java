@@ -64,5 +64,8 @@ public class PlaceDto {
 		private String x;
 		private String y;
 		private PlaceReviewSummaryResponse reviewSummary;
+		
+		@com.fasterxml.jackson.annotation.JsonProperty("isSaved")
+		private boolean isSaved;
 	}
 }

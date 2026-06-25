@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.ssafy.gourming.model.dto.UserDto;
-import com.ssafy.gourming.model.mapper.UserMapper;
 import com.ssafy.gourming.model.service.FollowService;
 import com.ssafy.gourming.model.service.UserService;
 
@@ -155,17 +154,16 @@ public class UserController {
 	 * 회원의 프로필 정보(닉네임, 핸들, 프로필 이미지, 자기소개 등)를 수정합니다.
 	 * 보안을 위해 URL 경로의 id와 토큰에 저장된 유저의 id가 일치하는지 검증합니다.
 	 * 
-	 * @param id 수정 대상 유저의 고유 식별자(UUID 등)
+	 * @param id                  수정 대상 유저의 고유 식별자(UUID 등)
 	 * @param authenticatedUserId JWT에서 추출한 현재 인증 사용자의 ID
-	 * @param request 변경할 프로필 정보가 담긴 요청 객체
+	 * @param request             변경할 프로필 정보가 담긴 요청 객체
 	 * @return 성공 시 200 OK
 	 */
 	@PutMapping("/{id}")
 	public ResponseEntity<?> updateProfile(
 			@PathVariable String id,
 			@AuthenticationPrincipal String authenticatedUserId,
-			@Valid @RequestBody UserDto.UpdateProfileRequest request
-	) {
+			@Valid @RequestBody UserDto.UpdateProfileRequest request) {
 		userService.updateProfile(id, authenticatedUserId, request);
 		return ResponseEntity.ok().build();
 	}

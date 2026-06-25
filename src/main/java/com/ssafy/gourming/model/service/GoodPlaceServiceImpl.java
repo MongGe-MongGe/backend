@@ -173,4 +173,14 @@ public class GoodPlaceServiceImpl implements GoodPlaceService {
 		response.setCreatedAt(goodPlace.getCreatedAt());
 		return response;
 	}
+
+	@Override
+	public boolean isPlaceSavedByUser(String userId, String placeId) {
+		return goodPlaceMapper.isPlaceSavedByUser(userId, placeId);
+	}
+
+	@Override
+	public java.util.List<String> getGroupIdsByPlace(String userId, String placeId) {
+		return goodPlaceMapper.selectGroupIdsByPlace(userId, placeId);
+	}
 }

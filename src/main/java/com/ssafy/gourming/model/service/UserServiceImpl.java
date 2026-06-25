@@ -248,6 +248,23 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	@Override
+	@Transactional
+	public void updateRole(String targetUserId, String authenticatedUserId, String role) {
+		// 본인만 역할 변경 가능
+		if (!Objects.equals(authenticatedUserId, targetUserId)) {
+			throw new SecurityException("자신의 역할만 변경할 수 있습니다.");
+		}
+		// 허용된 역할 값만 수용
+		if (!"USER".equals(role) && !"ADMIN".equals(role)) {
+			throw new IllegalArgumentException("허용되지 않은 역할 값입니다: " + role);
+		}
+		int updated = userMapper.updateRole(targetUserId, role);
+		if (updated == 0) {
+			throw new NoSuchElementException("User not found: " + targetUserId);
+		}
+	}
+
 	private String generateRawToken() {
 		byte[] bytes = new byte[32];
 		secureRandom.nextBytes(bytes);

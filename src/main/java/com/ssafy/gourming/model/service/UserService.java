@@ -13,4 +13,5 @@ public interface UserService {
 	UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId);
 	java.util.List<UserDto.UserProfileResponse> searchUsers(String keyword, String authenticatedUserId, int limit, int offset);
 	void updateProfile(String id, String authenticatedEmail, UserDto.UpdateProfileRequest request);
+	void updateRole(String id, String authenticatedUserId, String role);
 }

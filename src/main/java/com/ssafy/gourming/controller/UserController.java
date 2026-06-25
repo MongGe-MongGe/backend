@@ -3,7 +3,9 @@ package com.ssafy.gourming.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -165,6 +167,27 @@ public class UserController {
 			@AuthenticationPrincipal String authenticatedUserId,
 			@Valid @RequestBody UserDto.UpdateProfileRequest request) {
 		userService.updateProfile(id, authenticatedUserId, request);
+		return ResponseEntity.ok().build();
+	}
+
+	/**
+	 * 사용자 역할(role) 변경 API (인증 필수)
+	 * 본인만 자신의 역할을 USER ↔ ADMIN으로 변경할 수 있습니다.
+	 *
+	 * @param id                  변경 대상 유저의 식별자(UUID)
+	 * @param authenticatedUserId JWT에서 추출한 현재 인증 사용자의 ID
+	 * @param role                변경할 역할 값 ("USER" 또는 "ADMIN")
+	 * @return 성공 시 200 OK
+	 */
+	@PatchMapping("/{id}/role")
+	public ResponseEntity<?> updateRole(
+			@PathVariable String id,
+			@AuthenticationPrincipal String authenticatedUserId,
+			@RequestParam String role) {
+		if (authenticatedUserId == null || authenticatedUserId.equals("anonymousUser")) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+		userService.updateRole(id, authenticatedUserId, role);
 		return ResponseEntity.ok().build();
 	}
 }

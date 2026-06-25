@@ -63,6 +63,12 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateRole">
+        UPDATE users
+        SET role = #{role}
+        WHERE id = #{id}
+    </update>
+
     <!-- 
       유저 검색 쿼리
       1. 키워드가 포함된 사용자를 찾습니다.

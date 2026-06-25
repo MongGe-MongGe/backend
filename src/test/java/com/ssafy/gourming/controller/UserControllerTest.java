@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(properties = "password-reset.mail.enabled=false")
 @AutoConfigureMockMvc
 class UserControllerTest {
 

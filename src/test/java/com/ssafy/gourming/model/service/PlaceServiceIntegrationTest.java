@@ -14,7 +14,7 @@ import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceRequest;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 
-@SpringBootTest
+@SpringBootTest(properties = "password-reset.mail.enabled=false")
 @EnabledIfSystemProperty(named = "run.place.integration", matches = "true")
 @DisplayName("장소 서비스 통합 테스트")
 class PlaceServiceIntegrationTest {

@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.hamcrest.Matchers.containsString;
 
-@SpringBootTest
+@SpringBootTest(properties = "password-reset.mail.enabled=false")
 @AutoConfigureMockMvc
 public class ImageUploadTest {
 

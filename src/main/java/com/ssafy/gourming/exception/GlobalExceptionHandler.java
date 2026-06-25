@@ -61,6 +61,17 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * 403 Forbidden: 권한 부족 (Spring Security @PreAuthorize 등)
+	 */
+	@ExceptionHandler({
+		org.springframework.security.authorization.AuthorizationDeniedException.class,
+		org.springframework.security.access.AccessDeniedException.class
+	})
+	public ResponseEntity<?> handleAuthorizationDeniedException(Exception ex) {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body("접근 권한이 없습니다.");
+	}
+
+	/**
 	 * 404 Not Found: 리소스를 찾을 수 없음 (존재하지 않는 유저 등)
 	 */
 	@ExceptionHandler(NoSuchElementException.class)

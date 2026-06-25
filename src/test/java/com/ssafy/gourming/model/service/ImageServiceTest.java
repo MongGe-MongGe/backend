@@ -14,7 +14,7 @@ import static org.mockito.Mockito.*;
 import org.springframework.mock.web.MockMultipartFile;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
+@SpringBootTest(properties = "password-reset.mail.enabled=false")
 public class ImageServiceTest {
 
     @Autowired

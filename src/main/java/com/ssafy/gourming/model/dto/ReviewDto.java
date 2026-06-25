@@ -125,6 +125,8 @@ public class ReviewDto {
 		
 		@com.fasterxml.jackson.annotation.JsonProperty("isSaved")
 		private boolean isSaved;
+		
+		private com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryResponse reviewSummary;
 	}
 
 	// 리뷰 응답에 포함되는 작성자 요약 정보

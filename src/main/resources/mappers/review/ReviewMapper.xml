@@ -42,6 +42,18 @@
 			<result property="x" column="x" />
 			<result property="y" column="y" />
 			<result property="isSaved" column="place_is_saved" />
+			<association property="reviewSummary" javaType="com.ssafy.gourming.model.dto.PlaceReviewSummaryDto$PlaceReviewSummaryResponse">
+				<result property="placeId" column="place_id" />
+				<result property="summary" column="pr_sum_summary" />
+				<result property="positivePoints" column="pr_sum_positive_points" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+				<result property="negativePoints" column="pr_sum_negative_points" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+				<result property="recommendedFor" column="pr_sum_recommended_for" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+				<result property="keywords" column="pr_sum_keywords" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+				<result property="reviewCount" column="pr_sum_review_count" />
+				<result property="status" column="pr_sum_status" />
+				<result property="lastReviewUpdatedAt" column="pr_sum_last_review_updated_at" />
+				<result property="updatedAt" column="pr_sum_updated_at" />
+			</association>
 		</association>
 		<association property="author"
 			javaType="com.ssafy.gourming.model.dto.ReviewDto$AuthorSummary">
@@ -61,6 +73,15 @@
 		r.visited_at,
 		r.created_at,
 		r.updated_at,
+		pr_sum.summary AS pr_sum_summary,
+		pr_sum.positive_points AS pr_sum_positive_points,
+		pr_sum.negative_points AS pr_sum_negative_points,
+		pr_sum.recommended_for AS pr_sum_recommended_for,
+		pr_sum.keywords AS pr_sum_keywords,
+		pr_sum.review_count AS pr_sum_review_count,
+		pr_sum.status AS pr_sum_status,
+		pr_sum.last_review_updated_at AS pr_sum_last_review_updated_at,
+		pr_sum.updated_at AS pr_sum_updated_at,
 		p.id AS place_id,
 		p.name AS place_name,
 		p.category_name,
@@ -145,6 +166,7 @@
 		FROM reviews r
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		WHERE r.id = #{reviewId}
 	</select>
 
@@ -172,6 +194,7 @@
 		FROM reviews r
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		WHERE r.place_id = #{placeId}
 		ORDER BY r.created_at DESC, r.id DESC
 		LIMIT #{size} OFFSET #{offset}
@@ -189,6 +212,7 @@
 		FROM reviews r
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		WHERE r.user_id = #{userId}
 		ORDER BY r.created_at DESC, r.id DESC
 		LIMIT #{size} OFFSET #{offset}
@@ -206,6 +230,7 @@
 		FROM reviews r
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		WHERE r.user_id = #{userId}
 		   OR r.user_id IN (SELECT target_user_id FROM follows WHERE user_id = #{userId})
 		ORDER BY r.created_at DESC, r.id DESC
@@ -226,6 +251,7 @@
 		JOIN reviews r ON r.id = prs.review_id
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		WHERE prs.window_days = #{windowDays}
 		ORDER BY prs.rank_no ASC, prs.score DESC, r.created_at DESC
 		LIMIT #{size} OFFSET #{offset}
@@ -243,6 +269,7 @@
 		FROM reviews r
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		ORDER BY r.created_at DESC, r.id DESC
 		LIMIT #{size} OFFSET #{offset}
 	</select>
@@ -258,6 +285,7 @@
 		FROM reviews r
 		JOIN places p ON p.id = r.place_id
 		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
 		WHERE p.category_name LIKE CONCAT('%', #{keyword}, '%')
 		   OR r.content LIKE CONCAT('%', #{keyword}, '%')
 		   OR p.name LIKE CONCAT('%', #{keyword}, '%')

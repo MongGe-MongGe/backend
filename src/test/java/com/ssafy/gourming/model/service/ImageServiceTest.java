@@ -20,6 +20,7 @@ public class ImageServiceTest {
     private ImageService imageService;
 
     // 실제 DB 연동 없이 비즈니스 로직만 테스트하기 위해 Mapper를 Mock(가짜 객체)으로 주입합니다.
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private ImageMapper imageMapper;
 
     @Test

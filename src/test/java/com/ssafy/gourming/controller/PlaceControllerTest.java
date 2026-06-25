@@ -53,6 +53,9 @@ class PlaceControllerTest {
 	private PlaceService placeService;
 
 	@MockitoBean
+	private com.ssafy.gourming.model.service.GoodPlaceService goodPlaceService;
+
+	@MockitoBean
 	private PlaceReviewSummaryService placeReviewSummaryService;
 
 	@MockitoBean

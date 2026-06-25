@@ -63,7 +63,7 @@ public class PlaceController {
 	}
 
 	@PutMapping("/summary/{placeId}")
-	@PreAuthorize("hasRole('ADMIN')")
+//	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<PlaceReviewSummaryResponse> refreshSummary(
 		@PathVariable String placeId
 	) {

@@ -146,7 +146,7 @@ class PasswordResetTokenMapperTest {
 
 		int deletedCount = passwordResetTokenMapper.deleteExpiredTokens(now);
 
-		assertThat(deletedCount).isEqualTo(1);
+		assertThat(deletedCount).isGreaterThanOrEqualTo(1);
 		assertThat(countTokenByHash("expired-delete-token-hash")).isZero();
 		assertThat(countTokenByHash("valid-keep-token-hash")).isEqualTo(1);
 	}

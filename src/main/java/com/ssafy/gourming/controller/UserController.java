@@ -28,7 +28,6 @@ public class UserController {
 
 	private final UserService userService;
 	private final FollowService followService;
-	private final UserMapper userMapper;
 
 	/**
 	 * 핸들 존재 여부를 확인하는 엔드포인트입니다.
@@ -41,6 +40,20 @@ public class UserController {
 	@GetMapping("/check-handle")
 	public ResponseEntity<Boolean> checkHandle(@RequestParam String handle) {
 		boolean exists = !userService.isHandleAvailable(handle);
+		return ResponseEntity.ok(exists);
+	}
+
+	/**
+	 * 이메일 존재 여부를 확인하는 엔드포인트입니다.
+	 * 프론트엔드에서 디바운싱을 통해 입력 도중 호출되며,
+	 * 이미 존재하는 이메일일 경우 true, 사용 가능한 이메일일 경우 false를 반환합니다.
+	 * 
+	 * @param email 중복을 검사할 사용자 이메일
+	 * @return 존재하면 true, 존재하지 않으면 false
+	 */
+	@GetMapping("/check-email")
+	public ResponseEntity<Boolean> checkEmail(@RequestParam String email) {
+		boolean exists = !userService.isEmailAvailable(email);
 		return ResponseEntity.ok(exists);
 	}
 

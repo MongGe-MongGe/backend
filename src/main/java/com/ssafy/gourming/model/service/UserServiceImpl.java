@@ -173,6 +173,11 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
+	public boolean isEmailAvailable(String email) {
+		return userMapper.findByEmail(email) == null;
+	}
+
+	@Override
 	public UserDto.UserProfileResponse getUserProfile(String handle, String authenticatedUserId) {
 		String currentUserId = null;
 		// SecurityContext에서 얻어온 주체가 익명 사용자(anonymousUser)가 아닐 경우 식별자를 매핑합니다.

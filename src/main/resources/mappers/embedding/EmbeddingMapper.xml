@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.EmbeddingMapper">
+
+	<resultMap id="embeddingTargetRowMap"
+		type="com.ssafy.gourming.model.dto.EmbeddingDto$EmbeddingTargetRow">
+		<id property="reviewId" column="review_id" />
+		<result property="content" column="content" />
+	</resultMap>
+
+	<resultMap id="reviewEmbeddingRowMap"
+		type="com.ssafy.gourming.model.dto.EmbeddingDto$ReviewEmbeddingRow">
+		<id property="reviewId" column="review_id" />
+		<result property="embedding" column="embedding"
+			typeHandler="com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler" />
+		<result property="embedderVersion" column="embedder_version" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<select id="selectEmbeddingTargets" resultMap="embeddingTargetRowMap">
+		SELECT
+			r.id AS review_id,
+			r.content
+		FROM reviews r
+		LEFT JOIN review_embeddings e ON e.review_id = r.id
+		WHERE e.review_id IS NULL
+		   OR e.updated_at &lt; r.updated_at
+		   OR e.embedder_version &lt;&gt; #{embedderVersion}
+		ORDER BY r.updated_at ASC, r.id ASC
+	</select>
+
+	<insert id="upsertReviewEmbeddings">
+		INSERT INTO review_embeddings (review_id, embedding, embedder_version, updated_at)
+		VALUES
+		<foreach collection="rows" item="row" separator=",">
+			(
+				#{row.reviewId},
+				#{row.embedding, typeHandler=com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler},
+				#{row.embedderVersion},
+				CURRENT_TIMESTAMP
+			)
+		</foreach>
+		ON DUPLICATE KEY UPDATE
+			embedding = VALUES(embedding),
+			embedder_version = VALUES(embedder_version),
+			updated_at = CURRENT_TIMESTAMP
+	</insert>
+
+	<select id="selectPlaceIdsWithEmbeddedReviews" resultType="string">
+		SELECT DISTINCT r.place_id
+		FROM reviews r
+		JOIN review_embeddings e ON e.review_id = r.id
+		WHERE e.embedder_version = #{embedderVersion}
+		ORDER BY r.place_id
+	</select>
+
+	<select id="selectReviewEmbeddingsByPlaceId" resultMap="reviewEmbeddingRowMap">
+		SELECT
+			e.review_id,
+			e.embedding,
+			e.embedder_version,
+			e.updated_at
+		FROM review_embeddings e
+		JOIN reviews r ON r.id = e.review_id
+		WHERE r.place_id = #{placeId}
+		  AND e.embedder_version = #{embedderVersion}
+	</select>
+
+	<select id="selectPlaceIdsNeedingCategoryEmbedding" resultType="string">
+		SELECT p.id
+		FROM places p
+		LEFT JOIN place_embeddings pe ON pe.place_id = p.id
+		WHERE NOT EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
+		  AND (
+				pe.place_id IS NULL
+			 OR pe.embedder_version &lt;&gt; #{embedderVersion}
+			 OR pe.source &lt;&gt; 'CATEGORY'
+		  )
+		ORDER BY p.id
+	</select>
+
+	<insert id="upsertPlaceEmbedding"
+		parameterType="com.ssafy.gourming.model.dto.EmbeddingDto$PlaceEmbeddingRow">
+		INSERT INTO place_embeddings (place_id, embedding, source, review_count, embedder_version, updated_at)
+		VALUES (
+			#{placeId},
+			#{embedding, typeHandler=com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler},
+			#{source},
+			#{reviewCount},
+			#{embedderVersion},
+			CURRENT_TIMESTAMP
+		)
+		ON DUPLICATE KEY UPDATE
+			embedding = VALUES(embedding),
+			source = VALUES(source),
+			review_count = VALUES(review_count),
+			embedder_version = VALUES(embedder_version),
+			updated_at = CURRENT_TIMESTAMP
+	</insert>
+
+</mapper>

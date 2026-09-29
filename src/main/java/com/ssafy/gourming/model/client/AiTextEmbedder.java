@@ -23,6 +23,9 @@ public class AiTextEmbedder implements TextEmbedder {
 
 	private static final String EMBEDDINGS_PATH = "/v1/embeddings";
 	private static final String BLANK_REPLACEMENT = "(내용 없음)";
+	// 입력당 토큰 상한(8,192)을 넘는 리뷰 하나가 묶음 전체를 실패시키지 않도록 글자 수로 자른다.
+	// 한글은 글자당 1~2토큰이라 3,000자면 여유가 있다.
+	public static final int MAX_TEXT_LENGTH = 3000;
 
 	private final RestClient restClient;
 	private final EmbeddingProperties properties;
@@ -44,9 +47,10 @@ public class AiTextEmbedder implements TextEmbedder {
 		String model = requireSetting(properties.getAi().getModel(), "embedding.ai.model");
 		String apiKey = requireSetting(properties.getAi().getApiKey(), "embedding.ai.api-key");
 
-		// 공백 문자열은 임베딩 API가 거부할 수 있어 고정 문자열로 치환한다.
+		// 공백 문자열은 임베딩 API가 거부할 수 있어 고정 문자열로 치환하고, 너무 긴 본문은 자른다.
 		List<String> input = texts.stream()
 			.map(text -> text == null || text.isBlank() ? BLANK_REPLACEMENT : text)
+			.map(text -> text.length() > MAX_TEXT_LENGTH ? text.substring(0, MAX_TEXT_LENGTH) : text)
 			.toList();
 
 		EmbeddingResponse response = restClient.post()

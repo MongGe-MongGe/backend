@@ -91,6 +91,26 @@ class EmbeddingMapperTest {
 	}
 
 	@Test
+	@DisplayName("대상 조회는 리뷰의 updated_at을 함께 반환하고, upsert는 그 값을 벡터 행에 저장한다")
+	void upsertStoresGivenUpdatedAt() {
+		LocalDateTime reviewUpdatedAt = LocalDateTime.of(2026, 9, 1, 10, 0);
+		EmbeddingTargetRow target = embeddingMapper.selectEmbeddingTargets(VERSION).stream()
+			.filter(t -> t.getReviewId().equals(REVIEW_ID)).findFirst().get();
+		assertThat(target.getReviewUpdatedAt()).isEqualTo(reviewUpdatedAt);
+
+		ReviewEmbeddingRow row = row(REVIEW_ID, new float[] {1f, 2f}, VERSION);
+		row.setUpdatedAt(reviewUpdatedAt);
+		embeddingMapper.upsertReviewEmbeddings(List.of(row));
+
+		LocalDateTime stored = jdbcTemplate.queryForObject(
+			"SELECT updated_at FROM review_embeddings WHERE review_id = ?", LocalDateTime.class, REVIEW_ID);
+		assertThat(stored).isEqualTo(reviewUpdatedAt);
+		// 리뷰가 그 뒤에 수정되지 않았으므로 대상에서 빠진다.
+		assertThat(embeddingMapper.selectEmbeddingTargets(VERSION))
+			.extracting(EmbeddingTargetRow::getReviewId).doesNotContain(REVIEW_ID);
+	}
+
+	@Test
 	@DisplayName("버전이 다른 벡터를 가진 리뷰는 대상이 된다")
 	void selectEmbeddingTargetsReturnsVersionMismatch() {
 		upsert(REVIEW_ID, "old-v0");

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,6 +82,24 @@ class EmbeddingServiceMockTest {
 		assertThat(response.getEmbedderVersion()).isEqualTo(VERSION);
 		assertThat(response.getStartedAt()).isNotNull();
 		assertThat(response.getFinishedAt()).isNotNull();
+	}
+
+	@Test
+	@DisplayName("저장하는 벡터의 updated_at은 저장 시각이 아니라 본문을 읽은 리뷰의 updated_at이다")
+	void refreshAllStoresReviewUpdatedAt() {
+		LocalDateTime reviewUpdatedAt = LocalDateTime.of(2026, 9, 1, 10, 0);
+		EmbeddingTargetRow target = target("r1", "a");
+		target.setReviewUpdatedAt(reviewUpdatedAt);
+		when(embeddingMapper.selectEmbeddingTargets(VERSION)).thenReturn(List.of(target));
+		when(textEmbedder.embed(anyList())).thenReturn(List.of(new float[] {1f, 0f}));
+		when(embeddingMapper.selectPlaceIdsWithEmbeddedReviews(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsNeedingCategoryEmbedding(VERSION)).thenReturn(List.of());
+
+		service.refreshAll();
+
+		verify(embeddingMapper).upsertReviewEmbeddings(argThat(rows ->
+			rows.size() == 1 && reviewUpdatedAt.equals(rows.get(0).getUpdatedAt())
+		));
 	}
 
 	@Test

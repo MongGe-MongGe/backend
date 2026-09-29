@@ -219,6 +219,36 @@ CREATE TABLE popular_review_scores (
         FOREIGN KEY (review_id) REFERENCES reviews (id) ON DELETE CASCADE
 );
 
+-- ============================================================
+-- ReviewEmbeddings (리뷰 본문 임베딩 벡터)
+-- ============================================================
+CREATE TABLE review_embeddings (
+    review_id         CHAR(36)     NOT NULL,
+    embedding         JSON         NOT NULL,                  -- [0.01, -0.02, ...]
+    embedder_version  VARCHAR(50)  NOT NULL,                  -- 모델명 또는 fake-v1
+    updated_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (review_id),
+    CONSTRAINT fk_review_embeddings_review
+        FOREIGN KEY (review_id) REFERENCES reviews (id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- PlaceEmbeddings (장소 벡터: 리뷰 벡터 평균 또는 카테고리 임베딩)
+-- ============================================================
+CREATE TABLE place_embeddings (
+    place_id          VARCHAR(50)  NOT NULL,
+    embedding         JSON         NOT NULL,
+    source            VARCHAR(10)  NOT NULL,                  -- REVIEWS | CATEGORY
+    review_count      INT          NOT NULL DEFAULT 0,
+    embedder_version  VARCHAR(50)  NOT NULL,
+    updated_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (place_id),
+    CONSTRAINT fk_place_embeddings_place
+        FOREIGN KEY (place_id) REFERENCES places (id) ON DELETE CASCADE
+);
+
 
 -- ============================================================
 -- Images (이미지 업로드 및 생명주기 관리)

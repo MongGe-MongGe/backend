@@ -16,6 +16,8 @@ public class EmbeddingDto {
 
 		private String reviewId;
 		private String content;
+		// 본문을 읽은 시점의 리뷰 updated_at. 벡터 행에 그대로 저장해 배치 중 수정된 리뷰를 다음 배치가 잡게 한다.
+		private LocalDateTime reviewUpdatedAt;
 	}
 
 	// review_embeddings 테이블과 매핑되는 row

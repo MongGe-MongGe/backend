@@ -89,6 +89,8 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 					row.setReviewId(chunk.get(i).getReviewId());
 					row.setEmbedding(vectors.get(i));
 					row.setEmbedderVersion(version);
+					// 저장 시각이 아니라 본문을 읽은 시점의 리뷰 updated_at을 기록한다.
+					row.setUpdatedAt(chunk.get(i).getReviewUpdatedAt());
 					rows.add(row);
 				}
 				embeddingMapper.upsertReviewEmbeddings(rows);

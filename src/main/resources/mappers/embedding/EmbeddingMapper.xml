@@ -9,6 +9,7 @@
 		type="com.ssafy.gourming.model.dto.EmbeddingDto$EmbeddingTargetRow">
 		<id property="reviewId" column="review_id" />
 		<result property="content" column="content" />
+		<result property="reviewUpdatedAt" column="review_updated_at" />
 	</resultMap>
 
 	<resultMap id="reviewEmbeddingRowMap"
@@ -23,7 +24,8 @@
 	<select id="selectEmbeddingTargets" resultMap="embeddingTargetRowMap">
 		SELECT
 			r.id AS review_id,
-			r.content
+			r.content,
+			r.updated_at AS review_updated_at
 		FROM reviews r
 		LEFT JOIN review_embeddings e ON e.review_id = r.id
 		WHERE e.review_id IS NULL
@@ -40,13 +42,13 @@
 				#{row.reviewId},
 				#{row.embedding, typeHandler=com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler},
 				#{row.embedderVersion},
-				CURRENT_TIMESTAMP
+				COALESCE(#{row.updatedAt, jdbcType=TIMESTAMP}, CURRENT_TIMESTAMP)
 			)
 		</foreach>
 		ON DUPLICATE KEY UPDATE
 			embedding = VALUES(embedding),
 			embedder_version = VALUES(embedder_version),
-			updated_at = CURRENT_TIMESTAMP
+			updated_at = VALUES(updated_at)
 	</insert>
 
 	<select id="selectPlaceIdsWithEmbeddedReviews" resultType="string">

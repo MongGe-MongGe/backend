@@ -102,6 +102,22 @@ class AiTextEmbedderTest {
 	}
 
 	@Test
+	@DisplayName("너무 긴 본문은 최대 길이로 잘라 요청한다")
+	void embedTruncatesLongText() throws IOException {
+		startServer(200, objectMapper.writeValueAsString(Map.of(
+			"data", List.of(Map.of("index", 0, "embedding", List.of(0.1)))
+		)));
+		AiTextEmbedder embedder = createEmbedder();
+		String longText = "가".repeat(AiTextEmbedder.MAX_TEXT_LENGTH + 500);
+
+		embedder.embed(List.of(longText));
+
+		JsonNode requestJson = objectMapper.readTree(requestBody.get());
+		assertThat(requestJson.get("input").get(0).asText())
+			.hasSize(AiTextEmbedder.MAX_TEXT_LENGTH);
+	}
+
+	@Test
 	@DisplayName("API 키가 비어 있으면 호출 전에 예외를 던진다")
 	void embedThrowsWhenApiKeyMissing() throws IOException {
 		startServer(200, "{}");

@@ -60,6 +60,9 @@ class ReviewControllerTest {
 	private ReviewService reviewService;
 
 	@MockitoBean
+	private com.ssafy.gourming.model.service.RecommendationService recommendationService;
+
+	@MockitoBean
 	private JwtUtil jwtUtil;
 
 	@Test

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,7 @@ class UserTasteServiceMockTest {
 	@Test
 	@DisplayName("행동이 없으면 사용자 벡터는 null이고 빈 성향을 반환한다")
 	void emptyProfileWithoutEvidence() {
-		when(userTasteMapper.selectEvidences(USER_ID, VERSION)).thenReturn(List.of());
+		when(userTasteMapper.selectEvidences(USER_ID, VERSION, null)).thenReturn(List.of());
 
 		assertThat(service.computeUserVector(USER_ID)).isNull();
 
@@ -66,7 +67,7 @@ class UserTasteServiceMockTest {
 	@Test
 	@DisplayName("가중치 합이 0 이하이면 사용자 벡터는 null이다")
 	void nullVectorWhenWeightSumNotPositive() {
-		when(userTasteMapper.selectEvidences(USER_ID, VERSION))
+		when(userTasteMapper.selectEvidences(USER_ID, VERSION, null))
 			.thenReturn(List.of(evidence(new float[] {1f, 0f}, -4), evidence(new float[] {0f, 1f}, 2)));
 
 		assertThat(service.computeUserVector(USER_ID)).isNull();
@@ -75,7 +76,7 @@ class UserTasteServiceMockTest {
 	@Test
 	@DisplayName("사용자 벡터는 행동 벡터의 가중 평균이다")
 	void computeUserVectorWeightedMean() {
-		when(userTasteMapper.selectEvidences(USER_ID, VERSION))
+		when(userTasteMapper.selectEvidences(USER_ID, VERSION, null))
 			.thenReturn(List.of(evidence(new float[] {1f, 0f}, 3), evidence(new float[] {0f, 1f}, 1)));
 
 		UserVector userVector = service.computeUserVector(USER_ID);
@@ -88,7 +89,7 @@ class UserTasteServiceMockTest {
 	@Test
 	@DisplayName("태그 유사도 내림차순 상위 5개와 confidence를 반환하고 벡터 없는·버전 다른 태그는 제외한다")
 	void getTasteProfileRanksTags() {
-		when(userTasteMapper.selectEvidences(USER_ID, VERSION))
+		when(userTasteMapper.selectEvidences(USER_ID, VERSION, null))
 			.thenReturn(List.of(evidence(new float[] {1f, 0f}, 5)));
 		when(tasteTagMapper.selectActiveTags()).thenReturn(List.of(
 			tag("a", new float[] {0f, 1f}, VERSION),
@@ -119,7 +120,7 @@ class UserTasteServiceMockTest {
 	void dessertLoverTopTagIsDessert() {
 		FakeTextEmbedder fake = new FakeTextEmbedder();
 		float[] dessertReview = fake.embed(List.of("케이크와 디저트가 맛있어요")).get(0);
-		when(userTasteMapper.selectEvidences(USER_ID, VERSION))
+		when(userTasteMapper.selectEvidences(USER_ID, VERSION, null))
 			.thenReturn(List.of(evidence(dessertReview, 3)));
 		when(tasteTagMapper.selectActiveTags()).thenReturn(List.of(
 			tag("dessert", fake.embed(List.of("케이크, 빵, 디저트 메뉴가 맛있는 곳")).get(0), VERSION),
@@ -130,6 +131,18 @@ class UserTasteServiceMockTest {
 		UserTasteProfileResponse response = service.getTasteProfile(USER_ID);
 
 		assertThat(response.getTopTags().get(0).getCode()).isEqualTo("dessert");
+	}
+
+	@Test
+	@DisplayName("computeUserVector(userId, asOf)는 받은 asOf로 행동을 조회한다")
+	void computeUserVectorPassesAsOf() {
+		LocalDateTime asOf = LocalDateTime.of(2026, 9, 30, 11, 25, 52);
+		when(userTasteMapper.selectEvidences(USER_ID, VERSION, asOf))
+			.thenReturn(List.of(evidence(new float[] {1f, 0f}, 3)));
+
+		UserVector userVector = service.computeUserVector(USER_ID, asOf);
+
+		assertThat(userVector.getEvidenceCount()).isEqualTo(1);
 	}
 
 	private UserTasteEvidenceRow evidence(float[] embedding, double weight) {

@@ -1,5 +1,6 @@
 package com.ssafy.gourming.model.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,10 +32,16 @@ public class UserTasteServiceImpl implements UserTasteService {
 
 	@Override
 	public UserVector computeUserVector(String userId) {
+		return computeUserVector(userId, null);
+	}
+
+	@Override
+	public UserVector computeUserVector(String userId, LocalDateTime asOf) {
 		// 사용자 벡터는 저장하지 않고 매번 원본 행동에서 다시 계산한다.
 		// 좋아요 취소·저장 삭제·별점 수정이 다음 요청에 바로 반영된다.
+		// asOf가 있으면 그 시각 이후 행동은 무시해 추천 피드 페이지 사이 결과를 고정한다.
 		List<UserTasteEvidenceRow> evidences =
-			userTasteMapper.selectEvidences(userId, textEmbedder.version());
+			userTasteMapper.selectEvidences(userId, textEmbedder.version(), asOf);
 		if (evidences.isEmpty()) {
 			return null;
 		}

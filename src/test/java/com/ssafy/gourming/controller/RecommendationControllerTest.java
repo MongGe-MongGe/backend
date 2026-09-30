@@ -1,5 +1,6 @@
 package com.ssafy.gourming.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.ssafy.gourming.config.SecurityConfig;
-import com.ssafy.gourming.model.dto.ReviewDto.ReviewPageResponse;
+import com.ssafy.gourming.model.dto.RecommendationDto.RecommendationPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewResponse;
 import com.ssafy.gourming.model.service.RecommendationService;
 import com.ssafy.gourming.model.service.ReviewService;
@@ -52,15 +54,16 @@ class RecommendationControllerTest {
 	@Test
 	@DisplayName("로그인 사용자가 추천 피드를 조회한다")
 	void getRecommendedReviews() throws Exception {
-		when(recommendationService.getRecommendedReviews(USER_ID, 1, 10)).thenReturn(createPage());
+		when(recommendationService.getRecommendedReviews(USER_ID, 1, 10, null)).thenReturn(createPage());
 
 		mockMvc.perform(get("/api/reviews/recommended?page=1&size=10").with(authentication(userAuthentication())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.content[0].id").value("review-1"))
 			.andExpect(jsonPath("$.page").value(1))
-			.andExpect(jsonPath("$.totalElements").value(1));
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.asOf").value("2026-09-30T11:25:52"));
 
-		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10);
+		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10, null);
 	}
 
 	@Test
@@ -71,7 +74,7 @@ class RecommendationControllerTest {
 		mockMvc.perform(get("/api/reviews/recommended?size=101").with(authentication(userAuthentication())))
 			.andExpect(status().isBadRequest());
 
-		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt());
+		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
 	}
 
 	@Test
@@ -82,7 +85,31 @@ class RecommendationControllerTest {
 		mockMvc.perform(get("/api/reviews/popular"))
 			.andExpect(status().isOk());
 
-		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt());
+		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
+	}
+
+	@Test
+	@DisplayName("asOf 파라미터를 받아 서비스에 넘긴다")
+	void passesAsOf() throws Exception {
+		LocalDateTime asOf = LocalDateTime.of(2026, 9, 30, 11, 25, 52);
+		when(recommendationService.getRecommendedReviews(USER_ID, 1, 10, asOf)).thenReturn(createPage());
+
+		mockMvc.perform(get("/api/reviews/recommended?page=1&size=10&asOf=2026-09-30T11:25:52")
+				.with(authentication(userAuthentication())))
+			.andExpect(status().isOk());
+
+		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10, asOf);
+	}
+
+	@Test
+	@DisplayName("asOf나 page의 형식이 잘못되면 400이다")
+	void rejectsMalformedParams() throws Exception {
+		mockMvc.perform(get("/api/reviews/recommended?asOf=abc").with(authentication(userAuthentication())))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(get("/api/reviews/popular?page=abc"))
+			.andExpect(status().isBadRequest());
+
+		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
 	}
 
 	private Authentication userAuthentication() {
@@ -90,10 +117,10 @@ class RecommendationControllerTest {
 			USER_ID, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
 	}
 
-	private ReviewPageResponse createPage() {
+	private RecommendationPageResponse createPage() {
 		ReviewResponse review = new ReviewResponse();
 		review.setId("review-1");
-		ReviewPageResponse page = new ReviewPageResponse();
+		RecommendationPageResponse page = new RecommendationPageResponse();
 		page.setContent(List.of(review));
 		page.setPage(1);
 		page.setSize(10);
@@ -101,6 +128,7 @@ class RecommendationControllerTest {
 		page.setTotalPages(1);
 		page.setFirst(false);
 		page.setLast(true);
+		page.setAsOf(LocalDateTime.of(2026, 9, 30, 11, 25, 52));
 		return page;
 	}
 }

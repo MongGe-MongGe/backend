@@ -1,5 +1,8 @@
 package com.ssafy.gourming.controller;
 
+import java.time.LocalDateTime;
+
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ssafy.gourming.model.dto.RecommendationDto.RecommendationPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewCreateRequest;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewResponse;
@@ -56,13 +60,15 @@ public class ReviewController {
 	}
 
 	// 로그인 사용자의 취향과 비슷한 리뷰를 추천한다. 행동이 없는 사용자는 인기 피드를 받는다.
+	// 첫 페이지 응답의 asOf를 다음 페이지 요청에 그대로 보내면 페이지 사이 결과가 고정된다.
 	@GetMapping("/reviews/recommended")
-	public ResponseEntity<ReviewPageResponse> getRecommendedReviews(
+	public ResponseEntity<RecommendationPageResponse> getRecommendedReviews(
 		@AuthenticationPrincipal String userId,
 		@RequestParam(defaultValue = "0") @Min(0) int page,
-		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+		@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime asOf
 	) {
-		return ResponseEntity.ok(recommendationService.getRecommendedReviews(userId, page, size));
+		return ResponseEntity.ok(recommendationService.getRecommendedReviews(userId, page, size, asOf));
 	}
 
 	// 리뷰 상세 조회는 공개 API로 제공한다.

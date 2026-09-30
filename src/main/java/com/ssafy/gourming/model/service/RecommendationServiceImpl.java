@@ -1,5 +1,7 @@
 package com.ssafy.gourming.model.service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.ssafy.gourming.config.RecommendationProperties;
 import com.ssafy.gourming.model.client.TextEmbedder;
 import com.ssafy.gourming.model.dto.RecommendationDto.RecommendationCandidateRow;
+import com.ssafy.gourming.model.dto.RecommendationDto.RecommendationPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewResponse;
 import com.ssafy.gourming.model.dto.UserTasteDto.UserVector;
@@ -34,20 +37,26 @@ public class RecommendationServiceImpl implements RecommendationService {
 	private final RecommendationProperties properties;
 
 	@Override
-	public ReviewPageResponse getRecommendedReviews(String userId, int page, int size) {
+	public RecommendationPageResponse getRecommendedReviews(
+		String userId,
+		int page,
+		int size,
+		LocalDateTime requestedAsOf
+	) {
 		validatePageRequest(page, size);
+		LocalDateTime asOf = resolveAsOf(requestedAsOf);
 
-		UserVector userVector = userTasteService.computeUserVector(userId);
+		UserVector userVector = userTasteService.computeUserVector(userId, asOf);
 		if (userVector == null) {
-			// 콜드 스타트: 응답 형식이 같은 인기 피드로 대체한다.
+			// 콜드 스타트: 응답 형식이 같은 인기 피드로 대체한다. 다음 페이지에 보낼 asOf도 함께 담는다.
 			log.debug("추천 피드 콜드 스타트, 인기 피드로 대체. userId={}", userId);
-			return reviewService.getPopularReviews(userId, page, size);
+			return RecommendationPageResponse.of(reviewService.getPopularReviews(userId, page, size), asOf);
 		}
 
 		// ponytail: 요청마다 후보 전체의 코사인을 계산한다. 사용자·리뷰가 수천 단위가 되면
 		// 인기피드처럼 배치로 추천 결과를 미리 저장하는 방식으로 전환한다.
 		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(
-			userId, textEmbedder.version(), properties.getCandidateSize());
+			userId, textEmbedder.version(), properties.getCandidateSize(), asOf);
 		List<ScoredCandidate> scored = new ArrayList<>(candidates.size());
 		for (RecommendationCandidateRow candidate : candidates) {
 			// 배치가 모델을 바꾸는 중이면 길이가 다른 벡터가 섞일 수 있다. 코사인이 예외를 던지므로 건너뛴다.
@@ -74,7 +83,16 @@ public class RecommendationServiceImpl implements RecommendationService {
 			? List.of()
 			: reorder(reviewMapper.selectReviewsByIds(pageIds, userId), pageIds);
 
-		return createPageResponse(content, page, size, totalElements);
+		return RecommendationPageResponse.of(createPageResponse(content, page, size, totalElements), asOf);
+	}
+
+	private LocalDateTime resolveAsOf(LocalDateTime requestedAsOf) {
+		// DB DATETIME이 초 단위라 초로 자른다. 미래 시각은 아직 일어나지 않은 행동을 포함하려는 요청이라 현재로 보정한다.
+		LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+		if (requestedAsOf == null || requestedAsOf.isAfter(now)) {
+			return now;
+		}
+		return requestedAsOf.truncatedTo(ChronoUnit.SECONDS);
 	}
 
 	private List<String> applyPlaceLimit(List<ScoredCandidate> scored) {

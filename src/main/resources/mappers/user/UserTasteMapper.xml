@@ -25,6 +25,9 @@
 			SELECT place_id, MIN(created_at) AS created_at
 			FROM good_places
 			WHERE user_id = #{userId}
+			<if test="asOf != null">
+			  AND created_at &lt;= #{asOf}
+			</if>
 			GROUP BY place_id
 		) s
 		JOIN place_embeddings pe ON pe.place_id = s.place_id
@@ -41,6 +44,9 @@
 		JOIN review_embeddings re ON re.review_id = l.review_id
 		WHERE l.user_id = #{userId}
 		  AND re.embedder_version = #{embedderVersion}
+		<if test="asOf != null">
+		  AND l.created_at &lt;= #{asOf}
+		</if>
 
 		UNION ALL
 
@@ -59,6 +65,9 @@
 		WHERE r.user_id = #{userId}
 		  AND r.rating_score IN (1, 2, 4, 5)
 		  AND re.embedder_version = #{embedderVersion}
+		<if test="asOf != null">
+		  AND r.created_at &lt;= #{asOf}
+		</if>
 	</select>
 
 </mapper>

@@ -24,11 +24,17 @@
 		JOIN review_embeddings re ON re.review_id = r.id
 		WHERE r.user_id &lt;&gt; #{userId}
 		  AND re.embedder_version = #{embedderVersion}
+		<if test="asOf != null">
+		  AND r.created_at &lt;= #{asOf}
+		</if>
 		  AND NOT EXISTS (
 			SELECT 1
 			FROM likes l
 			WHERE l.user_id = #{userId}
 			  AND l.review_id = r.id
+			<if test="asOf != null">
+			  AND l.created_at &lt;= #{asOf}
+			</if>
 		  )
 		ORDER BY r.created_at DESC, r.id DESC
 		LIMIT #{limit}

@@ -47,7 +47,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 		// ponytail: 요청마다 후보 전체의 코사인을 계산한다. 사용자·리뷰가 수천 단위가 되면
 		// 인기피드처럼 배치로 추천 결과를 미리 저장하는 방식으로 전환한다.
 		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(
-			userId, textEmbedder.version(), properties.getCandidateSize());
+			userId, textEmbedder.version(), properties.getCandidateSize(), null);
 		List<ScoredCandidate> scored = new ArrayList<>(candidates.size());
 		for (RecommendationCandidateRow candidate : candidates) {
 			// 배치가 모델을 바꾸는 중이면 길이가 다른 벡터가 섞일 수 있다. 코사인이 예외를 던지므로 건너뛴다.

@@ -17,6 +17,8 @@
 			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
 		<result property="keywords" column="keywords"
 			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="tagSentiments" column="tag_sentiments"
+			typeHandler="com.ssafy.gourming.typehandler.MapJsonTypeHandler" />
 		<result property="reviewCount" column="review_count" />
 		<result property="modelVersion" column="model_version" />
 		<result property="status" column="status" />
@@ -44,6 +46,7 @@
 			negative_points,
 			recommended_for,
 			keywords,
+			tag_sentiments,
 			review_count,
 			model_version,
 			status,
@@ -64,6 +67,7 @@
 			negative_points,
 			recommended_for,
 			keywords,
+			tag_sentiments,
 			review_count,
 			model_version,
 			status,
@@ -77,6 +81,7 @@
 			#{negativePoints, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
 			#{recommendedFor, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
 			#{keywords, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{tagSentiments, typeHandler=com.ssafy.gourming.typehandler.MapJsonTypeHandler},
 			#{reviewCount},
 			#{modelVersion},
 			#{status},
@@ -89,6 +94,7 @@
 			negative_points = VALUES(negative_points),
 			recommended_for = VALUES(recommended_for),
 			keywords = VALUES(keywords),
+			tag_sentiments = VALUES(tag_sentiments),
 			review_count = VALUES(review_count),
 			model_version = VALUES(model_version),
 			status = VALUES(status),

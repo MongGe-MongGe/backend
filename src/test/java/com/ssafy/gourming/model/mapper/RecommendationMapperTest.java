@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,6 +49,10 @@ class RecommendationMapperTest {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
+	// JDBC로 데이터를 바꾼 뒤 같은 인자로 다시 조회할 때 MyBatis 1차 캐시를 비우기 위해 쓴다.
+	@Autowired
+	private SqlSession sqlSession;
+
 	@BeforeEach
 	void setUp() {
 		deleteTestData();
@@ -78,7 +83,7 @@ class RecommendationMapperTest {
 	@Test
 	@DisplayName("본인·좋아요·벡터 없음·버전 불일치 리뷰를 제외하고 최신순으로 후보를 조회한다")
 	void selectCandidatesFilters() {
-		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 500);
+		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 500, null);
 
 		assertThat(candidates).extracting(RecommendationCandidateRow::getReviewId)
 			.containsExactly(CANDIDATE_NEW, CANDIDATE_OLD);
@@ -90,7 +95,7 @@ class RecommendationMapperTest {
 	@Test
 	@DisplayName("limit만큼만 조회된다")
 	void selectCandidatesLimit() {
-		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 1);
+		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 1, null);
 
 		assertThat(candidates).extracting(RecommendationCandidateRow::getReviewId).containsExactly(CANDIDATE_NEW);
 	}
@@ -103,6 +108,30 @@ class RecommendationMapperTest {
 		assertThat(reviews).extracting(ReviewResponse::getId).containsExactlyInAnyOrder(CANDIDATE_OLD, CANDIDATE_NEW);
 		assertThat(reviews.get(0).getPlace().getId()).isEqualTo(PLACE_ID);
 		assertThat(reviews.get(0).getAuthor().getId()).isEqualTo(OTHER);
+	}
+
+	@Test
+	@DisplayName("asOf 이후 작성된 리뷰는 후보에 없고, asOf 이후 누른 좋아요는 제외에 쓰이지 않는다")
+	void selectCandidatesRespectsAsOf() {
+		LocalDateTime asOf = LocalDateTime.of(2026, 9, 3, 0, 0);
+		// CANDIDATE_NEW(9/5 작성)는 asOf 이후라 빠지고, CANDIDATE_OLD(9/1 작성)만 남는다.
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf))
+			.extracting(RecommendationCandidateRow::getReviewId)
+			.containsExactly(CANDIDATE_OLD);
+
+		// asOf 이후에 누른 좋아요는 무시되어 CANDIDATE_OLD가 남는다.
+		jdbcTemplate.update("INSERT INTO likes (id, user_id, review_id, created_at) VALUES (UUID(), ?, ?, ?)",
+			ME, CANDIDATE_OLD, LocalDateTime.of(2026, 9, 4, 0, 0));
+		sqlSession.clearCache();
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf))
+			.extracting(RecommendationCandidateRow::getReviewId)
+			.containsExactly(CANDIDATE_OLD);
+
+		// asOf 이전 좋아요면 제외된다.
+		jdbcTemplate.update("UPDATE likes SET created_at = ? WHERE user_id = ? AND review_id = ?",
+			LocalDateTime.of(2026, 9, 2, 0, 0), ME, CANDIDATE_OLD);
+		sqlSession.clearCache();
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf)).isEmpty();
 	}
 
 	private void insertUser(String id, String email, String handle) {

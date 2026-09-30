@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +87,40 @@ class PlaceReviewSummaryMapperTest {
 		assertThat(selectedSummary.getErrorMessage()).isNull();
 		assertThat(selectedSummary.getCreatedAt()).isNotNull();
 		assertThat(selectedSummary.getUpdatedAt()).isNotNull();
+		assertThat(selectedSummary.getTagSentiments())
+			.containsEntry("dessert", 0.9)
+			.containsEntry("waiting", -0.8);
+	}
+
+	@Test
+	@DisplayName("tag_sentiments가 NULL인 요약은 빈 Map으로 조회된다")
+	void selectReturnsEmptyMapForNullTagSentiments() {
+		placeReviewSummaryMapper.markProcessing(PLACE_ID, "test-model");
+
+		PlaceReviewSummaryEntity selected = placeReviewSummaryMapper.selectByPlaceId(PLACE_ID);
+
+		assertThat(selected.getTagSentiments()).isNotNull().isEmpty();
+	}
+
+	@Test
+	@DisplayName("요약이 없거나 오래된 장소만 갱신 대상으로 조회된다")
+	void selectStalePlaceIds() {
+		insertTestReview(REVIEW_ID, PLACE_ID, "리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		// OTHER_PLACE_ID는 리뷰가 없으므로 대상이 아니다.
+
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds())
+			.contains(PLACE_ID)
+			.doesNotContain(OTHER_PLACE_ID);
+
+		PlaceReviewSummaryEntity fresh = createSummary(PLACE_ID, "최신 요약", "COMPLETED");
+		fresh.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 12, 0));
+		placeReviewSummaryMapper.upsert(fresh);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+
+		PlaceReviewSummaryEntity stale = createSummary(PLACE_ID, "오래된 요약", "COMPLETED");
+		stale.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 9, 0));
+		placeReviewSummaryMapper.upsert(stale);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
 	}
 
 	@Test
@@ -213,6 +248,7 @@ class PlaceReviewSummaryMapperTest {
 		summary.setNegativePoints(List.of("대기가 길 수 있어요"));
 		summary.setRecommendedFor(List.of("데이트", "친구 모임"));
 		summary.setKeywords(List.of("파스타", "분위기", "친절"));
+		summary.setTagSentiments(Map.of("dessert", 0.9, "waiting", -0.8));
 		summary.setReviewCount(2);
 		summary.setModelVersion("test-model");
 		summary.setStatus(status);

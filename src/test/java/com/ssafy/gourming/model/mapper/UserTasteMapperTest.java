@@ -3,6 +3,7 @@ package com.ssafy.gourming.model.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -81,7 +82,7 @@ class UserTasteMapperTest {
 		jdbcTemplate.update("INSERT INTO good_places (id, user_id, group_id, place_id) VALUES (UUID(), ?, ?, ?)",
 			USER_ID, GROUP_B, PLACE_ID);
 
-		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(USER_ID, VERSION);
+		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(USER_ID, VERSION, null);
 
 		List<UserTasteEvidenceRow> saves = rows.stream()
 			.filter(r -> r.getSource().equals(UserTasteEvidenceRow.SOURCE_PLACE_SAVE)).toList();
@@ -96,7 +97,7 @@ class UserTasteMapperTest {
 	void selectEvidencesWeights() {
 		jdbcTemplate.update("INSERT INTO likes (id, user_id, review_id) VALUES (UUID(), ?, ?)", USER_ID, OTHER_REVIEW);
 
-		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(USER_ID, VERSION);
+		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(USER_ID, VERSION, null);
 
 		assertThat(rows.stream().filter(r -> r.getSource().equals(UserTasteEvidenceRow.SOURCE_LIKE)))
 			.hasSize(1)
@@ -112,21 +113,47 @@ class UserTasteMapperTest {
 	void selectEvidencesFiltersVersion() {
 		jdbcTemplate.update("INSERT INTO likes (id, user_id, review_id) VALUES (UUID(), ?, ?)", USER_ID, OTHER_REVIEW);
 
-		assertThat(userTasteMapper.selectEvidences(USER_ID, "other-version")).isEmpty();
+		assertThat(userTasteMapper.selectEvidences(USER_ID, "other-version", null)).isEmpty();
 
 		jdbcTemplate.update("DELETE FROM review_embeddings WHERE review_id = ?", OTHER_REVIEW);
-		assertThat(userTasteMapper.selectEvidences(USER_ID, VERSION)
+		assertThat(userTasteMapper.selectEvidences(USER_ID, VERSION, null)
 			.stream().filter(r -> r.getSource().equals(UserTasteEvidenceRow.SOURCE_LIKE))).isEmpty();
 	}
 
 	@Test
 	@DisplayName("다른 사용자의 행동은 조회되지 않는다")
 	void selectEvidencesIsolatesUser() {
-		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(OTHER_USER_ID, VERSION);
+		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(OTHER_USER_ID, VERSION, null);
 
 		assertThat(rows).hasSize(1);
 		assertThat(rows.get(0).getSource()).isEqualTo(UserTasteEvidenceRow.SOURCE_OWN_REVIEW);
 		assertThat(rows.get(0).getWeight()).isEqualTo(2.0);
+	}
+
+	@Test
+	@DisplayName("asOf 이후에 생긴 저장·좋아요·내 리뷰는 조회되지 않는다")
+	void selectEvidencesIgnoresActionsAfterAsOf() {
+		LocalDateTime asOf = LocalDateTime.of(2026, 9, 22, 0, 0);
+		jdbcTemplate.update(
+			"INSERT INTO likes (id, user_id, review_id, created_at) VALUES (UUID(), ?, ?, ?)",
+			USER_ID, OTHER_REVIEW, LocalDateTime.of(2026, 9, 20, 0, 0));
+		jdbcTemplate.update(
+			"INSERT INTO good_places (id, user_id, group_id, place_id, created_at) VALUES (UUID(), ?, ?, ?, ?)",
+			USER_ID, GROUP_A, PLACE_ID, LocalDateTime.of(2026, 9, 25, 0, 0));
+		jdbcTemplate.update("UPDATE reviews SET created_at = ? WHERE id = ?",
+			LocalDateTime.of(2026, 9, 10, 0, 0), REVIEW_5);
+		// REVIEW_1(별점 1)은 created_at이 현재 시각이라 asOf 이후다.
+
+		List<UserTasteEvidenceRow> rows = userTasteMapper.selectEvidences(USER_ID, VERSION, asOf);
+
+		assertThat(rows).extracting(UserTasteEvidenceRow::getSource)
+			.containsExactlyInAnyOrder(UserTasteEvidenceRow.SOURCE_LIKE, UserTasteEvidenceRow.SOURCE_OWN_REVIEW);
+		assertThat(rows.stream().filter(r -> r.getSource().equals(UserTasteEvidenceRow.SOURCE_OWN_REVIEW)))
+			.allSatisfy(r -> assertThat(r.getWeight()).isEqualTo(4.0));
+
+		assertThat(userTasteMapper.selectEvidences(USER_ID, VERSION, null))
+			.extracting(UserTasteEvidenceRow::getSource)
+			.contains(UserTasteEvidenceRow.SOURCE_PLACE_SAVE);
 	}
 
 	private void insertUser(String id, String email, String handle) {

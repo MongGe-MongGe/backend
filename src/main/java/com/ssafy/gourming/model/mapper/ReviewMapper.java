@@ -90,4 +90,10 @@ public interface ReviewMapper {
 	);
 
 	long countSearchReviews(@Param("keyword") String keyword);
+
+	// ID 목록으로 리뷰 상세를 조회한다. 반환 순서는 보장하지 않으므로 호출부에서 재배열한다.
+	List<ReviewResponse> selectReviewsByIds(
+		@Param("reviewIds") List<String> reviewIds,
+		@Param("viewerId") String viewerId
+	);
 }

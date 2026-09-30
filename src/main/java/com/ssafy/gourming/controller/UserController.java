@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.ssafy.gourming.model.dto.UserDto;
+import com.ssafy.gourming.model.dto.UserTasteDto.UserTasteProfileResponse;
 import com.ssafy.gourming.model.service.FollowService;
 import com.ssafy.gourming.model.service.UserService;
+import com.ssafy.gourming.model.service.UserTasteService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +31,18 @@ public class UserController {
 
 	private final UserService userService;
 	private final FollowService followService;
+	private final UserTasteService userTasteService;
+
+	/**
+	 * 로그인 사용자의 미식 성향(상위 태그 최대 5개)을 조회합니다.
+	 * 사용자 벡터는 저장하지 않고 요청마다 저장 장소·좋아요·별점 행동에서 계산합니다.
+	 */
+	@GetMapping("/me/taste-profile")
+	public ResponseEntity<UserTasteProfileResponse> getMyTasteProfile(
+		@AuthenticationPrincipal String userId
+	) {
+		return ResponseEntity.ok(userTasteService.getTasteProfile(userId));
+	}
 
 	/**
 	 * 핸들 존재 여부를 확인하는 엔드포인트입니다.

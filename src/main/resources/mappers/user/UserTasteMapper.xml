@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.UserTasteMapper">
+
+	<resultMap id="evidenceRowMap"
+		type="com.ssafy.gourming.model.dto.UserTasteDto$UserTasteEvidenceRow">
+		<result property="source" column="source" />
+		<result property="embedding" column="embedding"
+			typeHandler="com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler" />
+		<result property="weight" column="weight" />
+		<result property="createdAt" column="created_at" />
+	</resultMap>
+
+	<!-- 같은 장소를 여러 그룹에 저장해도 한 번만 반영하도록 서브쿼리에서 place_id로 묶는다. -->
+	<select id="selectEvidences" resultMap="evidenceRowMap">
+		SELECT
+			'PLACE_SAVE' AS source,
+			pe.embedding,
+			5 AS weight,
+			s.created_at
+		FROM (
+			SELECT place_id, MIN(created_at) AS created_at
+			FROM good_places
+			WHERE user_id = #{userId}
+			GROUP BY place_id
+		) s
+		JOIN place_embeddings pe ON pe.place_id = s.place_id
+		WHERE pe.embedder_version = #{embedderVersion}
+
+		UNION ALL
+
+		SELECT
+			'LIKE' AS source,
+			re.embedding,
+			3 AS weight,
+			l.created_at
+		FROM likes l
+		JOIN review_embeddings re ON re.review_id = l.review_id
+		WHERE l.user_id = #{userId}
+		  AND re.embedder_version = #{embedderVersion}
+
+		UNION ALL
+
+		SELECT
+			'OWN_REVIEW' AS source,
+			re.embedding,
+			CASE r.rating_score
+				WHEN 5 THEN 4
+				WHEN 4 THEN 2
+				WHEN 2 THEN -2
+				WHEN 1 THEN -4
+			END AS weight,
+			r.created_at
+		FROM reviews r
+		JOIN review_embeddings re ON re.review_id = r.id
+		WHERE r.user_id = #{userId}
+		  AND r.rating_score IN (1, 2, 4, 5)
+		  AND re.embedder_version = #{embedderVersion}
+	</select>
+
+</mapper>

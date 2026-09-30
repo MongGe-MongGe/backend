@@ -211,6 +211,24 @@ class RecommendationServiceMockTest {
 		assertThat(response.getContent()).extracting(ReviewResponse::getId).containsExactly("dessert", "spicy");
 	}
 
+	@Test
+	@DisplayName("점수와 작성 시각이 같으면 Mapper 반환 순서와 무관하게 리뷰 ID 내림차순으로 정렬한다")
+	void breaksTiesByReviewIdDesc() {
+		stubUserVector(new float[] {1f, 0f});
+		// 점수·작성 시각이 모두 같은 후보를 ID 오름차순으로 돌려준다.
+		when(recommendationMapper.selectCandidates(USER_ID, VERSION, 500)).thenReturn(List.of(
+			candidate("r1", "p1", new float[] {1f, 0f}),
+			candidate("r2", "p2", new float[] {1f, 0f}),
+			candidate("r3", "p3", new float[] {1f, 0f})
+		));
+		when(reviewMapper.selectReviewsByIds(anyList(), eq(USER_ID)))
+			.thenAnswer(invocation -> invocation.<List<String>>getArgument(0).stream().map(this::review).toList());
+
+		ReviewPageResponse response = service.getRecommendedReviews(USER_ID, 0, 20);
+
+		assertThat(response.getContent()).extracting(ReviewResponse::getId).containsExactly("r3", "r2", "r1");
+	}
+
 	private void stubUserVector(float[] vector) {
 		when(textEmbedder.version()).thenReturn(VERSION);
 		when(userTasteService.computeUserVector(USER_ID)).thenReturn(new UserVector(vector, 3));

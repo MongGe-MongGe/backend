@@ -273,6 +273,63 @@ class AiPlaceReviewSummarizerTest {
 		assertThat(result.getTagSentiments()).isNotNull().isEmpty();
 	}
 
+	@Test
+	@DisplayName("tagSentiments가 객체가 아니면 빈 Map으로 처리하고 요약은 정상 반환한다")
+	void summarizeIgnoresNonObjectTagSentiments() throws IOException {
+		startServer(
+			HttpStatus.OK.value(),
+			createChatCompletionResponse(
+				"""
+				{
+				  "summary": "요약입니다.",
+				  "positivePoints": [], "negativePoints": [], "recommendedFor": [], "keywords": [],
+				  "tagSentiments": []
+				}
+				"""
+			),
+			new AtomicReference<>(),
+			new AtomicInteger()
+		);
+		AiPlaceReviewSummarizer summarizer = createSummarizer();
+
+		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
+			"test-place",
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))),
+			createTags()
+		);
+
+		assertThat(result.getSummary()).isEqualTo("요약입니다.");
+		assertThat(result.getTagSentiments()).isNotNull().isEmpty();
+	}
+
+	@Test
+	@DisplayName("NaN이나 무한대 값은 버린다")
+	void summarizeDropsNonFiniteTagSentiments() throws IOException {
+		startServer(
+			HttpStatus.OK.value(),
+			createChatCompletionResponse(
+				"""
+				{
+				  "summary": "요약입니다.",
+				  "positivePoints": [], "negativePoints": [], "recommendedFor": [], "keywords": [],
+				  "tagSentiments": {"dessert": "NaN", "quiet": "Infinity", "waiting": -0.5}
+				}
+				"""
+			),
+			new AtomicReference<>(),
+			new AtomicInteger()
+		);
+		AiPlaceReviewSummarizer summarizer = createSummarizer();
+
+		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
+			"test-place",
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))),
+			createTags()
+		);
+
+		assertThat(result.getTagSentiments()).containsOnlyKeys("waiting");
+	}
+
 	private List<TasteTagRow> createTags() {
 		return List.of(tag("dessert", "디저트"), tag("waiting", "웨이팅"), tag("quiet", "조용한 분위기"));
 	}

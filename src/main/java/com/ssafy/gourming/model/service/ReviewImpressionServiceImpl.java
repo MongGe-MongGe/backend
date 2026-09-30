@@ -17,7 +17,7 @@ public class ReviewImpressionServiceImpl implements ReviewImpressionService {
 
 	@Override
 	public void record(String userId, List<String> reviewIds) {
-		// 같은 요청 안에서 한 리뷰를 두 번 upsert하면 seen_count가 두 번 오르므로 먼저 중복을 없앤다.
+		// 공백·null을 거르고 중복을 없애 IN 목록을 줄인다. (SQL은 reviews에서 SELECT하므로 중복이 있어도 한 번만 기록된다.)
 		List<String> ids = reviewIds.stream()
 			.filter(Objects::nonNull)
 			.map(String::trim)

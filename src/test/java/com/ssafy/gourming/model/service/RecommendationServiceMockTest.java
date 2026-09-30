@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,14 +92,14 @@ class RecommendationServiceMockTest {
 
 		assertThat(response.getContent()).isSameAs(popular.getContent());
 		assertThat(response.getAsOf()).isNotNull();
-		verify(recommendationMapper, never()).selectCandidates(any(), any(), anyInt(), any());
+		verify(recommendationMapper, never()).selectCandidates(any(), any(), anyInt(), any(), any());
 	}
 
 	@Test
 	@DisplayName("유사도 내림차순으로 정렬하고 Mapper 반환 순서와 무관하게 응답 순서를 유지한다")
 	void sortsBySimilarity() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of(
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of(
 			candidate("far", "p1", new float[] {0f, 1f}),
 			candidate("near", "p2", new float[] {1f, 0f}),
 			candidate("mid", "p3", new float[] {1f, 1f})
@@ -124,7 +125,7 @@ class RecommendationServiceMockTest {
 	@DisplayName("같은 장소 리뷰는 최대 2개만 포함되고 totalElements는 필터 후 개수다")
 	void limitsPerPlace() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of(
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of(
 			candidate("a1", "p1", new float[] {1f, 0f}),
 			candidate("a2", "p1", new float[] {0.9f, 0.1f}),
 			candidate("a3", "p1", new float[] {0.8f, 0.2f}),
@@ -143,7 +144,7 @@ class RecommendationServiceMockTest {
 	@DisplayName("페이지 슬라이스가 겹치지 않고 범위를 넘으면 빈 content를 반환한다")
 	void pagesDoNotOverlap() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of(
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of(
 			candidate("r1", "p1", new float[] {1f, 0f}),
 			candidate("r2", "p2", new float[] {0.9f, 0.1f}),
 			candidate("r3", "p3", new float[] {0.8f, 0.2f})
@@ -169,7 +170,7 @@ class RecommendationServiceMockTest {
 	@DisplayName("후보가 0개이면 빈 페이지를 반환하고 인기 피드로 대체하지 않는다")
 	void emptyCandidates() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of());
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of());
 
 		ReviewPageResponse response = service.getRecommendedReviews(USER_ID, 0, 20, null);
 
@@ -185,7 +186,7 @@ class RecommendationServiceMockTest {
 	@DisplayName("벡터 길이가 다른 후보는 건너뛴다")
 	void skipsLengthMismatch() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of(
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of(
 			candidate("ok", "p1", new float[] {1f, 0f}),
 			candidate("bad", "p2", new float[] {1f, 0f, 0f})
 		));
@@ -203,7 +204,7 @@ class RecommendationServiceMockTest {
 		FakeTextEmbedder fake = new FakeTextEmbedder();
 		float[] dessertTaste = fake.embed(List.of("케이크와 디저트가 좋아요")).get(0);
 		stubUserVector(dessertTaste);
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of(
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of(
 			candidate("spicy", "p1", fake.embed(List.of("매콤한 떡볶이가 얼큰해요")).get(0)),
 			candidate("dessert", "p2", fake.embed(List.of("케이크가 맛있는 디저트 카페")).get(0))
 		));
@@ -220,7 +221,7 @@ class RecommendationServiceMockTest {
 	void breaksTiesByReviewIdDesc() {
 		stubUserVector(new float[] {1f, 0f});
 		// 점수·작성 시각이 모두 같은 후보를 ID 오름차순으로 돌려준다.
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of(
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of(
 			candidate("r1", "p1", new float[] {1f, 0f}),
 			candidate("r2", "p2", new float[] {1f, 0f}),
 			candidate("r3", "p3", new float[] {1f, 0f})
@@ -237,7 +238,7 @@ class RecommendationServiceMockTest {
 	@DisplayName("asOf가 없으면 현재 시각(초 단위)을 쓰고 사용자 벡터·후보 조회에 같은 값을 넘기며 응답에 담는다")
 	void usesNowTruncatedWhenAsOfMissing() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of());
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of());
 		LocalDateTime before = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
 		RecommendationPageResponse response = service.getRecommendedReviews(USER_ID, 0, 20, null);
@@ -247,23 +248,36 @@ class RecommendationServiceMockTest {
 		assertThat(asOf).isBetween(before, after);
 		assertThat(asOf.getNano()).isZero();
 		verify(userTasteService).computeUserVector(USER_ID, asOf);
-		verify(recommendationMapper).selectCandidates(USER_ID, VERSION, 500, asOf);
+		verify(recommendationMapper).selectCandidates(USER_ID, VERSION, 500, asOf, asOf.minusDays(14));
 	}
 
 	@Test
 	@DisplayName("받은 asOf를 그대로 쓰고, 미래 asOf는 현재 시각으로 보정한다")
 	void usesGivenAsOfAndClampsFuture() {
 		stubUserVector(new float[] {1f, 0f});
-		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any())).thenReturn(List.of());
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of());
 		LocalDateTime given = LocalDateTime.of(2026, 9, 30, 11, 25, 52);
 
 		assertThat(service.getRecommendedReviews(USER_ID, 0, 20, given).getAsOf()).isEqualTo(given);
-		verify(recommendationMapper).selectCandidates(USER_ID, VERSION, 500, given);
+		verify(recommendationMapper).selectCandidates(USER_ID, VERSION, 500, given, given.minusDays(14));
 
 		LocalDateTime future = LocalDateTime.now().plusDays(1);
 		LocalDateTime clamped = service.getRecommendedReviews(USER_ID, 0, 20, future).getAsOf();
 		assertThat(clamped).isBeforeOrEqualTo(LocalDateTime.now());
 		assertThat(clamped.getNano()).isZero();
+	}
+
+	@Test
+	@DisplayName("seen-exclude-days가 0이면 본 리뷰 제외 기준 시각으로 null을 넘긴다")
+	void passesNullSeenSinceWhenDisabled() {
+		properties.setSeenExcludeDays(0);
+		stubUserVector(new float[] {1f, 0f});
+		when(recommendationMapper.selectCandidates(eq(USER_ID), eq(VERSION), eq(500), any(), any())).thenReturn(List.of());
+
+		service.getRecommendedReviews(USER_ID, 0, 20, LocalDateTime.of(2026, 9, 30, 11, 25, 52));
+
+		verify(recommendationMapper).selectCandidates(
+			eq(USER_ID), eq(VERSION), eq(500), eq(LocalDateTime.of(2026, 9, 30, 11, 25, 52)), isNull());
 	}
 
 	private void stubUserVector(float[] vector) {

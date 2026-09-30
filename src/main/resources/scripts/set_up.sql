@@ -296,6 +296,24 @@ INSERT INTO taste_tags (code, label, description, category, sort_order) VALUES
     ('waiting',  '웨이팅',        '대기 줄이 길고 웨이팅이 필요한 곳',                   'SERVICE',  61),
     ('parking',  '주차',          '주차가 편리하거나 주차 공간이 있는 곳',               'SERVICE',  62);
 
+-- ============================================================
+-- ReviewImpressions (리뷰 노출 기록: 사용자가 피드에서 실제로 본 리뷰)
+-- ============================================================
+CREATE TABLE review_impressions (
+    user_id        CHAR(36)  NOT NULL,
+    review_id      CHAR(36)  NOT NULL,
+    first_seen_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at   DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    seen_count     INT       NOT NULL DEFAULT 1,
+
+    PRIMARY KEY (user_id, review_id),
+    KEY idx_review_impressions_user_seen (user_id, last_seen_at),
+    CONSTRAINT fk_review_impressions_user
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_review_impressions_review
+        FOREIGN KEY (review_id) REFERENCES reviews (id) ON DELETE CASCADE
+);
+
 
 -- ============================================================
 -- Images (이미지 업로드 및 생명주기 관리)

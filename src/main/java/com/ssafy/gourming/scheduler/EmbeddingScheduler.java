@@ -1,5 +1,6 @@
 package com.ssafy.gourming.scheduler;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,6 +18,10 @@ public class EmbeddingScheduler {
 
 	private final EmbeddingService embeddingService;
 
+	// 시작 직후 배치는 요약 LLM 호출까지 포함하므로 기본은 끈다. 테스트 컨텍스트마다 실행되는 것도 막는다.
+	@Value("${embedding.refresh-on-startup:false}")
+	private boolean refreshOnStartup;
+
 	@Scheduled(cron = "${embedding.refresh-cron:0 5 0 * * *}", zone = "Asia/Seoul")
 	public void refreshEmbeddings() {
 		refresh("scheduled");
@@ -24,6 +29,10 @@ public class EmbeddingScheduler {
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void refreshOnStartup() {
+		if (!refreshOnStartup) {
+			log.info("임베딩 시작 직후 갱신이 꺼져 있어 건너뜁니다. embedding.refresh-on-startup=false");
+			return;
+		}
 		try {
 			refresh("startup");
 		} catch (Exception e) {

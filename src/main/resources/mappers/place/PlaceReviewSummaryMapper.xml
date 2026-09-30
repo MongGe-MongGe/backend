@@ -17,6 +17,8 @@
 			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
 		<result property="keywords" column="keywords"
 			typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+		<result property="tagSentiments" column="tag_sentiments"
+			typeHandler="com.ssafy.gourming.typehandler.MapJsonTypeHandler" />
 		<result property="reviewCount" column="review_count" />
 		<result property="modelVersion" column="model_version" />
 		<result property="status" column="status" />
@@ -44,6 +46,7 @@
 			negative_points,
 			recommended_for,
 			keywords,
+			tag_sentiments,
 			review_count,
 			model_version,
 			status,
@@ -64,6 +67,7 @@
 			negative_points,
 			recommended_for,
 			keywords,
+			tag_sentiments,
 			review_count,
 			model_version,
 			status,
@@ -77,6 +81,7 @@
 			#{negativePoints, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
 			#{recommendedFor, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
 			#{keywords, typeHandler=com.ssafy.gourming.typehandler.StringListJsonTypeHandler},
+			#{tagSentiments, typeHandler=com.ssafy.gourming.typehandler.MapJsonTypeHandler},
 			#{reviewCount},
 			#{modelVersion},
 			#{status},
@@ -89,6 +94,7 @@
 			negative_points = VALUES(negative_points),
 			recommended_for = VALUES(recommended_for),
 			keywords = VALUES(keywords),
+			tag_sentiments = VALUES(tag_sentiments),
 			review_count = VALUES(review_count),
 			model_version = VALUES(model_version),
 			status = VALUES(status),
@@ -173,6 +179,38 @@
 		FROM reviews
 		WHERE place_id = #{placeId}
 		ORDER BY created_at DESC, id DESC
+	</select>
+
+	<!--
+		요약 갱신 대상 장소.
+		- 리뷰가 있는 장소: 요약이 없음, COMPLETED가 아님(FAILED·PROCESSING 재시도),
+		  tag_sentiments가 없음(기존 요약 백필), 요약 이후 리뷰 수정, 리뷰 개수 변화(리뷰 삭제)
+		- 리뷰가 모두 삭제된 장소: 옛 요약이 남아 있으면 빈 요약으로 교체 (AI 호출 없음)
+	-->
+	<select id="selectStalePlaceIds" resultType="string">
+		SELECT p.id
+		FROM places p
+		LEFT JOIN place_review_summaries s ON s.place_id = p.id
+		WHERE (
+				EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
+			AND (
+					s.place_id IS NULL
+				 OR s.status &lt;&gt; 'COMPLETED'
+				 OR s.tag_sentiments IS NULL
+				 OR s.last_review_updated_at IS NULL
+				 OR s.last_review_updated_at &lt; (
+						SELECT MAX(r.updated_at) FROM reviews r WHERE r.place_id = p.id
+				 )
+				 OR s.review_count &lt;&gt; (
+						SELECT COUNT(*) FROM reviews r WHERE r.place_id = p.id
+				 )
+			)
+		)
+		   OR (
+				s.review_count &gt; 0
+			AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
+		)
+		ORDER BY p.id
 	</select>
 
 </mapper>

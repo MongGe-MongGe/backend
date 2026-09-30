@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,10 @@ class PlaceReviewSummaryMapperTest {
 
 	@Autowired
 	private PlaceMapper placeMapper;
+
+	// 리뷰 삭제를 MyBatis로 해야 같은 트랜잭션의 1차 캐시가 비워진다.
+	@Autowired
+	private ReviewMapper reviewMapper;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -86,6 +91,41 @@ class PlaceReviewSummaryMapperTest {
 		assertThat(selectedSummary.getErrorMessage()).isNull();
 		assertThat(selectedSummary.getCreatedAt()).isNotNull();
 		assertThat(selectedSummary.getUpdatedAt()).isNotNull();
+		assertThat(selectedSummary.getTagSentiments())
+			.containsEntry("dessert", 0.9)
+			.containsEntry("waiting", -0.8);
+	}
+
+	@Test
+	@DisplayName("tag_sentiments가 NULL인 요약은 빈 Map으로 조회된다")
+	void selectReturnsEmptyMapForNullTagSentiments() {
+		placeReviewSummaryMapper.markProcessing(PLACE_ID, "test-model");
+
+		PlaceReviewSummaryEntity selected = placeReviewSummaryMapper.selectByPlaceId(PLACE_ID);
+
+		assertThat(selected.getTagSentiments()).isNotNull().isEmpty();
+	}
+
+	@Test
+	@DisplayName("요약이 없거나 오래된 장소만 갱신 대상으로 조회된다")
+	void selectStalePlaceIds() {
+		insertTestReview(REVIEW_ID, PLACE_ID, "리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		// OTHER_PLACE_ID는 리뷰가 없으므로 대상이 아니다.
+
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds())
+			.contains(PLACE_ID)
+			.doesNotContain(OTHER_PLACE_ID);
+
+		PlaceReviewSummaryEntity fresh = createSummary(PLACE_ID, "최신 요약", "COMPLETED");
+		fresh.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 12, 0));
+		fresh.setReviewCount(1);
+		placeReviewSummaryMapper.upsert(fresh);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+
+		PlaceReviewSummaryEntity stale = createSummary(PLACE_ID, "오래된 요약", "COMPLETED");
+		stale.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 9, 0));
+		placeReviewSummaryMapper.upsert(stale);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
 	}
 
 	@Test
@@ -178,6 +218,53 @@ class PlaceReviewSummaryMapperTest {
 	}
 
 	@Test
+	@DisplayName("리뷰가 최신이어도 tag_sentiments가 없거나 COMPLETED가 아니면 갱신 대상이다")
+	void selectStalePlaceIdsIncludesMissingTagSentimentsAndNotCompleted() {
+		insertTestReview(REVIEW_ID, PLACE_ID, "리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		PlaceReviewSummaryEntity legacy = freshSummary("COMPLETED");
+		legacy.setTagSentiments(null);
+		placeReviewSummaryMapper.upsert(legacy);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		placeReviewSummaryMapper.upsert(freshSummary("FAILED"));
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		placeReviewSummaryMapper.upsert(freshSummary("COMPLETED"));
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+	}
+
+	@Test
+	@DisplayName("리뷰가 삭제되어 개수가 달라지거나 모두 삭제된 장소는 갱신 대상이다")
+	void selectStalePlaceIdsIncludesDeletedReviews() {
+		insertTestReview(REVIEW_ID, PLACE_ID, "첫 리뷰", LocalDateTime.of(2026, 6, 24, 9, 0));
+		insertTestReview(OTHER_REVIEW_ID, PLACE_ID, "둘째 리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		PlaceReviewSummaryEntity summary = freshSummary("COMPLETED");
+		summary.setReviewCount(2);
+		placeReviewSummaryMapper.upsert(summary);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+
+		// 최신 리뷰가 아닌 리뷰를 지우면 MAX(updated_at)은 그대로지만 개수가 달라진다.
+		reviewMapper.deleteReview(REVIEW_ID, USER_ID);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		// 리뷰가 모두 삭제돼도 옛 요약이 남아 있으면 비워야 하므로 대상이다.
+		reviewMapper.deleteReview(OTHER_REVIEW_ID, USER_ID);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		PlaceReviewSummaryEntity empty = freshSummary("COMPLETED");
+		empty.setReviewCount(0);
+		placeReviewSummaryMapper.upsert(empty);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+	}
+
+	private PlaceReviewSummaryEntity freshSummary(String status) {
+		PlaceReviewSummaryEntity summary = createSummary(PLACE_ID, "요약", status);
+		summary.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 10, 0));
+		summary.setReviewCount(1);
+		return summary;
+	}
+
+	@Test
 	@DisplayName("전체 장소 ID 목록을 생성순으로 조회한다")
 	void selectAllPlaceIds() {
 		List<String> placeIds = placeMapper.selectAllPlaceIds();
@@ -213,6 +300,7 @@ class PlaceReviewSummaryMapperTest {
 		summary.setNegativePoints(List.of("대기가 길 수 있어요"));
 		summary.setRecommendedFor(List.of("데이트", "친구 모임"));
 		summary.setKeywords(List.of("파스타", "분위기", "친절"));
+		summary.setTagSentiments(Map.of("dessert", 0.9, "waiting", -0.8));
 		summary.setReviewCount(2);
 		summary.setModelVersion("test-model");
 		summary.setStatus(status);

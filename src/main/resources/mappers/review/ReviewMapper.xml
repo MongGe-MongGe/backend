@@ -49,6 +49,7 @@
 				<result property="negativePoints" column="pr_sum_negative_points" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
 				<result property="recommendedFor" column="pr_sum_recommended_for" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
 				<result property="keywords" column="pr_sum_keywords" typeHandler="com.ssafy.gourming.typehandler.StringListJsonTypeHandler" />
+				<result property="tagSentiments" column="pr_sum_tag_sentiments" typeHandler="com.ssafy.gourming.typehandler.MapJsonTypeHandler" />
 				<result property="reviewCount" column="pr_sum_review_count" />
 				<result property="status" column="pr_sum_status" />
 				<result property="lastReviewUpdatedAt" column="pr_sum_last_review_updated_at" />
@@ -78,6 +79,7 @@
 		pr_sum.negative_points AS pr_sum_negative_points,
 		pr_sum.recommended_for AS pr_sum_recommended_for,
 		pr_sum.keywords AS pr_sum_keywords,
+		pr_sum.tag_sentiments AS pr_sum_tag_sentiments,
 		pr_sum.review_count AS pr_sum_review_count,
 		pr_sum.status AS pr_sum_status,
 		pr_sum.last_review_updated_at AS pr_sum_last_review_updated_at,

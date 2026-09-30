@@ -2,14 +2,18 @@ package com.ssafy.gourming.model.client;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 
 @Component
 @ConditionalOnProperty(
@@ -22,11 +26,13 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 	@Override
 	public PlaceReviewSummaryGenerateResult summarize(
 		String placeId,
-		List<ReviewSummarySourceRow> reviews
+		List<ReviewSummarySourceRow> reviews,
+		List<TasteTagRow> allowedTags
 	) {
 		// 테스트나 로컬 fallback 환경에서도 실제 AI 생성기와 같은 입력 계약을 사용한다.
 		List<ReviewSummarySourceRow> safeReviews =
 			reviews == null ? Collections.emptyList() : reviews;
+		List<TasteTagRow> safeTags = allowedTags == null ? Collections.emptyList() : allowedTags;
 
 		PlaceReviewSummaryGenerateResult result = new PlaceReviewSummaryGenerateResult();
 		result.setReviewCount(safeReviews.size());
@@ -39,6 +45,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 			result.setNegativePoints(List.of());
 			result.setRecommendedFor(List.of());
 			result.setKeywords(List.of());
+			result.setTagSentiments(new LinkedHashMap<>());
 			return result;
 		}
 
@@ -48,6 +55,7 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 		result.setNegativePoints(createNegativePoints(safeReviews));
 		result.setRecommendedFor(List.of("가볍게 방문하기 좋은 장소"));
 		result.setKeywords(List.of("리뷰", "방문", "장소"));
+		result.setTagSentiments(createTagSentiments(safeReviews, safeTags));
 		return result;
 	}
 
@@ -75,6 +83,30 @@ public class FakePlaceReviewSummarizer implements PlaceReviewSummarizer {
 			return List.of();
 		}
 		return List.of("일부 아쉬운 평가가 있어요");
+	}
+
+	// 리뷰 본문에 태그 라벨이 포함되면 0.7, "웨이팅"/"대기"가 포함되면 waiting을 -0.7로 둔다.
+	private Map<String, Double> createTagSentiments(
+		List<ReviewSummarySourceRow> reviews,
+		List<TasteTagRow> tags
+	) {
+		String joined = reviews.stream()
+			.map(ReviewSummarySourceRow::getContent)
+			.filter(Objects::nonNull)
+			.collect(Collectors.joining(" "));
+		Map<String, Double> sentiments = new LinkedHashMap<>();
+		for (TasteTagRow tag : tags) {
+			if ("waiting".equals(tag.getCode())) {
+				if (joined.contains("웨이팅") || joined.contains("대기")) {
+					sentiments.put("waiting", -0.7);
+				}
+				continue;
+			}
+			if (tag.getLabel() != null && joined.contains(tag.getLabel())) {
+				sentiments.put(tag.getCode(), 0.7);
+			}
+		}
+		return sentiments;
 	}
 
 	private LocalDateTime findLastReviewUpdatedAt(List<ReviewSummarySourceRow> reviews) {

@@ -27,4 +27,7 @@ public interface PlaceReviewSummaryMapper {
 	);
 
 	List<ReviewSummarySourceRow> selectReviewSourcesByPlaceId(String placeId);
+
+	// 요약이 없거나, 요약 이후 리뷰가 수정된 장소 ID. 리뷰가 0개인 장소는 제외한다.
+	List<String> selectStalePlaceIds();
 }

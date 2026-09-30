@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.DisplayName;
@@ -29,8 +30,10 @@ import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryEnti
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryResponse;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 import com.ssafy.gourming.model.mapper.PlaceReviewSummaryMapper;
+import com.ssafy.gourming.model.mapper.TasteTagMapper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("장소 리뷰 요약 서비스 Mock 단위 테스트")
@@ -50,6 +53,9 @@ class PlaceReviewSummaryServiceMockTest {
 
 	@Mock
 	private PlaceSummaryAiProperties placeSummaryAiProperties;
+
+	@Mock
+	private TasteTagMapper tasteTagMapper;
 
 	@InjectMocks
 	private PlaceReviewSummaryServiceImpl placeReviewSummaryService;
@@ -73,7 +79,7 @@ class PlaceReviewSummaryServiceMockTest {
 		assertThat(result.getSummary()).isEqualTo("저장된 요약입니다.");
 		assertThat(result.getPositivePoints()).containsExactly("맛이 좋아요");
 		assertThat(result.getStatus()).isEqualTo("COMPLETED");
-		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummarizer, never()).summarize(any(), any(), any());
 		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
 	}
 
@@ -86,7 +92,7 @@ class PlaceReviewSummaryServiceMockTest {
 			placeReviewSummaryService.getSummary(PLACE_ID);
 
 		assertThat(result).isNull();
-		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummarizer, never()).summarize(any(), any(), any());
 		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
 	}
 
@@ -105,7 +111,7 @@ class PlaceReviewSummaryServiceMockTest {
 			placeReviewSummaryService.getSummary(PLACE_ID);
 
 		assertThat(result).isNull();
-		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummarizer, never()).summarize(any(), any(), any());
 		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
 	}
 
@@ -124,7 +130,7 @@ class PlaceReviewSummaryServiceMockTest {
 			placeReviewSummaryService.getSummary(PLACE_ID);
 
 		assertThat(result).isNull();
-		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummarizer, never()).summarize(any(), any(), any());
 		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
 	}
 
@@ -134,7 +140,7 @@ class PlaceReviewSummaryServiceMockTest {
 		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
 		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
 			.thenReturn(List.of(createReviewSource()));
-		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any()))
+		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any(), any()))
 			.thenThrow(new IllegalStateException("AI failed"));
 
 		assertThatThrownBy(() -> placeReviewSummaryService.refreshSummary(PLACE_ID))
@@ -159,7 +165,7 @@ class PlaceReviewSummaryServiceMockTest {
 			.hasMessage("Place not found: " + PLACE_ID);
 
 		verify(placeReviewSummaryMapper, never()).markProcessing(any(), any());
-		verify(placeReviewSummarizer, never()).summarize(any(), any());
+		verify(placeReviewSummarizer, never()).summarize(any(), any(), any());
 	}
 
 	@Test
@@ -180,9 +186,9 @@ class PlaceReviewSummaryServiceMockTest {
 			.thenReturn(List.of(createReviewSource()));
 		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(OTHER_PLACE_ID))
 			.thenReturn(List.of(createReviewSource()));
-		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any()))
+		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any(), any()))
 			.thenReturn(generatedSummary);
-		when(placeReviewSummarizer.summarize(eq(OTHER_PLACE_ID), any()))
+		when(placeReviewSummarizer.summarize(eq(OTHER_PLACE_ID), any(), any()))
 			.thenThrow(new IllegalStateException("AI failed"));
 		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
 			.thenReturn(savedSummary);
@@ -216,7 +222,7 @@ class PlaceReviewSummaryServiceMockTest {
 		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
 		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
 			.thenReturn(List.of(createReviewSource()));
-		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any()))
+		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any(), any()))
 			.thenReturn(generatedSummary);
 		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
 			.thenReturn(savedSummary);
@@ -234,6 +240,42 @@ class PlaceReviewSummaryServiceMockTest {
 				&& summary.getModelVersion().equals("fake")
 				&& summary.getPositivePoints().contains("맛이 좋아요")
 		));
+	}
+
+	@Test
+	@DisplayName("refreshSummary는 활성 태그 목록을 요약기에 전달하고 tagSentiments를 저장한다")
+	void refreshSummaryPassesActiveTagsAndSavesTagSentiments() {
+		TasteTagRow dessert = new TasteTagRow();
+		dessert.setCode("dessert");
+		dessert.setLabel("디저트");
+		List<TasteTagRow> tags = List.of(dessert);
+		PlaceReviewSummaryGenerateResult generatedSummary = createGeneratedSummary();
+
+		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
+		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
+			.thenReturn(List.of(createReviewSource()));
+		when(tasteTagMapper.selectActiveTags()).thenReturn(tags);
+		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any(), eq(tags)))
+			.thenReturn(generatedSummary);
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
+			.thenReturn(createSummaryEntity(PLACE_ID, generatedSummary.getSummary(), "COMPLETED"));
+
+		placeReviewSummaryService.refreshSummary(PLACE_ID);
+
+		verify(placeReviewSummaryMapper).upsert(argThat(summary ->
+			summary.getTagSentiments().equals(Map.of("dessert", 0.9))
+		));
+	}
+
+	@Test
+	@DisplayName("저장된 요약의 tagSentiments가 null이면 응답은 빈 Map이다")
+	void getSummaryReturnsEmptyTagSentimentsWhenNull() {
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
+			.thenReturn(createSummaryEntity(PLACE_ID, "요약", "COMPLETED"));
+
+		PlaceReviewSummaryResponse result = placeReviewSummaryService.getSummary(PLACE_ID);
+
+		assertThat(result.getTagSentiments()).isNotNull().isEmpty();
 	}
 
 	private PlaceEntity createPlace(String placeId) {
@@ -275,6 +317,7 @@ class PlaceReviewSummaryServiceMockTest {
 		result.setNegativePoints(List.of());
 		result.setRecommendedFor(List.of("데이트"));
 		result.setKeywords(List.of("파스타"));
+		result.setTagSentiments(Map.of("dessert", 0.9));
 		result.setReviewCount(1);
 		result.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 12, 0));
 		return result;

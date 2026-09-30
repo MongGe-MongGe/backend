@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ssafy.gourming.model.service.EmbeddingService;
 
@@ -50,8 +51,19 @@ class EmbeddingSchedulerTest {
 	}
 
 	@Test
+	@DisplayName("시작 직후 실행 설정이 꺼져 있으면 갱신하지 않는다")
+	void refreshOnStartupSkipsWhenDisabled() {
+		ReflectionTestUtils.setField(scheduler, "refreshOnStartup", false);
+
+		scheduler.refreshOnStartup();
+
+		verify(embeddingService, never()).refreshAll();
+	}
+
+	@Test
 	@DisplayName("애플리케이션 시작 직후 실패해도 예외를 전파하지 않는다")
 	void refreshOnStartupIgnoresFailure() {
+		ReflectionTestUtils.setField(scheduler, "refreshOnStartup", true);
 		when(embeddingService.isRunning()).thenReturn(false);
 		doThrow(new RuntimeException("DB error")).when(embeddingService).refreshAll();
 

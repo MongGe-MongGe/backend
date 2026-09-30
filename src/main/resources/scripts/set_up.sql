@@ -92,6 +92,7 @@ CREATE TABLE place_review_summaries (
     negative_points         JSON          NULL,
     recommended_for         JSON          NULL,
     keywords                JSON          NULL,
+    tag_sentiments          JSON          NULL,                -- {"dessert": 0.9, "waiting": -0.8}
     review_count            INT           NOT NULL DEFAULT 0,
     model_version           VARCHAR(50)   NOT NULL,
     status                  VARCHAR(20)   NOT NULL,
@@ -248,6 +249,52 @@ CREATE TABLE place_embeddings (
     CONSTRAINT fk_place_embeddings_place
         FOREIGN KEY (place_id) REFERENCES places (id) ON DELETE CASCADE
 );
+
+-- ============================================================
+-- TasteTags (미식 태그 사전)
+-- ============================================================
+CREATE TABLE taste_tags (
+    code              VARCHAR(30)   NOT NULL,                 -- dessert, quiet, ...
+    label             VARCHAR(50)   NOT NULL,                 -- 화면 표시명
+    description       VARCHAR(200)  NOT NULL,                 -- 임베딩 대상 설명문
+    category          VARCHAR(20)   NOT NULL,                 -- CATEGORY | TASTE | MOOD | PURPOSE | PRICE | SERVICE
+    embedding         JSON          NULL,                     -- 배치가 채운다
+    embedder_version  VARCHAR(50)   NULL,
+    active            BOOLEAN       NOT NULL DEFAULT TRUE,
+    sort_order        INT           NOT NULL DEFAULT 0,
+    created_at        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (code)
+);
+
+INSERT INTO taste_tags (code, label, description, category, sort_order) VALUES
+    ('cafe',     '카페',          '커피와 음료를 마시며 머무르기 좋은 카페',            'CATEGORY', 10),
+    ('dessert',  '디저트',        '케이크, 빵, 디저트 메뉴가 맛있는 곳',                'CATEGORY', 11),
+    ('bakery',   '베이커리',      '갓 구운 빵과 페이스트리를 파는 빵집',                'CATEGORY', 12),
+    ('korean',   '한식',          '국밥, 찌개, 김치 같은 한식을 내는 식당',              'CATEGORY', 13),
+    ('japanese', '일식',          '라멘, 초밥, 돈카츠 같은 일식을 내는 식당',            'CATEGORY', 14),
+    ('western',  '양식',          '파스타, 스테이크, 피자 같은 양식을 내는 식당',        'CATEGORY', 15),
+    ('chinese',  '중식',          '짜장면, 탕수육, 마라 같은 중식을 내는 식당',          'CATEGORY', 16),
+    ('spicy',    '매운맛',        '매운, 매콤한, 얼큰한 음식이 특징인 곳',               'TASTE',    20),
+    ('sweet',    '달콤한 맛',     '달콤한 단맛이 특징인 음식과 디저트',                  'TASTE',    21),
+    ('savory',   '고소한 맛',     '고소하고 감칠맛이 진한 음식',                         'TASTE',    22),
+    ('light',    '담백한 맛',     '담백하고 깔끔한 맛의 음식',                           'TASTE',    23),
+    ('rich',     '진한 맛',       '진하고 묵직한 국물이나 소스가 특징인 음식',           'TASTE',    24),
+    ('quiet',    '조용한 분위기', '조용하고 차분해서 대화나 작업에 좋은 분위기',         'MOOD',     30),
+    ('lively',   '활기찬 분위기', '활기차고 시끌벅적한 분위기',                          'MOOD',     31),
+    ('cozy',     '아늑한 분위기', '아늑하고 편안한 인테리어와 좌석',                     'MOOD',     32),
+    ('clean',    '청결',          '청결하고 깨끗하게 관리되는 매장',                     'MOOD',     33),
+    ('view',     '뷰 맛집',       '뷰와 전망이 좋은 자리가 있는 곳',                     'MOOD',     34),
+    ('date',     '데이트',        '연인과 데이트하기 좋은 곳',                           'PURPOSE',  40),
+    ('family',   '가족 모임',     '가족이나 아이와 함께 가기 좋은 곳',                   'PURPOSE',  41),
+    ('group',    '단체 모임',     '여러 명이 모임이나 회식을 하기 좋은 곳',              'PURPOSE',  42),
+    ('solo',     '혼밥',          '혼자 가서 혼밥하기 편한 곳',                          'PURPOSE',  43),
+    ('value',    '가성비',        '가격이 저렴하고 가성비가 좋은 곳',                    'PRICE',    50),
+    ('premium',  '프리미엄',      '가격대가 높은 고급 프리미엄 식당',                    'PRICE',    51),
+    ('kind',     '친절',          '직원이 친절하고 응대가 좋은 곳',                      'SERVICE',  60),
+    ('waiting',  '웨이팅',        '대기 줄이 길고 웨이팅이 필요한 곳',                   'SERVICE',  61),
+    ('parking',  '주차',          '주차가 편리하거나 주차 공간이 있는 곳',               'SERVICE',  62);
 
 
 -- ============================================================

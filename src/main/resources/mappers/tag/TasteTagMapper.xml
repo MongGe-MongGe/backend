@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.TasteTagMapper">
+
+	<resultMap id="tasteTagRowMap"
+		type="com.ssafy.gourming.model.dto.TasteTagDto$TasteTagRow">
+		<id property="code" column="code" />
+		<result property="label" column="label" />
+		<result property="description" column="description" />
+		<result property="category" column="category" />
+		<result property="embedding" column="embedding"
+			typeHandler="com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler" />
+		<result property="embedderVersion" column="embedder_version" />
+		<result property="active" column="active" />
+		<result property="sortOrder" column="sort_order" />
+	</resultMap>
+
+	<sql id="tagColumns">
+		code, label, description, category, embedding, embedder_version, active, sort_order
+	</sql>
+
+	<select id="selectActiveTags" resultMap="tasteTagRowMap">
+		SELECT <include refid="tagColumns" />
+		FROM taste_tags
+		WHERE active = TRUE
+		ORDER BY sort_order ASC, code ASC
+	</select>
+
+	<select id="selectTagsMissingVersion" resultMap="tasteTagRowMap">
+		SELECT <include refid="tagColumns" />
+		FROM taste_tags
+		WHERE active = TRUE
+		  AND (embedding IS NULL OR embedder_version IS NULL OR embedder_version &lt;&gt; #{embedderVersion})
+		ORDER BY sort_order ASC, code ASC
+	</select>
+
+	<update id="upsertTagEmbedding">
+		UPDATE taste_tags
+		SET embedding = #{embedding, typeHandler=com.ssafy.gourming.typehandler.FloatArrayJsonTypeHandler},
+			embedder_version = #{embedderVersion}
+		WHERE code = #{code}
+	</update>
+
+</mapper>

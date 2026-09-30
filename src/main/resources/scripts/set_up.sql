@@ -92,6 +92,7 @@ CREATE TABLE place_review_summaries (
     negative_points         JSON          NULL,
     recommended_for         JSON          NULL,
     keywords                JSON          NULL,
+    tag_sentiments          JSON          NULL,                -- {"dessert": 0.9, "waiting": -0.8}
     review_count            INT           NOT NULL DEFAULT 0,
     model_version           VARCHAR(50)   NOT NULL,
     status                  VARCHAR(20)   NOT NULL,

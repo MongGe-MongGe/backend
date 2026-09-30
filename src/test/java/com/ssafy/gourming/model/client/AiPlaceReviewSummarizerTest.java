@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.PlaceSummaryAiProperties;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -56,7 +57,7 @@ class AiPlaceReviewSummarizerTest {
 
 		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
 			"test-place",
-			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0)))
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))), createTags()
 		);
 
 		JsonNode requestJson = objectMapper.readTree(requestBody.get());
@@ -88,7 +89,7 @@ class AiPlaceReviewSummarizerTest {
 		AiPlaceReviewSummarizer summarizer = createSummarizer();
 
 		PlaceReviewSummaryGenerateResult result =
-			summarizer.summarize("test-place", List.of());
+			summarizer.summarize("test-place", List.of(), createTags());
 
 		assertThat(requestCount.get()).isZero();
 		assertThat(result.getSummary()).isEqualTo("아직 작성된 리뷰가 없습니다.");
@@ -115,7 +116,7 @@ class AiPlaceReviewSummarizerTest {
 
 		assertThatThrownBy(() -> summarizer.summarize(
 			"test-place",
-			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0)))
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))), createTags()
 		))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("no choices");
@@ -136,7 +137,7 @@ class AiPlaceReviewSummarizerTest {
 
 		assertThatThrownBy(() -> summarizer.summarize(
 			"test-place",
-			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0)))
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))), createTags()
 		))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("content is empty");
@@ -155,7 +156,7 @@ class AiPlaceReviewSummarizerTest {
 
 		assertThatThrownBy(() -> summarizer.summarize(
 			"test-place",
-			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0)))
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))), createTags()
 		))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("not a JSON object");
@@ -178,7 +179,7 @@ class AiPlaceReviewSummarizerTest {
 
 		assertThatThrownBy(() -> summarizer.summarize(
 			"test-place",
-			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0)))
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))), createTags()
 		))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("summary");
@@ -207,12 +208,83 @@ class AiPlaceReviewSummarizerTest {
 
 		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
 			"test-place",
-			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0)))
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))), createTags()
 		);
 
 		assertThat(result.getPositivePoints()).containsExactly("1", "2", "3", "4", "5");
 		assertThat(result.getRecommendedFor()).containsExactly("1", "2", "3", "4", "5");
 		assertThat(result.getKeywords()).containsExactly("1", "2", "3", "4", "5");
+	}
+
+	@Test
+	@DisplayName("프롬프트에 허용 태그를 포함하고 tagSentiments를 검증해 반환한다")
+	void summarizeParsesTagSentiments() throws IOException {
+		AtomicReference<String> requestBody = new AtomicReference<>();
+		startServer(
+			HttpStatus.OK.value(),
+			createChatCompletionResponse(
+				"""
+				{
+				  "summary": "요약입니다.",
+				  "positivePoints": [], "negativePoints": [], "recommendedFor": [], "keywords": [],
+				  "tagSentiments": {
+				    "dessert": 0.9,
+				    "waiting": -1.7,
+				    "unknown": 0.5,
+				    "quiet": "0.6",
+				    "spicy": "high"
+				  }
+				}
+				"""
+			),
+			requestBody,
+			new AtomicInteger()
+		);
+		AiPlaceReviewSummarizer summarizer = createSummarizer();
+
+		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
+			"test-place",
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))),
+			createTags()
+		);
+
+		assertThat(requestBody.get()).contains("dessert(디저트)").contains("waiting(웨이팅)");
+		assertThat(result.getTagSentiments())
+			.containsEntry("dessert", 0.9)
+			.containsEntry("waiting", -1.0)
+			.containsEntry("quiet", 0.6)
+			.doesNotContainKeys("unknown", "spicy");
+	}
+
+	@Test
+	@DisplayName("tagSentiments가 없으면 빈 Map으로 처리하고 요약은 정상 반환한다")
+	void summarizeReturnsEmptyTagSentimentsWhenMissing() throws IOException {
+		startServer(HttpStatus.OK.value(), createChatCompletionResponse(createAiSummaryJson()),
+			new AtomicReference<>(), new AtomicInteger());
+		AiPlaceReviewSummarizer summarizer = createSummarizer();
+
+		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
+			"test-place",
+			List.of(createReviewSource("review-1", 4, LocalDateTime.of(2026, 6, 24, 12, 0))),
+			createTags()
+		);
+
+		assertThat(result.getSummary()).isNotBlank();
+		assertThat(result.getTagSentiments()).isNotNull().isEmpty();
+	}
+
+	private List<TasteTagRow> createTags() {
+		return List.of(tag("dessert", "디저트"), tag("waiting", "웨이팅"), tag("quiet", "조용한 분위기"));
+	}
+
+	private TasteTagRow tag(String code, String label) {
+		TasteTagRow row = new TasteTagRow();
+		row.setCode(code);
+		row.setLabel(label);
+		row.setDescription(label + " 설명");
+		row.setCategory("MOOD");
+		row.setActive(true);
+		return row;
 	}
 
 	private void startServer(

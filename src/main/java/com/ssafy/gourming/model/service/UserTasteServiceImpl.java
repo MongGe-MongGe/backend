@@ -43,6 +43,8 @@ public class UserTasteServiceImpl implements UserTasteService {
 			// 별점 1~2점 리뷰만 있는 경우처럼 "좋아하는 방향"이 없으면 성향을 만들지 않는다.
 			return null;
 		}
+		// ponytail: 음수 가중치(별점 1~2점)를 평균에 그대로 섞는다. 좋아한 곳과 싫어한 곳이 비슷하면
+		// 공통 성분이 상쇄돼 방향이 흐려질 수 있다. 문제가 되면 음수는 별도 감점(코사인 차감)으로 분리한다.
 		List<float[]> vectors = new ArrayList<>(evidences.size());
 		List<Double> weights = new ArrayList<>(evidences.size());
 		for (UserTasteEvidenceRow evidence : evidences) {

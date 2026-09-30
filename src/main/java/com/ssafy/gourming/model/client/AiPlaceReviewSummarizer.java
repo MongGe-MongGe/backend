@@ -20,6 +20,7 @@ import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.PlaceSummaryAiProperties;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
@@ -286,23 +287,24 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 	}
 
 	private Map<String, Double> normalizeTagSentiments(
-		Map<String, Object> raw,
+		JsonNode raw,
 		List<TasteTagRow> allowedTags
 	) {
-		// LLM 응답은 신뢰하지 않는다. 허용 태그만 남기고, 숫자가 아니면 버리고, -1.0~1.0으로 보정한다.
+		// LLM 응답은 신뢰하지 않는다. 객체가 아니면(예: []) 요약은 살리고 태그 감정만 비운다.
+		// 허용 태그만 남기고, 유한한 숫자가 아니면 버리고, -1.0~1.0으로 보정한다.
 		Map<String, Double> normalized = new LinkedHashMap<>();
-		if (raw == null || raw.isEmpty()) {
+		if (raw == null || !raw.isObject()) {
 			return normalized;
 		}
 		Set<String> allowedCodes = allowedTags.stream()
 			.map(TasteTagRow::getCode)
 			.collect(Collectors.toSet());
-		for (Map.Entry<String, Object> entry : raw.entrySet()) {
+		for (Map.Entry<String, JsonNode> entry : raw.properties()) {
 			if (!allowedCodes.contains(entry.getKey())) {
 				continue;
 			}
 			Double value = toDouble(entry.getValue());
-			if (value == null) {
+			if (value == null || !Double.isFinite(value)) {
 				continue;
 			}
 			normalized.put(entry.getKey(), Math.max(-1.0, Math.min(1.0, value)));
@@ -310,13 +312,13 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 		return normalized;
 	}
 
-	private Double toDouble(Object value) {
-		if (value instanceof Number number) {
-			return number.doubleValue();
+	private Double toDouble(JsonNode value) {
+		if (value.isNumber()) {
+			return value.doubleValue();
 		}
-		if (value instanceof String text) {
+		if (value.isTextual()) {
 			try {
-				return Double.parseDouble(text.trim());
+				return Double.parseDouble(value.asText().trim());
 			} catch (NumberFormatException exception) {
 				return null;
 			}
@@ -405,13 +407,14 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 		private List<String> negativePoints;
 		private List<String> recommendedFor;
 		private List<String> keywords;
-		private Map<String, Object> tagSentiments;
+		// 형식이 틀려도 요약 전체 파싱이 실패하지 않도록 JsonNode로 받고 정규화 단계에서 검사한다.
+		private JsonNode tagSentiments;
 
-		public Map<String, Object> getTagSentiments() {
+		public JsonNode getTagSentiments() {
 			return tagSentiments;
 		}
 
-		public void setTagSentiments(Map<String, Object> tagSentiments) {
+		public void setTagSentiments(JsonNode tagSentiments) {
 			this.tagSentiments = tagSentiments;
 		}
 

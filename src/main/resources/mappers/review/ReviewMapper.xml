@@ -309,4 +309,17 @@
 		   OR u.handle LIKE CONCAT('%', #{keyword}, '%')
 	</select>
 
+	<select id="selectReviewsByIds" resultMap="reviewResponseResultMap">
+		SELECT
+			<include refid="reviewResponseColumns" />
+		FROM reviews r
+		JOIN places p ON p.id = r.place_id
+		JOIN users u ON u.id = r.user_id
+		LEFT JOIN place_review_summaries pr_sum ON pr_sum.place_id = r.place_id
+		WHERE r.id IN
+		<foreach collection="reviewIds" item="reviewId" open="(" separator="," close=")">
+			#{reviewId}
+		</foreach>
+	</select>
+
 </mapper>

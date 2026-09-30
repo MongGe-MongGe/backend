@@ -17,6 +17,7 @@ import com.ssafy.gourming.model.dto.ReviewDto.ReviewCreateRequest;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewUpdateRequest;
+import com.ssafy.gourming.model.service.RecommendationService;
 import com.ssafy.gourming.model.service.ReviewService;
 
 import jakarta.validation.Valid;
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class ReviewController {
 
 	private final ReviewService reviewService;
+	private final RecommendationService recommendationService;
 
 	// 인증된 사용자가 선택한 장소에 리뷰를 작성한다.
 	@PostMapping("/reviews")
@@ -51,6 +53,16 @@ public class ReviewController {
 		return ResponseEntity.ok(
 			reviewService.getPopularReviews(normalizeViewerId(viewerId), page, size)
 		);
+	}
+
+	// 로그인 사용자의 취향과 비슷한 리뷰를 추천한다. 행동이 없는 사용자는 인기 피드를 받는다.
+	@GetMapping("/reviews/recommended")
+	public ResponseEntity<ReviewPageResponse> getRecommendedReviews(
+		@AuthenticationPrincipal String userId,
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+	) {
+		return ResponseEntity.ok(recommendationService.getRecommendedReviews(userId, page, size));
 	}
 
 	// 리뷰 상세 조회는 공개 API로 제공한다.

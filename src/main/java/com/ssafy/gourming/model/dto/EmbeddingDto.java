@@ -61,6 +61,11 @@ public class EmbeddingDto {
 		private int placeRequestedCount;
 		private int placeSuccessCount;
 		private int placeFailedCount;
+		private int tagRequestedCount;
+		private int tagSuccessCount;
+		private int summaryRequestedCount;
+		private int summarySuccessCount;
+		private int summaryFailedCount;
 		private String embedderVersion;
 		private LocalDateTime startedAt;
 		private LocalDateTime finishedAt;

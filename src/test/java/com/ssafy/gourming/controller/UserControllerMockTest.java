@@ -45,6 +45,9 @@ class UserControllerMockTest {
     private FollowService followService;
 
     @MockitoBean
+    private com.ssafy.gourming.model.service.UserTasteService userTasteService;
+
+    @MockitoBean
     private com.ssafy.gourming.model.mapper.UserMapper userMapper;
 
     @MockitoBean

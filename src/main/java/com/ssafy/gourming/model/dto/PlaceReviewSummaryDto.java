@@ -3,6 +3,7 @@ package com.ssafy.gourming.model.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class PlaceReviewSummaryDto {
 		private List<String> negativePoints;
 		private List<String> recommendedFor;
 		private List<String> keywords;
+		private Map<String, Double> tagSentiments;
 		private int reviewCount;
 		private String modelVersion;
 		private String status;
@@ -43,6 +45,7 @@ public class PlaceReviewSummaryDto {
 		private List<String> negativePoints;
 		private List<String> recommendedFor;
 		private List<String> keywords;
+		private Map<String, Double> tagSentiments;
 		private int reviewCount;
 		private String status;
 		private LocalDateTime lastReviewUpdatedAt;
@@ -60,6 +63,7 @@ public class PlaceReviewSummaryDto {
 		private List<String> negativePoints;
 		private List<String> recommendedFor;
 		private List<String> keywords;
+		private Map<String, Double> tagSentiments;
 		private int reviewCount;
 		private LocalDateTime lastReviewUpdatedAt;
 	}

@@ -34,6 +34,8 @@ public class SecurityConfig {
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/users/me/**").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+				// 추천 피드는 개인화라 인증이 필요하다. 아래 GET /api/reviews/** permitAll보다 먼저 선언해야 한다.
+				.requestMatchers(HttpMethod.GET, "/api/reviews/recommended").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/places/*/reviews").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/places").permitAll()

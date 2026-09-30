@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +60,8 @@ class RecommendationControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.content[0].id").value("review-1"))
 			.andExpect(jsonPath("$.page").value(1))
-			.andExpect(jsonPath("$.totalElements").value(1));
+			.andExpect(jsonPath("$.totalElements").value(1))
+			.andExpect(jsonPath("$.asOf").value("2026-09-30T11:25:52"));
 
 		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10, null);
 	}
@@ -86,6 +88,30 @@ class RecommendationControllerTest {
 		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
 	}
 
+	@Test
+	@DisplayName("asOf 파라미터를 받아 서비스에 넘긴다")
+	void passesAsOf() throws Exception {
+		LocalDateTime asOf = LocalDateTime.of(2026, 9, 30, 11, 25, 52);
+		when(recommendationService.getRecommendedReviews(USER_ID, 1, 10, asOf)).thenReturn(createPage());
+
+		mockMvc.perform(get("/api/reviews/recommended?page=1&size=10&asOf=2026-09-30T11:25:52")
+				.with(authentication(userAuthentication())))
+			.andExpect(status().isOk());
+
+		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10, asOf);
+	}
+
+	@Test
+	@DisplayName("asOf나 page의 형식이 잘못되면 400이다")
+	void rejectsMalformedParams() throws Exception {
+		mockMvc.perform(get("/api/reviews/recommended?asOf=abc").with(authentication(userAuthentication())))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(get("/api/reviews/popular?page=abc"))
+			.andExpect(status().isBadRequest());
+
+		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
+	}
+
 	private Authentication userAuthentication() {
 		return new UsernamePasswordAuthenticationToken(
 			USER_ID, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
@@ -102,6 +128,7 @@ class RecommendationControllerTest {
 		page.setTotalPages(1);
 		page.setFirst(false);
 		page.setLast(true);
+		page.setAsOf(LocalDateTime.of(2026, 9, 30, 11, 25, 52));
 		return page;
 	}
 }

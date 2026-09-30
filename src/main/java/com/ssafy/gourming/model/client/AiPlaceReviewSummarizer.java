@@ -4,8 +4,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.PlaceSummaryAiProperties;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 
 @Component
 @ConditionalOnProperty(
@@ -53,11 +58,13 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 	@Override
 	public PlaceReviewSummaryGenerateResult summarize(
 		String placeId,
-		List<ReviewSummarySourceRow> reviews
+		List<ReviewSummarySourceRow> reviews,
+		List<TasteTagRow> allowedTags
 	) {
 		// 호출부에서 null을 넘기더라도 리뷰가 없는 장소로 안전하게 처리한다.
 		List<ReviewSummarySourceRow> safeReviews =
 			reviews == null ? Collections.emptyList() : reviews;
+		List<TasteTagRow> safeTags = allowedTags == null ? Collections.emptyList() : allowedTags;
 
 		// 리뷰가 없으면 AI를 호출하지 않는다.
 		// 이 경우는 실패가 아니라 정상적인 빈 요약(COMPLETED) 케이스다.
@@ -68,7 +75,7 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 		// 비용과 prompt 길이를 제어하기 위해 최신 리뷰 일부만 AI에 전달한다.
 		List<ReviewSummarySourceRow> limitedReviews = limitReviews(safeReviews);
 		// AI 호출 -> 응답 content 추출 -> JSON 파싱 순서로 요약 결과를 만든다.
-		ChatCompletionResponse response = requestSummary(placeId, limitedReviews);
+		ChatCompletionResponse response = requestSummary(placeId, limitedReviews, safeTags);
 		String content = extractContent(response);
 		AiSummaryResponse summaryResponse = parseSummaryResponse(content);
 
@@ -79,6 +86,7 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 		result.setNegativePoints(limitList(summaryResponse.getNegativePoints()));
 		result.setRecommendedFor(limitList(summaryResponse.getRecommendedFor()));
 		result.setKeywords(limitList(summaryResponse.getKeywords()));
+		result.setTagSentiments(normalizeTagSentiments(summaryResponse.getTagSentiments(), safeTags));
 		result.setReviewCount(safeReviews.size());
 		result.setLastReviewUpdatedAt(findLastReviewUpdatedAt(safeReviews));
 		return result;
@@ -100,6 +108,7 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 		result.setNegativePoints(List.of());
 		result.setRecommendedFor(List.of());
 		result.setKeywords(List.of());
+		result.setTagSentiments(new LinkedHashMap<>());
 		result.setReviewCount(0);
 		result.setLastReviewUpdatedAt(null);
 		return result;
@@ -116,7 +125,8 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 
 	private ChatCompletionResponse requestSummary(
 		String placeId,
-		List<ReviewSummarySourceRow> reviews
+		List<ReviewSummarySourceRow> reviews,
+		List<TasteTagRow> tags
 	) {
 		// 실제 AI 호출에 필요한 설정은 호출 직전에 검증해 설정 누락을 명확한 예외로 드러낸다.
 		String model = requireSetting(properties.getModel(), "place-summary.ai.model");
@@ -127,7 +137,7 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 			model,
 			List.of(
 				new ChatMessage("developer", createDeveloperPrompt()),
-				new ChatMessage("user", createUserPrompt(placeId, reviews))
+				new ChatMessage("user", createUserPrompt(placeId, reviews, tags))
 			),
 			new ResponseFormat("json_object")
 		);
@@ -151,12 +161,15 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 			리뷰에 없는 내용을 과장하거나 추측하지 않는다.
 			summary는 1~2문장으로 작성한다.
 			positivePoints, negativePoints, recommendedFor, keywords는 각각 최대 5개 문자열 배열이다.
+			tagSentiments는 허용 태그 코드만 키로 사용하는 객체이며 값은 -1.0에서 1.0 사이 숫자다.
+			리뷰에서 언급되지 않은 태그는 tagSentiments에 포함하지 않는다.
 			""";
 	}
 
 	private String createUserPrompt(
 		String placeId,
-		List<ReviewSummarySourceRow> reviews
+		List<ReviewSummarySourceRow> reviews,
+		List<TasteTagRow> tags
 	) {
 		try {
 			// 리뷰 원문은 JSON 문자열로 직렬화해 prompt에 포함한다.
@@ -164,6 +177,9 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 			List<ReviewPromptItem> promptReviews = reviews.stream()
 				.map(this::toPromptItem)
 				.toList();
+			String allowedTags = tags.stream()
+				.map(tag -> tag.getCode() + "(" + tag.getLabel() + ")")
+				.collect(Collectors.joining(", "));
 
 			return """
 				아래 장소 리뷰들을 요약해줘.
@@ -174,12 +190,14 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 				  "positivePoints": ["좋았던 점"],
 				  "negativePoints": ["아쉬웠던 점"],
 				  "recommendedFor": ["추천 대상"],
-				  "keywords": ["키워드"]
+				  "keywords": ["키워드"],
+				  "tagSentiments": {"태그코드": -1.0에서 1.0 사이 숫자}
 				}
 				
+				허용 태그: %s
 				placeId: %s
 				reviews: %s
-				""".formatted(placeId, objectMapper.writeValueAsString(promptReviews));
+				""".formatted(allowedTags, placeId, objectMapper.writeValueAsString(promptReviews));
 		} catch (JsonProcessingException exception) {
 			throw new IllegalStateException("Failed to serialize review prompt", exception);
 		}
@@ -267,6 +285,45 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 			.toList();
 	}
 
+	private Map<String, Double> normalizeTagSentiments(
+		Map<String, Object> raw,
+		List<TasteTagRow> allowedTags
+	) {
+		// LLM 응답은 신뢰하지 않는다. 허용 태그만 남기고, 숫자가 아니면 버리고, -1.0~1.0으로 보정한다.
+		Map<String, Double> normalized = new LinkedHashMap<>();
+		if (raw == null || raw.isEmpty()) {
+			return normalized;
+		}
+		Set<String> allowedCodes = allowedTags.stream()
+			.map(TasteTagRow::getCode)
+			.collect(Collectors.toSet());
+		for (Map.Entry<String, Object> entry : raw.entrySet()) {
+			if (!allowedCodes.contains(entry.getKey())) {
+				continue;
+			}
+			Double value = toDouble(entry.getValue());
+			if (value == null) {
+				continue;
+			}
+			normalized.put(entry.getKey(), Math.max(-1.0, Math.min(1.0, value)));
+		}
+		return normalized;
+	}
+
+	private Double toDouble(Object value) {
+		if (value instanceof Number number) {
+			return number.doubleValue();
+		}
+		if (value instanceof String text) {
+			try {
+				return Double.parseDouble(text.trim());
+			} catch (NumberFormatException exception) {
+				return null;
+			}
+		}
+		return null;
+	}
+
 	private LocalDateTime findLastReviewUpdatedAt(List<ReviewSummarySourceRow> reviews) {
 		// 요약이 어떤 리뷰 버전까지 반영했는지 판단할 수 있도록 최신 리뷰 수정 시각을 저장한다.
 		return reviews.stream()
@@ -348,6 +405,15 @@ public class AiPlaceReviewSummarizer implements PlaceReviewSummarizer {
 		private List<String> negativePoints;
 		private List<String> recommendedFor;
 		private List<String> keywords;
+		private Map<String, Object> tagSentiments;
+
+		public Map<String, Object> getTagSentiments() {
+			return tagSentiments;
+		}
+
+		public void setTagSentiments(Map<String, Object> tagSentiments) {
+			this.tagSentiments = tagSentiments;
+		}
 
 		public String getSummary() {
 			return summary;

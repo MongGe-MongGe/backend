@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
@@ -16,8 +17,10 @@ import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryEnti
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryResponse;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
 import com.ssafy.gourming.model.mapper.PlaceReviewSummaryMapper;
+import com.ssafy.gourming.model.mapper.TasteTagMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +34,7 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 	private final PlaceReviewSummaryMapper placeReviewSummaryMapper;
 	private final PlaceReviewSummarizer placeReviewSummarizer;
 	private final PlaceSummaryAiProperties placeSummaryAiProperties;
+	private final TasteTagMapper tasteTagMapper;
 
 	@Override
 	public PlaceReviewSummaryResponse getSummary(String placeId) {
@@ -66,8 +70,10 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 
 			// 설정에 따라 실제 AI 생성기 또는 Fake 생성기가 주입된다.
 			// 리뷰가 없는 경우에도 생성기가 COMPLETED로 저장 가능한 빈 요약을 반환한다.
+			// 요약기가 tagSentiments 키로 쓸 수 있는 활성 태그 목록을 함께 넘긴다.
+			List<TasteTagRow> allowedTags = tasteTagMapper.selectActiveTags();
 			PlaceReviewSummaryGenerateResult generatedSummary =
-				placeReviewSummarizer.summarize(placeId, reviews);
+				placeReviewSummarizer.summarize(placeId, reviews, allowedTags);
 
 			PlaceReviewSummaryEntity entity =
 				toEntity(placeId, generatedSummary, modelVersion, STATUS_COMPLETED, null);
@@ -146,6 +152,7 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 		entity.setNegativePoints(normalizeList(generatedSummary.getNegativePoints()));
 		entity.setRecommendedFor(normalizeList(generatedSummary.getRecommendedFor()));
 		entity.setKeywords(normalizeList(generatedSummary.getKeywords()));
+		entity.setTagSentiments(normalizeMap(generatedSummary.getTagSentiments()));
 		entity.setReviewCount(generatedSummary.getReviewCount());
 		entity.setModelVersion(modelVersion);
 		entity.setStatus(status);
@@ -164,6 +171,7 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 		response.setNegativePoints(normalizeList(entity.getNegativePoints()));
 		response.setRecommendedFor(normalizeList(entity.getRecommendedFor()));
 		response.setKeywords(normalizeList(entity.getKeywords()));
+		response.setTagSentiments(normalizeMap(entity.getTagSentiments()));
 		response.setReviewCount(entity.getReviewCount());
 		response.setStatus(entity.getStatus());
 		response.setLastReviewUpdatedAt(entity.getLastReviewUpdatedAt());
@@ -176,6 +184,14 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 		// 응답에서는 빈 배열로 다루기 위해 빈 리스트로 정규화한다.
 		if (values == null) {
 			return Collections.emptyList();
+		}
+		return values;
+	}
+
+	private Map<String, Double> normalizeMap(Map<String, Double> values) {
+		// 기존 요약처럼 tag_sentiments가 NULL이어도 응답에서는 빈 객체로 다룬다.
+		if (values == null) {
+			return Collections.emptyMap();
 		}
 		return values;
 	}

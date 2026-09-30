@@ -55,8 +55,13 @@ public class RecommendationServiceImpl implements RecommendationService {
 
 		// ponytail: 요청마다 후보 전체의 코사인을 계산한다. 사용자·리뷰가 수천 단위가 되면
 		// 인기피드처럼 배치로 추천 결과를 미리 저장하는 방식으로 전환한다.
+		// 기준 시각 이전 N일 안에 화면에서 본 리뷰는 후보에서 뺀다. 0 이하면 제외하지 않는다.
+		// asOf 기준으로 계산해야 같은 asOf의 페이지들이 같은 제외 범위를 쓴다.
+		LocalDateTime seenSince = properties.getSeenExcludeDays() > 0
+			? asOf.minusDays(properties.getSeenExcludeDays())
+			: null;
 		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(
-			userId, textEmbedder.version(), properties.getCandidateSize(), asOf);
+			userId, textEmbedder.version(), properties.getCandidateSize(), asOf, seenSince);
 		List<ScoredCandidate> scored = new ArrayList<>(candidates.size());
 		for (RecommendationCandidateRow candidate : candidates) {
 			// 배치가 모델을 바꾸는 중이면 길이가 다른 벡터가 섞일 수 있다. 코사인이 예외를 던지므로 건너뛴다.

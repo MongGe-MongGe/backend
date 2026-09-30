@@ -58,8 +58,10 @@ public class RecommendationServiceImpl implements RecommendationService {
 			scored.add(new ScoredCandidate(
 				candidate, VectorMath.cosine(userVector.getVector(), candidate.getEmbedding())));
 		}
+		// 점수 → 최신순 → 리뷰 ID 순으로 완전히 정해 두어 같은 데이터면 페이지마다 같은 순서가 나오게 한다.
 		scored.sort(Comparator.comparingDouble(ScoredCandidate::score).reversed()
-			.thenComparing(s -> s.candidate().getCreatedAt(), Comparator.nullsLast(Comparator.reverseOrder())));
+			.thenComparing(s -> s.candidate().getCreatedAt(), Comparator.nullsLast(Comparator.reverseOrder()))
+			.thenComparing(s -> s.candidate().getReviewId(), Comparator.reverseOrder()));
 
 		List<String> orderedIds = applyPlaceLimit(scored);
 		long totalElements = orderedIds.size();

@@ -14,4 +14,5 @@ public class RecommendationProperties {
 
 	private int candidateSize = 500;
 	private int maxPerPlace = 2;
+	private int seenExcludeDays = 14;
 }

@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -34,6 +35,14 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(HandlerMethodValidationException.class)
 	public ResponseEntity<?> handleHandlerMethodValidationException(HandlerMethodValidationException ex) {
 		return ResponseEntity.badRequest().body("요청 파라미터가 올바르지 않습니다.");
+	}
+
+	/**
+	 * 400 Bad Request: 쿼리 파라미터 형식 오류 (예: page=abc, asOf=abc)
+	 */
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<?> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+		return ResponseEntity.badRequest().body("요청 파라미터 형식이 올바르지 않습니다: " + ex.getName());
 	}
 
 	/**

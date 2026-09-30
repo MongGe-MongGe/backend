@@ -62,7 +62,7 @@ public class ReviewController {
 		@RequestParam(defaultValue = "0") @Min(0) int page,
 		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
 	) {
-		return ResponseEntity.ok(recommendationService.getRecommendedReviews(userId, page, size));
+		return ResponseEntity.ok(recommendationService.getRecommendedReviews(userId, page, size, null));
 	}
 
 	// 리뷰 상세 조회는 공개 API로 제공한다.

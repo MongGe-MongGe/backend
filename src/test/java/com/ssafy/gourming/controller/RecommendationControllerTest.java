@@ -1,5 +1,6 @@
 package com.ssafy.gourming.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -24,7 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.ssafy.gourming.config.SecurityConfig;
-import com.ssafy.gourming.model.dto.ReviewDto.ReviewPageResponse;
+import com.ssafy.gourming.model.dto.RecommendationDto.RecommendationPageResponse;
 import com.ssafy.gourming.model.dto.ReviewDto.ReviewResponse;
 import com.ssafy.gourming.model.service.RecommendationService;
 import com.ssafy.gourming.model.service.ReviewService;
@@ -52,7 +53,7 @@ class RecommendationControllerTest {
 	@Test
 	@DisplayName("로그인 사용자가 추천 피드를 조회한다")
 	void getRecommendedReviews() throws Exception {
-		when(recommendationService.getRecommendedReviews(USER_ID, 1, 10)).thenReturn(createPage());
+		when(recommendationService.getRecommendedReviews(USER_ID, 1, 10, null)).thenReturn(createPage());
 
 		mockMvc.perform(get("/api/reviews/recommended?page=1&size=10").with(authentication(userAuthentication())))
 			.andExpect(status().isOk())
@@ -60,7 +61,7 @@ class RecommendationControllerTest {
 			.andExpect(jsonPath("$.page").value(1))
 			.andExpect(jsonPath("$.totalElements").value(1));
 
-		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10);
+		verify(recommendationService).getRecommendedReviews(USER_ID, 1, 10, null);
 	}
 
 	@Test
@@ -71,7 +72,7 @@ class RecommendationControllerTest {
 		mockMvc.perform(get("/api/reviews/recommended?size=101").with(authentication(userAuthentication())))
 			.andExpect(status().isBadRequest());
 
-		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt());
+		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
 	}
 
 	@Test
@@ -82,7 +83,7 @@ class RecommendationControllerTest {
 		mockMvc.perform(get("/api/reviews/popular"))
 			.andExpect(status().isOk());
 
-		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt());
+		verify(recommendationService, never()).getRecommendedReviews(anyString(), anyInt(), anyInt(), any());
 	}
 
 	private Authentication userAuthentication() {
@@ -90,10 +91,10 @@ class RecommendationControllerTest {
 			USER_ID, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
 	}
 
-	private ReviewPageResponse createPage() {
+	private RecommendationPageResponse createPage() {
 		ReviewResponse review = new ReviewResponse();
 		review.setId("review-1");
-		ReviewPageResponse page = new ReviewPageResponse();
+		RecommendationPageResponse page = new RecommendationPageResponse();
 		page.setContent(List.of(review));
 		page.setPage(1);
 		page.setSize(10);

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 
 @DisplayName("Fake 장소 리뷰 요약 생성기 테스트")
 class FakePlaceReviewSummarizerTest {
@@ -21,7 +22,7 @@ class FakePlaceReviewSummarizerTest {
 	@DisplayName("리뷰가 없으면 빈 요약을 반환한다")
 	void summarizeWithoutReviews() {
 		PlaceReviewSummaryGenerateResult result =
-			summarizer.summarize("test-place-id", List.of());
+			summarizer.summarize("test-place-id", List.of(), List.of());
 
 		assertThat(result.getSummary()).isEqualTo("아직 작성된 리뷰가 없습니다.");
 		assertThat(result.getPositivePoints()).isEmpty();
@@ -43,7 +44,7 @@ class FakePlaceReviewSummarizerTest {
 		);
 
 		PlaceReviewSummaryGenerateResult result =
-			summarizer.summarize("test-place-id", List.of(review));
+			summarizer.summarize("test-place-id", List.of(review), List.of());
 
 		assertThat(result.getSummary())
 			.isEqualTo("최근 리뷰를 기준으로 전반적인 만족도와 방문 경험을 요약했습니다.");
@@ -67,7 +68,7 @@ class FakePlaceReviewSummarizerTest {
 		);
 
 		PlaceReviewSummaryGenerateResult result =
-			summarizer.summarize("test-place-id", List.of(review));
+			summarizer.summarize("test-place-id", List.of(review), List.of());
 
 		assertThat(result.getPositivePoints()).isEmpty();
 		assertThat(result.getNegativePoints()).containsExactly("일부 아쉬운 평가가 있어요");
@@ -91,11 +92,45 @@ class FakePlaceReviewSummarizerTest {
 		);
 
 		PlaceReviewSummaryGenerateResult result =
-			summarizer.summarize("test-place-id", List.of(olderReview, newerReview));
+			summarizer.summarize("test-place-id", List.of(olderReview, newerReview), List.of());
 
 		assertThat(result.getReviewCount()).isEqualTo(2);
 		assertThat(result.getLastReviewUpdatedAt())
 			.isEqualTo(LocalDateTime.of(2026, 6, 24, 12, 0));
+	}
+
+	@Test
+	@DisplayName("웨이팅이 언급되면 waiting이 음수, 디저트가 언급되면 dessert가 양수다")
+	void summarizeCreatesTagSentiments() {
+		ReviewSummarySourceRow review = new ReviewSummarySourceRow();
+		review.setReviewId("r1");
+		review.setContent("디저트가 맛있는데 웨이팅이 길어요");
+		review.setRatingScore(4);
+
+		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
+			"p1", List.of(review), List.of(tag("dessert", "디저트"), tag("waiting", "웨이팅"), tag("quiet", "조용한 분위기")));
+
+		assertThat(result.getTagSentiments())
+			.containsEntry("dessert", 0.7)
+			.containsEntry("waiting", -0.7)
+			.doesNotContainKey("quiet");
+	}
+
+	@Test
+	@DisplayName("리뷰가 없으면 tagSentiments는 빈 Map이다")
+	void summarizeWithoutReviewsReturnsEmptyTagSentiments() {
+		PlaceReviewSummaryGenerateResult result =
+			summarizer.summarize("p1", List.of(), List.of(tag("dessert", "디저트")));
+
+		assertThat(result.getTagSentiments()).isNotNull().isEmpty();
+	}
+
+	private TasteTagRow tag(String code, String label) {
+		TasteTagRow row = new TasteTagRow();
+		row.setCode(code);
+		row.setLabel(label);
+		row.setActive(true);
+		return row;
 	}
 
 	private ReviewSummarySourceRow createReviewSource(

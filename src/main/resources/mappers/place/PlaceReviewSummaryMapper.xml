@@ -181,4 +181,19 @@
 		ORDER BY created_at DESC, id DESC
 	</select>
 
+	<select id="selectStalePlaceIds" resultType="string">
+		SELECT p.id
+		FROM places p
+		LEFT JOIN place_review_summaries s ON s.place_id = p.id
+		WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
+		  AND (
+				s.place_id IS NULL
+			 OR s.last_review_updated_at IS NULL
+			 OR s.last_review_updated_at &lt; (
+					SELECT MAX(r.updated_at) FROM reviews r WHERE r.place_id = p.id
+			 )
+		  )
+		ORDER BY p.id
+	</select>
+
 </mapper>

@@ -40,6 +40,10 @@ class PlaceReviewSummaryMapperTest {
 	@Autowired
 	private PlaceMapper placeMapper;
 
+	// 리뷰 삭제를 MyBatis로 해야 같은 트랜잭션의 1차 캐시가 비워진다.
+	@Autowired
+	private ReviewMapper reviewMapper;
+
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
@@ -114,6 +118,7 @@ class PlaceReviewSummaryMapperTest {
 
 		PlaceReviewSummaryEntity fresh = createSummary(PLACE_ID, "최신 요약", "COMPLETED");
 		fresh.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 12, 0));
+		fresh.setReviewCount(1);
 		placeReviewSummaryMapper.upsert(fresh);
 		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
 
@@ -210,6 +215,53 @@ class PlaceReviewSummaryMapperTest {
 		assertThat(reviewSources.get(0).getRatingScore()).isEqualTo(5);
 		assertThat(reviewSources.get(0).getVisitedAt()).isEqualTo(LocalDate.of(2026, 6, 24));
 		assertThat(reviewSources.get(0).getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 6, 24, 11, 0));
+	}
+
+	@Test
+	@DisplayName("리뷰가 최신이어도 tag_sentiments가 없거나 COMPLETED가 아니면 갱신 대상이다")
+	void selectStalePlaceIdsIncludesMissingTagSentimentsAndNotCompleted() {
+		insertTestReview(REVIEW_ID, PLACE_ID, "리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		PlaceReviewSummaryEntity legacy = freshSummary("COMPLETED");
+		legacy.setTagSentiments(null);
+		placeReviewSummaryMapper.upsert(legacy);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		placeReviewSummaryMapper.upsert(freshSummary("FAILED"));
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		placeReviewSummaryMapper.upsert(freshSummary("COMPLETED"));
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+	}
+
+	@Test
+	@DisplayName("리뷰가 삭제되어 개수가 달라지거나 모두 삭제된 장소는 갱신 대상이다")
+	void selectStalePlaceIdsIncludesDeletedReviews() {
+		insertTestReview(REVIEW_ID, PLACE_ID, "첫 리뷰", LocalDateTime.of(2026, 6, 24, 9, 0));
+		insertTestReview(OTHER_REVIEW_ID, PLACE_ID, "둘째 리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		PlaceReviewSummaryEntity summary = freshSummary("COMPLETED");
+		summary.setReviewCount(2);
+		placeReviewSummaryMapper.upsert(summary);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+
+		// 최신 리뷰가 아닌 리뷰를 지우면 MAX(updated_at)은 그대로지만 개수가 달라진다.
+		reviewMapper.deleteReview(REVIEW_ID, USER_ID);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		// 리뷰가 모두 삭제돼도 옛 요약이 남아 있으면 비워야 하므로 대상이다.
+		reviewMapper.deleteReview(OTHER_REVIEW_ID, USER_ID);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).contains(PLACE_ID);
+
+		PlaceReviewSummaryEntity empty = freshSummary("COMPLETED");
+		empty.setReviewCount(0);
+		placeReviewSummaryMapper.upsert(empty);
+		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
+	}
+
+	private PlaceReviewSummaryEntity freshSummary(String status) {
+		PlaceReviewSummaryEntity summary = createSummary(PLACE_ID, "요약", status);
+		summary.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 10, 0));
+		summary.setReviewCount(1);
+		return summary;
 	}
 
 	@Test

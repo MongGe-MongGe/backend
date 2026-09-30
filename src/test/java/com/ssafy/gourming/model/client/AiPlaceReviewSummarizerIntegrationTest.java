@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.PlaceSummaryAiProperties;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.PlaceReviewSummaryGenerateResult;
 import com.ssafy.gourming.model.dto.PlaceReviewSummaryDto.ReviewSummarySourceRow;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 
 @EnabledIfSystemProperty(
 	named = "run.place-summary.ai.integration",
@@ -43,7 +44,8 @@ class AiPlaceReviewSummarizerIntegrationTest {
 
 		PlaceReviewSummaryGenerateResult result = summarizer.summarize(
 			"test-place-ai-summary",
-			List.of(createReviewSource())
+			List.of(createReviewSource()),
+			List.of(tag("dessert", "디저트"), tag("waiting", "웨이팅"), tag("kind", "친절"))
 		);
 
 		System.out.printf(
@@ -56,6 +58,9 @@ class AiPlaceReviewSummarizerIntegrationTest {
 		);
 
 		assertThat(result.getSummary()).isNotBlank();
+		assertThat(result.getTagSentiments()).isNotNull();
+		assertThat(result.getTagSentiments().keySet())
+			.allMatch(code -> List.of("dessert", "waiting", "kind").contains(code));
 		assertThat(result.getPositivePoints()).isNotNull();
 		assertThat(result.getNegativePoints()).isNotNull();
 		assertThat(result.getRecommendedFor()).isNotNull();
@@ -112,6 +117,14 @@ class AiPlaceReviewSummarizerIntegrationTest {
 			return System.getenv("GMS_KEY");
 		}
 		return apiKey;
+	}
+
+	private TasteTagRow tag(String code, String label) {
+		TasteTagRow row = new TasteTagRow();
+		row.setCode(code);
+		row.setLabel(label);
+		row.setActive(true);
+		return row;
 	}
 
 	private ReviewSummarySourceRow createReviewSource() {

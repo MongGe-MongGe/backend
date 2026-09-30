@@ -113,6 +113,16 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<systemPropertyVariables>
+						<!-- 로컬 설정과 무관하게 테스트 컨텍스트가 뜰 때 임베딩·요약 배치가 돌지 않게 한다. -->
+						<embedding.refresh-on-startup>false</embedding.refresh-on-startup>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>

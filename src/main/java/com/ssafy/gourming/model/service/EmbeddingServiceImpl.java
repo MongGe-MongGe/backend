@@ -15,8 +15,11 @@ import com.ssafy.gourming.model.dto.EmbeddingDto.EmbeddingTargetRow;
 import com.ssafy.gourming.model.dto.EmbeddingDto.PlaceEmbeddingRow;
 import com.ssafy.gourming.model.dto.EmbeddingDto.ReviewEmbeddingRow;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 import com.ssafy.gourming.model.mapper.EmbeddingMapper;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
+import com.ssafy.gourming.model.mapper.PlaceReviewSummaryMapper;
+import com.ssafy.gourming.model.mapper.TasteTagMapper;
 import com.ssafy.gourming.util.VectorMath;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,9 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 
 	private final EmbeddingMapper embeddingMapper;
 	private final PlaceMapper placeMapper;
+	private final TasteTagMapper tasteTagMapper;
+	private final PlaceReviewSummaryMapper placeReviewSummaryMapper;
+	private final PlaceReviewSummaryService placeReviewSummaryService;
 	private final TextEmbedder textEmbedder;
 	private final EmbeddingProperties properties;
 
@@ -52,12 +58,15 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 		try {
 			refreshReviews(version, response);
 			refreshPlaces(version, response);
+			refreshTags(version, response);
+			refreshSummaries(response);
 			return response;
 		} finally {
 			response.setFinishedAt(LocalDateTime.now());
 			running.set(false);
 			log.info(
-				"임베딩 배치 완료. version={}, reviews={}/{}/{}, places={}/{}/{}, elapsedMs={}",
+				"임베딩 배치 완료. version={}, reviews={}/{}/{}, places={}/{}/{}, tags={}/{}, "
+					+ "summaries={}/{}/{}, elapsedMs={}",
 				version,
 				response.getReviewRequestedCount(),
 				response.getReviewSuccessCount(),
@@ -65,6 +74,11 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 				response.getPlaceRequestedCount(),
 				response.getPlaceSuccessCount(),
 				response.getPlaceFailedCount(),
+				response.getTagRequestedCount(),
+				response.getTagSuccessCount(),
+				response.getSummaryRequestedCount(),
+				response.getSummarySuccessCount(),
+				response.getSummaryFailedCount(),
 				Duration.between(startedAt, response.getFinishedAt()).toMillis()
 			);
 		}
@@ -149,6 +163,41 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 				log.warn("카테고리 임베딩 묶음 실패. start={}, size={}, reason={}",
 					start, chunk.size(), exception.getMessage());
 				response.setPlaceFailedCount(response.getPlaceFailedCount() + chunk.size());
+			}
+		}
+	}
+
+	private void refreshTags(String version, EmbeddingRefreshResponse response) {
+		// 태그 설명문 벡터는 버전이 바뀔 때만 다시 만든다. 태그는 수십 개라 한 번에 임베딩한다.
+		List<TasteTagRow> tags = tasteTagMapper.selectTagsMissingVersion(version);
+		response.setTagRequestedCount(tags.size());
+		if (tags.isEmpty()) {
+			return;
+		}
+		try {
+			List<float[]> vectors = textEmbedder.embed(
+				tags.stream().map(TasteTagRow::getDescription).toList());
+			for (int i = 0; i < tags.size(); i++) {
+				tasteTagMapper.upsertTagEmbedding(tags.get(i).getCode(), vectors.get(i), version);
+			}
+			response.setTagSuccessCount(tags.size());
+		} catch (RuntimeException exception) {
+			log.warn("태그 벡터 계산 실패. count={}, reason={}", tags.size(), exception.getMessage());
+		}
+	}
+
+	private void refreshSummaries(EmbeddingRefreshResponse response) {
+		// 요약이 없거나 요약 이후 리뷰가 수정된 장소만 갱신한다.
+		List<String> stalePlaceIds = placeReviewSummaryMapper.selectStalePlaceIds();
+		response.setSummaryRequestedCount(stalePlaceIds.size());
+		for (String placeId : stalePlaceIds) {
+			try {
+				placeReviewSummaryService.refreshSummary(placeId);
+				response.setSummarySuccessCount(response.getSummarySuccessCount() + 1);
+			} catch (RuntimeException exception) {
+				// refreshSummary가 FAILED 상태와 errorMessage를 이미 저장했다.
+				log.warn("장소 요약 갱신 실패. placeId={}, reason={}", placeId, exception.getMessage());
+				response.setSummaryFailedCount(response.getSummaryFailedCount() + 1);
 			}
 		}
 	}

@@ -3,7 +3,9 @@ package com.ssafy.gourming.model.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,8 +29,11 @@ import com.ssafy.gourming.model.dto.EmbeddingDto.EmbeddingTargetRow;
 import com.ssafy.gourming.model.dto.EmbeddingDto.PlaceEmbeddingRow;
 import com.ssafy.gourming.model.dto.EmbeddingDto.ReviewEmbeddingRow;
 import com.ssafy.gourming.model.dto.PlaceDto.PlaceEntity;
+import com.ssafy.gourming.model.dto.TasteTagDto.TasteTagRow;
 import com.ssafy.gourming.model.mapper.EmbeddingMapper;
 import com.ssafy.gourming.model.mapper.PlaceMapper;
+import com.ssafy.gourming.model.mapper.PlaceReviewSummaryMapper;
+import com.ssafy.gourming.model.mapper.TasteTagMapper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("임베딩 서비스 Mock 단위 테스트")
@@ -43,6 +48,15 @@ class EmbeddingServiceMockTest {
 	private PlaceMapper placeMapper;
 
 	@Mock
+	private TasteTagMapper tasteTagMapper;
+
+	@Mock
+	private PlaceReviewSummaryMapper placeReviewSummaryMapper;
+
+	@Mock
+	private PlaceReviewSummaryService placeReviewSummaryService;
+
+	@Mock
 	private TextEmbedder textEmbedder;
 
 	private EmbeddingProperties properties;
@@ -53,7 +67,9 @@ class EmbeddingServiceMockTest {
 		properties = new EmbeddingProperties();
 		properties.setBatchSize(2);
 		when(textEmbedder.version()).thenReturn(VERSION);
-		service = new EmbeddingServiceImpl(embeddingMapper, placeMapper, textEmbedder, properties);
+		service = new EmbeddingServiceImpl(
+			embeddingMapper, placeMapper, tasteTagMapper, placeReviewSummaryMapper,
+			placeReviewSummaryService, textEmbedder, properties);
 	}
 
 	@Test
@@ -204,6 +220,66 @@ class EmbeddingServiceMockTest {
 		service.refreshAll();
 
 		assertThat(service.isRunning()).isFalse();
+	}
+
+	@Test
+	@DisplayName("현재 버전 벡터가 없는 태그만 설명문을 임베딩해 저장한다")
+	void refreshAllEmbedsMissingTags() {
+		when(embeddingMapper.selectEmbeddingTargets(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsWithEmbeddedReviews(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsNeedingCategoryEmbedding(VERSION)).thenReturn(List.of());
+		TasteTagRow tag = new TasteTagRow();
+		tag.setCode("dessert");
+		tag.setDescription("케이크, 빵, 디저트 메뉴가 맛있는 곳");
+		when(tasteTagMapper.selectTagsMissingVersion(VERSION)).thenReturn(List.of(tag));
+		when(textEmbedder.embed(List.of("케이크, 빵, 디저트 메뉴가 맛있는 곳")))
+			.thenReturn(List.of(new float[] {0f, 1f}));
+		when(placeReviewSummaryMapper.selectStalePlaceIds()).thenReturn(List.of());
+
+		EmbeddingRefreshResponse response = service.refreshAll();
+
+		verify(tasteTagMapper).upsertTagEmbedding(eq("dessert"), any(), eq(VERSION));
+		assertThat(response.getTagRequestedCount()).isEqualTo(1);
+		assertThat(response.getTagSuccessCount()).isEqualTo(1);
+	}
+
+	@Test
+	@DisplayName("태그 임베딩이 실패해도 요약 갱신 단계는 계속된다")
+	void refreshAllContinuesWhenTagEmbeddingFails() {
+		when(embeddingMapper.selectEmbeddingTargets(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsWithEmbeddedReviews(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsNeedingCategoryEmbedding(VERSION)).thenReturn(List.of());
+		TasteTagRow tag = new TasteTagRow();
+		tag.setCode("dessert");
+		tag.setDescription("디저트");
+		when(tasteTagMapper.selectTagsMissingVersion(VERSION)).thenReturn(List.of(tag));
+		when(textEmbedder.embed(anyList())).thenThrow(new IllegalStateException("API down"));
+		when(placeReviewSummaryMapper.selectStalePlaceIds()).thenReturn(List.of("p1"));
+
+		EmbeddingRefreshResponse response = service.refreshAll();
+
+		assertThat(response.getTagSuccessCount()).isZero();
+		verify(placeReviewSummaryService).refreshSummary("p1");
+		assertThat(response.getSummarySuccessCount()).isEqualTo(1);
+	}
+
+	@Test
+	@DisplayName("리뷰가 바뀐 장소만 요약을 갱신하고 한 장소 실패가 다음 장소를 막지 않는다")
+	void refreshAllRefreshesStaleSummaries() {
+		when(embeddingMapper.selectEmbeddingTargets(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsWithEmbeddedReviews(VERSION)).thenReturn(List.of());
+		when(embeddingMapper.selectPlaceIdsNeedingCategoryEmbedding(VERSION)).thenReturn(List.of());
+		when(tasteTagMapper.selectTagsMissingVersion(VERSION)).thenReturn(List.of());
+		when(placeReviewSummaryMapper.selectStalePlaceIds()).thenReturn(List.of("p1", "p2"));
+		when(placeReviewSummaryService.refreshSummary("p1")).thenThrow(new IllegalStateException("AI down"));
+
+		EmbeddingRefreshResponse response = service.refreshAll();
+
+		verify(placeReviewSummaryService).refreshSummary("p1");
+		verify(placeReviewSummaryService).refreshSummary("p2");
+		assertThat(response.getSummaryRequestedCount()).isEqualTo(2);
+		assertThat(response.getSummaryFailedCount()).isEqualTo(1);
+		assertThat(response.getSummarySuccessCount()).isEqualTo(1);
 	}
 
 	private EmbeddingTargetRow target(String reviewId, String content) {

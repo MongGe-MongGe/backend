@@ -18,12 +18,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.gourming.config.SecurityConfig;
@@ -129,6 +131,7 @@ class PlaceControllerTest {
 			.andExpect(jsonPath("$.status").value("COMPLETED"));
 
 		verify(placeReviewSummaryService).refreshSummary(PLACE_ID);
+		verify(placeReviewSummaryService, never()).refreshSummaryIfStale(any());
 	}
 
 	@Test
@@ -158,13 +161,29 @@ class PlaceControllerTest {
 	}
 
 	@Test
-	@DisplayName("일반 사용자는 장소 리뷰 요약을 갱신할 수 없다")
-	void refreshSummaryWithUserRoleFails() throws Exception {
+	@DisplayName("일반 사용자는 요약이 오래됐을 때만 갱신하는 경로로 호출된다")
+	void refreshSummaryWithUserRoleUsesStaleOnly() throws Exception {
+		when(placeReviewSummaryService.refreshSummaryIfStale(PLACE_ID))
+			.thenReturn(createSummary());
+
 		mockMvc.perform(put("/api/places/summary/{placeId}", PLACE_ID)
 				.with(authentication(userAuthentication())))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.placeId").value(PLACE_ID));
 
+		verify(placeReviewSummaryService).refreshSummaryIfStale(PLACE_ID);
 		verify(placeReviewSummaryService, never()).refreshSummary(any());
+	}
+
+	@Test
+	@DisplayName("요약 생성 중이면 409를 반환한다")
+	void refreshSummaryWhileProcessingReturnsConflict() throws Exception {
+		when(placeReviewSummaryService.refreshSummaryIfStale(PLACE_ID))
+			.thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "생성 중"));
+
+		mockMvc.perform(put("/api/places/summary/{placeId}", PLACE_ID)
+				.with(authentication(userAuthentication())))
+			.andExpect(status().isConflict());
 	}
 
 	private Authentication userAuthentication() {

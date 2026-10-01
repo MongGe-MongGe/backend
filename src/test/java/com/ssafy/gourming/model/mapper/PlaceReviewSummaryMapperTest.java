@@ -257,6 +257,23 @@ class PlaceReviewSummaryMapperTest {
 		assertThat(placeReviewSummaryMapper.selectStalePlaceIds()).doesNotContain(PLACE_ID);
 	}
 
+	@Test
+	@DisplayName("단일 장소 갱신 필요 여부는 갱신 대상 조회와 같은 기준으로 판정한다")
+	void isSummaryStaleMatchesStaleQuery() {
+		// 리뷰도 요약도 없는 장소는 갱신할 필요가 없다.
+		assertThat(placeReviewSummaryMapper.isSummaryStale(OTHER_PLACE_ID)).isFalse();
+
+		insertTestReview(REVIEW_ID, PLACE_ID, "리뷰", LocalDateTime.of(2026, 6, 24, 10, 0));
+		// 리뷰는 있는데 요약이 없으면 갱신이 필요하다.
+		assertThat(placeReviewSummaryMapper.isSummaryStale(PLACE_ID)).isTrue();
+
+		placeReviewSummaryMapper.upsert(freshSummary("COMPLETED"));
+		assertThat(placeReviewSummaryMapper.isSummaryStale(PLACE_ID)).isFalse();
+
+		placeReviewSummaryMapper.upsert(freshSummary("FAILED"));
+		assertThat(placeReviewSummaryMapper.isSummaryStale(PLACE_ID)).isTrue();
+	}
+
 	private PlaceReviewSummaryEntity freshSummary(String status) {
 		PlaceReviewSummaryEntity summary = createSummary(PLACE_ID, "요약", status);
 		summary.setLastReviewUpdatedAt(LocalDateTime.of(2026, 6, 24, 10, 0));

@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.ssafy.gourming.config.PlaceSummaryAiProperties;
 import com.ssafy.gourming.model.client.PlaceReviewSummarizer;
@@ -29,6 +31,9 @@ import lombok.RequiredArgsConstructor;
 public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService {
 
 	private static final String STATUS_COMPLETED = "COMPLETED";
+	private static final String STATUS_PROCESSING = "PROCESSING";
+	// AI 응답 타임아웃(기본 20초)보다 넉넉하게 잡는다. 이보다 오래 PROCESSING이면 서버가 중간에 죽은 것으로 본다.
+	private static final long PROCESSING_GUARD_SECONDS = 60;
 
 	private final PlaceMapper placeMapper;
 	private final PlaceReviewSummaryMapper placeReviewSummaryMapper;
@@ -98,6 +103,27 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 			);
 			throw exception;
 		}
+	}
+
+	@Override
+	public PlaceReviewSummaryResponse refreshSummaryIfStale(String placeId) {
+		validatePlaceExists(placeId);
+		PlaceReviewSummaryEntity existingSummary = placeReviewSummaryMapper.selectByPlaceId(placeId);
+
+		// 일반 사용자가 버튼을 눌러도 요약이 최신이면 LLM을 다시 부르지 않는다.
+		if (existingSummary != null
+			&& STATUS_COMPLETED.equals(existingSummary.getStatus())
+			&& !placeReviewSummaryMapper.isSummaryStale(placeId)) {
+			return toResponse(existingSummary);
+		}
+		// 다른 요청이 같은 장소를 생성 중이면 중복 LLM 호출을 막는다.
+		if (existingSummary != null
+			&& STATUS_PROCESSING.equals(existingSummary.getStatus())
+			&& existingSummary.getUpdatedAt() != null
+			&& existingSummary.getUpdatedAt().isAfter(LocalDateTime.now().minusSeconds(PROCESSING_GUARD_SECONDS))) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "리뷰 요약을 생성하는 중입니다. 잠시 후 다시 시도해 주세요.");
+		}
+		return refreshSummary(placeId);
 	}
 
 	@Override

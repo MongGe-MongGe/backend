@@ -13,9 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +21,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.ssafy.gourming.config.PlaceSummaryAiProperties;
 import com.ssafy.gourming.model.client.PlaceReviewSummarizer;
@@ -334,10 +333,24 @@ class PlaceReviewSummaryServiceMockTest {
 	@Test
 	@DisplayName("일반 사용자 갱신: 다른 요청이 1분 안에 생성을 시작했으면 409로 막고 AI를 호출하지 않는다")
 	void refreshIfStaleRejectsWhileProcessing() {
-		PlaceReviewSummaryEntity processing = createSummaryEntity(PLACE_ID, null, "PROCESSING");
-		processing.setUpdatedAt(LocalDateTime.now().minusSeconds(10));
 		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
-		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID)).thenReturn(processing);
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
+			.thenReturn(createSummaryEntity(PLACE_ID, null, "PROCESSING"));
+		when(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).thenReturn(true);
+
+		assertThatThrownBy(() -> placeReviewSummaryService.refreshSummaryIfStale(PLACE_ID))
+			.isInstanceOf(ResponseStatusException.class)
+			.satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+		verify(placeReviewSummarizer, never()).summarize(any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("일반 사용자 갱신: 1분 안에 생성이 실패했으면 409로 막아 실패하는 장소에 AI를 반복 호출하지 않는다")
+	void refreshIfStaleRejectsRecentFailure() {
+		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
+		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
+			.thenReturn(createSummaryEntity(PLACE_ID, null, "FAILED"));
+		when(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).thenReturn(true);
 
 		assertThatThrownBy(() -> placeReviewSummaryService.refreshSummaryIfStale(PLACE_ID))
 			.isInstanceOf(ResponseStatusException.class)
@@ -349,11 +362,11 @@ class PlaceReviewSummaryServiceMockTest {
 	@DisplayName("일반 사용자 갱신: 생성 중 상태가 1분 넘게 남아 있으면 멈춘 것으로 보고 다시 생성한다")
 	void refreshIfStaleRetriesStuckProcessing() {
 		PlaceReviewSummaryGenerateResult generatedSummary = createGeneratedSummary();
-		PlaceReviewSummaryEntity stuck = createSummaryEntity(PLACE_ID, null, "PROCESSING");
-		stuck.setUpdatedAt(LocalDateTime.now().minusMinutes(5));
 		when(placeMapper.selectPlaceById(PLACE_ID)).thenReturn(createPlace(PLACE_ID));
 		when(placeReviewSummaryMapper.selectByPlaceId(PLACE_ID))
-			.thenReturn(stuck, createSummaryEntity(PLACE_ID, generatedSummary.getSummary(), "COMPLETED"));
+			.thenReturn(createSummaryEntity(PLACE_ID, null, "PROCESSING"),
+				createSummaryEntity(PLACE_ID, generatedSummary.getSummary(), "COMPLETED"));
+		when(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).thenReturn(false);
 		when(placeReviewSummaryMapper.selectReviewSourcesByPlaceId(PLACE_ID))
 			.thenReturn(List.of(createReviewSource()));
 		when(placeReviewSummarizer.summarize(eq(PLACE_ID), any(), any())).thenReturn(generatedSummary);

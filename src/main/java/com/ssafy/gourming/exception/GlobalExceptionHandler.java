@@ -11,6 +11,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * 전역 예외 처리기 (Global Exception Handler)
@@ -86,6 +87,14 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NoSuchElementException.class)
 	public ResponseEntity<?> handleNoSuchElementException(NoSuchElementException ex) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+	}
+
+	/**
+	 * 서비스가 지정한 상태 코드를 그대로 반환한다 (예: 409 요약 생성 중)
+	 */
+	@ExceptionHandler(ResponseStatusException.class)
+	public ResponseEntity<?> handleResponseStatusException(ResponseStatusException ex) {
+		return ResponseEntity.status(ex.getStatusCode()).body(ex.getReason());
 	}
 
 	/**

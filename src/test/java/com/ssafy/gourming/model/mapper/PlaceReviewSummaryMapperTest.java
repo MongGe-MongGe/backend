@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +47,10 @@ class PlaceReviewSummaryMapperTest {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	// JDBC로 updated_at을 바꾼 뒤 다시 조회할 때 MyBatis 1차 캐시를 비우기 위해 쓴다.
+	@Autowired
+	private SqlSession sqlSession;
 
 	@BeforeEach
 	void setUp() {
@@ -178,6 +183,37 @@ class PlaceReviewSummaryMapperTest {
 		assertThat(selectedSummary.getRecommendedFor()).isEmpty();
 		assertThat(selectedSummary.getKeywords()).isEmpty();
 		assertThat(selectedSummary.getErrorMessage()).isNull();
+	}
+
+	@Test
+	@DisplayName("1분 안에 PROCESSING·FAILED가 된 요약만 최근 시도로 본다. 이미 PROCESSING이어도 다시 표시하면 시각이 갱신된다")
+	void isRecentlyAttempted() {
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isFalse();
+
+		placeReviewSummaryMapper.markProcessing(PLACE_ID, "test-model");
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isTrue();
+
+		makeSummaryOld();
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isFalse();
+
+		// 같은 모델로 다시 PROCESSING 표시해도 값 변화가 없다고 updated_at이 멈추면 안 된다.
+		placeReviewSummaryMapper.markProcessing(PLACE_ID, "test-model");
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isTrue();
+
+		placeReviewSummaryMapper.markFailed(PLACE_ID, "test-model", "실패");
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isTrue();
+
+		makeSummaryOld();
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isFalse();
+
+		placeReviewSummaryMapper.upsert(freshSummary("COMPLETED"));
+		assertThat(placeReviewSummaryMapper.isRecentlyAttempted(PLACE_ID)).isFalse();
+	}
+
+	private void makeSummaryOld() {
+		jdbcTemplate.update(
+			"UPDATE place_review_summaries SET updated_at = NOW() - INTERVAL 5 MINUTE WHERE place_id = ?", PLACE_ID);
+		sqlSession.clearCache();
 	}
 
 	@Test

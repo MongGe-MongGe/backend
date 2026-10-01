@@ -132,7 +132,9 @@
 		ON DUPLICATE KEY UPDATE
 			model_version = VALUES(model_version),
 			status = VALUES(status),
-			error_message = NULL
+			error_message = NULL,
+			<!-- 이미 PROCESSING이면 값 변화가 없어 ON UPDATE CURRENT_TIMESTAMP가 동작하지 않으므로 직접 갱신한다. -->
+			updated_at = CURRENT_TIMESTAMP
 	</insert>
 
 	<insert id="markFailed">

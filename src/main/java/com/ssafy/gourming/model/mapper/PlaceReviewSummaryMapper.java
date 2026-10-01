@@ -30,4 +30,7 @@ public interface PlaceReviewSummaryMapper {
 
 	// 요약이 없거나, 요약 이후 리뷰가 수정된 장소 ID. 리뷰가 0개인 장소는 제외한다.
 	List<String> selectStalePlaceIds();
+
+	// 단일 장소가 요약 갱신 대상인지 selectStalePlaceIds와 같은 기준으로 판정한다.
+	boolean isSummaryStale(String placeId);
 }

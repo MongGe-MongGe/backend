@@ -187,12 +187,15 @@
 		  tag_sentiments가 없음(기존 요약 백필), 요약 이후 리뷰 수정, 리뷰 개수 변화(리뷰 삭제)
 		- 리뷰가 모두 삭제된 장소: 옛 요약이 남아 있으면 빈 요약으로 교체 (AI 호출 없음)
 	-->
-	<select id="selectStalePlaceIds" resultType="string">
-		SELECT p.id
-		FROM places p
-		LEFT JOIN place_review_summaries s ON s.place_id = p.id
-		WHERE (
-				EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
+	<!--
+		요약 갱신이 필요한 장소 조건. places p, place_review_summaries s(LEFT JOIN) 별칭을 전제로 한다.
+		- 리뷰가 있는 장소: 요약이 없음, COMPLETED가 아님(FAILED·PROCESSING 재시도),
+		  tag_sentiments가 없음(기존 요약 백필), 요약 이후 리뷰 수정, 리뷰 개수 변화(리뷰 삭제)
+		- 리뷰가 모두 삭제된 장소: 옛 요약이 남아 있으면 빈 요약으로 교체 (AI 호출 없음)
+	-->
+	<sql id="staleSummaryCondition">
+		(
+			EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
 			AND (
 					s.place_id IS NULL
 				 OR s.status &lt;&gt; 'COMPLETED'
@@ -206,11 +209,29 @@
 				 )
 			)
 		)
-		   OR (
-				s.review_count &gt; 0
+		OR (
+			s.review_count &gt; 0
 			AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.place_id = p.id)
 		)
+	</sql>
+
+	<select id="selectStalePlaceIds" resultType="string">
+		SELECT p.id
+		FROM places p
+		LEFT JOIN place_review_summaries s ON s.place_id = p.id
+		WHERE <include refid="staleSummaryCondition" />
 		ORDER BY p.id
+	</select>
+
+	<!-- 단일 장소가 요약 갱신 대상인지. 일반 사용자의 갱신 요청에서 LLM 호출 여부를 정하는 데 쓴다. -->
+	<select id="isSummaryStale" resultType="boolean">
+		SELECT EXISTS (
+			SELECT 1
+			FROM places p
+			LEFT JOIN place_review_summaries s ON s.place_id = p.id
+			WHERE p.id = #{placeId}
+			  AND (<include refid="staleSummaryCondition" />)
+		)
 	</select>
 
 </mapper>

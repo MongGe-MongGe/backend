@@ -236,4 +236,15 @@
 		)
 	</select>
 
+	<!-- JVM과 DB 시간대가 달라도 어긋나지 않도록 NOW()로 DB 안에서 비교한다. -->
+	<select id="isRecentlyAttempted" resultType="boolean">
+		SELECT EXISTS (
+			SELECT 1
+			FROM place_review_summaries
+			WHERE place_id = #{placeId}
+				AND status IN ('PROCESSING', 'FAILED')
+				AND updated_at &gt; NOW() - INTERVAL 60 SECOND
+		)
+	</select>
+
 </mapper>

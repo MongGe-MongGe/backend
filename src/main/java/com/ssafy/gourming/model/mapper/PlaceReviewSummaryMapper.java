@@ -33,4 +33,7 @@ public interface PlaceReviewSummaryMapper {
 
 	// 단일 장소가 요약 갱신 대상인지 selectStalePlaceIds와 같은 기준으로 판정한다.
 	boolean isSummaryStale(String placeId);
+
+	// 1분 안에 생성을 시작했거나(PROCESSING) 실패한(FAILED) 요약인지. 시각 비교는 DB 시계로 한다.
+	boolean isRecentlyAttempted(String placeId);
 }

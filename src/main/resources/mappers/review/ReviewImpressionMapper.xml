@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.gourming.model.mapper.ReviewImpressionMapper">
+
+	<!-- reviews에서 SELECT하므로 존재하지 않는 리뷰 ID는 자연히 빠진다. -->
+	<insert id="upsertImpressions">
+		INSERT INTO review_impressions (user_id, review_id)
+		SELECT #{userId}, r.id
+		FROM reviews r
+		WHERE r.id IN
+		<foreach collection="reviewIds" item="reviewId" open="(" separator="," close=")">
+			#{reviewId}
+		</foreach>
+		  AND r.user_id &lt;&gt; #{userId}
+		ON DUPLICATE KEY UPDATE
+			last_seen_at = CURRENT_TIMESTAMP,
+			seen_count = seen_count + 1
+	</insert>
+
+</mapper>

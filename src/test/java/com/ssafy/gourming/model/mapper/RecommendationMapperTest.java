@@ -83,7 +83,7 @@ class RecommendationMapperTest {
 	@Test
 	@DisplayName("본인·좋아요·벡터 없음·버전 불일치 리뷰를 제외하고 최신순으로 후보를 조회한다")
 	void selectCandidatesFilters() {
-		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 500, null);
+		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 500, null, null);
 
 		assertThat(candidates).extracting(RecommendationCandidateRow::getReviewId)
 			.containsExactly(CANDIDATE_NEW, CANDIDATE_OLD);
@@ -95,7 +95,7 @@ class RecommendationMapperTest {
 	@Test
 	@DisplayName("limit만큼만 조회된다")
 	void selectCandidatesLimit() {
-		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 1, null);
+		List<RecommendationCandidateRow> candidates = recommendationMapper.selectCandidates(ME, VERSION, 1, null, null);
 
 		assertThat(candidates).extracting(RecommendationCandidateRow::getReviewId).containsExactly(CANDIDATE_NEW);
 	}
@@ -115,7 +115,7 @@ class RecommendationMapperTest {
 	void selectCandidatesRespectsAsOf() {
 		LocalDateTime asOf = LocalDateTime.of(2026, 9, 3, 0, 0);
 		// CANDIDATE_NEW(9/5 작성)는 asOf 이후라 빠지고, CANDIDATE_OLD(9/1 작성)만 남는다.
-		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf))
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf, null))
 			.extracting(RecommendationCandidateRow::getReviewId)
 			.containsExactly(CANDIDATE_OLD);
 
@@ -123,7 +123,7 @@ class RecommendationMapperTest {
 		jdbcTemplate.update("INSERT INTO likes (id, user_id, review_id, created_at) VALUES (UUID(), ?, ?, ?)",
 			ME, CANDIDATE_OLD, LocalDateTime.of(2026, 9, 4, 0, 0));
 		sqlSession.clearCache();
-		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf))
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf, null))
 			.extracting(RecommendationCandidateRow::getReviewId)
 			.containsExactly(CANDIDATE_OLD);
 
@@ -131,7 +131,57 @@ class RecommendationMapperTest {
 		jdbcTemplate.update("UPDATE likes SET created_at = ? WHERE user_id = ? AND review_id = ?",
 			LocalDateTime.of(2026, 9, 2, 0, 0), ME, CANDIDATE_OLD);
 		sqlSession.clearCache();
-		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf)).isEmpty();
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf, null)).isEmpty();
+	}
+
+	@Test
+	@DisplayName("seenSince 이후에 본 리뷰는 후보에서 빠지고, 그 전에 본 리뷰는 남는다")
+	void selectCandidatesExcludesRecentlySeen() {
+		LocalDateTime seenSince = LocalDateTime.of(2026, 9, 15, 0, 0);
+		insertImpression(ME, CANDIDATE_NEW, seenSince.plusDays(1));
+		insertImpression(ME, CANDIDATE_OLD, seenSince.minusDays(1));
+
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, null, seenSince))
+			.extracting(RecommendationCandidateRow::getReviewId)
+			.containsExactly(CANDIDATE_OLD);
+	}
+
+	@Test
+	@DisplayName("다른 사용자가 본 리뷰는 영향이 없고, seenSince가 null이면 노출 기록과 무관하다")
+	void selectCandidatesIgnoresOthersAndNullSince() {
+		insertImpression(OTHER, CANDIDATE_NEW, LocalDateTime.now());
+		insertImpression(ME, CANDIDATE_OLD, LocalDateTime.now());
+
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, null, LocalDateTime.now().minusDays(14)))
+			.extracting(RecommendationCandidateRow::getReviewId)
+			.containsExactly(CANDIDATE_NEW);
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 499, null, null))
+			.extracting(RecommendationCandidateRow::getReviewId)
+			.containsExactly(CANDIDATE_NEW, CANDIDATE_OLD);
+	}
+
+	@Test
+	@DisplayName("asOf 이후에 본 리뷰는 제외에 쓰이지 않아 페이지 사이 결과가 흔들리지 않는다")
+	void selectCandidatesIgnoresImpressionsAfterAsOf() {
+		LocalDateTime asOf = LocalDateTime.of(2026, 9, 20, 0, 0);
+		LocalDateTime seenSince = asOf.minusDays(14);
+		// fixture의 좋아요는 현재 시각이라 asOf 이후다. 좋아요 제외가 이 테스트에 섞이지 않도록 asOf 이전으로 옮긴다.
+		jdbcTemplate.update("UPDATE likes SET created_at = ? WHERE user_id = ? AND review_id = ?",
+			asOf.minusDays(1), ME, LIKED_REVIEW);
+		// 0페이지를 받은 뒤(asOf 이후) 본 리뷰: 1페이지 계산에서 무시된다.
+		insertImpression(ME, CANDIDATE_NEW, asOf.plusDays(1));
+		// asOf 전 제외 기간 안에 본 리뷰: 제외된다.
+		insertImpression(ME, CANDIDATE_OLD, asOf.minusDays(10));
+
+		assertThat(recommendationMapper.selectCandidates(ME, VERSION, 500, asOf, seenSince))
+			.extracting(RecommendationCandidateRow::getReviewId)
+			.containsExactly(CANDIDATE_NEW);
+	}
+
+	private void insertImpression(String userId, String reviewId, LocalDateTime seenAt) {
+		jdbcTemplate.update(
+			"INSERT INTO review_impressions (user_id, review_id, first_seen_at, last_seen_at) VALUES (?, ?, ?, ?)",
+			userId, reviewId, seenAt, seenAt);
 	}
 
 	private void insertUser(String id, String email, String handle) {

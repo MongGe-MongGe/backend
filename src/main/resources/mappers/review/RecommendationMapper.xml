@@ -36,6 +36,18 @@
 			  AND l.created_at &lt;= #{asOf}
 			</if>
 		  )
+		<if test="seenSince != null">
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM review_impressions ri
+			WHERE ri.user_id = #{userId}
+			  AND ri.review_id = r.id
+			  AND ri.last_seen_at &gt;= #{seenSince}
+			<if test="asOf != null">
+			  AND ri.last_seen_at &lt;= #{asOf}
+			</if>
+		  )
+		</if>
 		ORDER BY r.created_at DESC, r.id DESC
 		LIMIT #{limit}
 	</select>

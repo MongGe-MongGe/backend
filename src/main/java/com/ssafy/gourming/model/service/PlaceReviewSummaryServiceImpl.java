@@ -31,9 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService {
 
 	private static final String STATUS_COMPLETED = "COMPLETED";
-	private static final String STATUS_PROCESSING = "PROCESSING";
-	// AI 응답 타임아웃(기본 20초)보다 넉넉하게 잡는다. 이보다 오래 PROCESSING이면 서버가 중간에 죽은 것으로 본다.
-	private static final long PROCESSING_GUARD_SECONDS = 60;
 
 	private final PlaceMapper placeMapper;
 	private final PlaceReviewSummaryMapper placeReviewSummaryMapper;
@@ -116,12 +113,11 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 			&& !placeReviewSummaryMapper.isSummaryStale(placeId)) {
 			return toResponse(existingSummary);
 		}
-		// 다른 요청이 같은 장소를 생성 중이면 중복 LLM 호출을 막는다.
-		if (existingSummary != null
-			&& STATUS_PROCESSING.equals(existingSummary.getStatus())
-			&& existingSummary.getUpdatedAt() != null
-			&& existingSummary.getUpdatedAt().isAfter(LocalDateTime.now().minusSeconds(PROCESSING_GUARD_SECONDS))) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "리뷰 요약을 생성하는 중입니다. 잠시 후 다시 시도해 주세요.");
+		// 1분 안에 다른 요청이 생성을 시작했거나 실패했으면 LLM을 다시 부르지 않는다.
+		// 1분은 AI 타임아웃(기본 20초)보다 넉넉하게 잡은 값이라, 더 오래된 PROCESSING은 서버가 중간에 멈춘 것으로 보고 다시 생성한다.
+		// ponytail: 확인 후 생성이라 정확히 동시에 들어온 요청은 함께 통과할 수 있다. 문제가 되면 조건부 UPDATE로 선점한다.
+		if (placeReviewSummaryMapper.isRecentlyAttempted(placeId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "리뷰 요약을 생성 중이거나 방금 실패했습니다. 잠시 후 다시 시도해 주세요.");
 		}
 		return refreshSummary(placeId);
 	}

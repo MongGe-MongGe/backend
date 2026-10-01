@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -62,12 +63,18 @@ public class PlaceController {
 		return ResponseEntity.ok(placeReviewSummaryService.refreshAllSummaries());
 	}
 
+	// 로그인 사용자 누구나 호출할 수 있다. 관리자는 강제 갱신하고,
+	// 일반 사용자는 요약이 없거나 오래됐을 때만 LLM을 호출해 비용 남용을 막는다.
 	@PutMapping("/summary/{placeId}")
-//	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<PlaceReviewSummaryResponse> refreshSummary(
-		@PathVariable String placeId
+		@PathVariable String placeId,
+		Authentication authentication
 	) {
-		return ResponseEntity.ok(placeReviewSummaryService.refreshSummary(placeId));
+		boolean isAdmin = authentication.getAuthorities().stream()
+			.anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+		return ResponseEntity.ok(isAdmin
+			? placeReviewSummaryService.refreshSummary(placeId)
+			: placeReviewSummaryService.refreshSummaryIfStale(placeId));
 	}
 
 	private PlaceDetailResponse toPlaceDetailResponse(

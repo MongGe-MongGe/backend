@@ -40,8 +40,8 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 
 	@Override
 	public PlaceReviewSummaryResponse getSummary(String placeId) {
-		// 공개 API에서는 저장된 요약만 읽는다.
-		// 요약 생성은 비용과 지연이 큰 작업이므로 관리자 갱신 API에서만 수행한다.
+		// 조회 API에서는 저장된 요약만 읽는다.
+		// 요약 생성은 비용과 지연이 큰 작업이므로 갱신 API(PUT)와 일일 배치에서만 수행한다.
 		PlaceReviewSummaryEntity existingSummary =
 			placeReviewSummaryMapper.selectByPlaceId(placeId);
 
@@ -49,7 +49,7 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 			return null;
 		}
 		// PROCESSING/FAILED 상태는 사용자에게 노출하지 않고 요약 없음으로 취급한다.
-		// FAILED 재시도 역시 공개 API가 아니라 관리자 PUT 요청으로만 수행한다.
+		// FAILED 재시도 역시 조회가 아니라 갱신 API(PUT)와 일일 배치에서 수행한다.
 		if (!STATUS_COMPLETED.equals(existingSummary.getStatus())) {
 			return null;
 		}
@@ -61,7 +61,6 @@ public class PlaceReviewSummaryServiceImpl implements PlaceReviewSummaryService 
 		validatePlaceExists(placeId);
 
 		String modelVersion = getModelVersion();
-		// 관리자 갱신 요청에서만 AI 요약 생성을 수행한다.
 		// 먼저 PROCESSING으로 표시해 두면 갱신 중인 상태를 DB에서 확인할 수 있다.
 		placeReviewSummaryMapper.markProcessing(placeId, modelVersion);
 

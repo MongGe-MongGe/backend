@@ -184,12 +184,6 @@
 	</select>
 
 	<!--
-		요약 갱신 대상 장소.
-		- 리뷰가 있는 장소: 요약이 없음, COMPLETED가 아님(FAILED·PROCESSING 재시도),
-		  tag_sentiments가 없음(기존 요약 백필), 요약 이후 리뷰 수정, 리뷰 개수 변화(리뷰 삭제)
-		- 리뷰가 모두 삭제된 장소: 옛 요약이 남아 있으면 빈 요약으로 교체 (AI 호출 없음)
-	-->
-	<!--
 		요약 갱신이 필요한 장소 조건. places p, place_review_summaries s(LEFT JOIN) 별칭을 전제로 한다.
 		- 리뷰가 있는 장소: 요약이 없음, COMPLETED가 아님(FAILED·PROCESSING 재시도),
 		  tag_sentiments가 없음(기존 요약 백필), 요약 이후 리뷰 수정, 리뷰 개수 변화(리뷰 삭제)
